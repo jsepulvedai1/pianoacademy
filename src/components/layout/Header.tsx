@@ -22,6 +22,9 @@ export function Header() {
           <Link href="/teachers" className="hover:text-primary transition-colors">
             Profesores
           </Link>
+          <Link href="/#plans" className="hover:text-primary transition-colors">
+            Planes
+          </Link>
           <Link href="/about" className="hover:text-primary transition-colors">
             Nosotros
           </Link>

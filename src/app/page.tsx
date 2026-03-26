@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Calendar, Music, UserCheck, Star } from 'lucide-react';
+import { Calendar, Music, UserCheck, Star, Check } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -78,6 +78,110 @@ export default function Home() {
               <p className="text-muted-foreground">
                 Clásico, Jazz, Pop o teoría musical. Adaptamos el contenido a tus objetivos.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing / Plans Section */}
+      <section id="plans" className="py-20 md:py-32 bg-background relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="container px-4 md:px-6 mx-auto relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-4xl md:text-5xl font-bold font-serif tracking-tight">Nuestros Planes</h2>
+            <p className="text-muted-foreground text-lg italic">
+              Invierte en tu talento. Elige el programa que mejor se adapte a tus metas musicales.
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-3 max-w-6xl mx-auto">
+            {/* Base Plan */}
+            <div className="flex flex-col p-8 bg-white rounded-3xl border border-muted/60 shadow-sm hover:shadow-xl transition-all duration-500 group">
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-2">Básico</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold font-serif">$49</span>
+                  <span className="text-muted-foreground text-sm">/mes</span>
+                </div>
+                <p className="text-muted-foreground text-sm mt-4">Ideal para aficionados y principiantes.</p>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> 1 Clase individual por semana
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> Acceso a material digital
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> Comunidad Détaché
+                </li>
+              </ul>
+              <Button variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary/5 font-bold uppercase tracking-wider">
+                Empezar hoy
+              </Button>
+            </div>
+
+            {/* Pro Plan - Featured */}
+            <div className="flex flex-col p-8 bg-primary text-white rounded-3xl shadow-2xl shadow-primary/30 relative overflow-hidden transform lg:scale-105 z-10">
+              <div className="absolute top-4 right-4 bg-secondary text-black text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                Recomendado
+              </div>
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-2">Pro Mastery</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold font-serif">$89</span>
+                  <span className="text-white/80 text-sm">/mes</span>
+                </div>
+                <p className="text-white/70 text-sm mt-4">Para músicos que buscan un progreso acelerado.</p>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-secondary" /> 2 Clases individuales por semana
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-secondary" /> Mentoría mensual personalizada
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-secondary" /> Acceso a salas de ensayo (2h/sem)
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-secondary" /> Masterclasses trimestrales
+                </li>
+              </ul>
+              <Button className="w-full h-12 bg-white text-primary hover:bg-white/90 font-bold uppercase tracking-wider">
+                Quiero ser Pro
+              </Button>
+            </div>
+
+            {/* Master Plan */}
+            <div className="flex flex-col p-8 bg-white rounded-3xl border border-muted/60 shadow-sm hover:shadow-xl transition-all duration-500">
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-2">Virtuoso Master</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold font-serif">$159</span>
+                  <span className="text-muted-foreground text-sm">/mes</span>
+                </div>
+                <p className="text-muted-foreground text-sm mt-4">Formación artística y técnica de élite.</p>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> Clases ilimitadas (sujeto a disponibilidad)
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> Grabación en estudio mensual
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> Participación en galas de invierno
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Check className="w-5 h-5 text-primary" /> Acceso prioritario a eventos VIP
+                </li>
+              </ul>
+              <Button variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary/5 font-bold uppercase tracking-wider">
+                Nivel Maestro
+              </Button>
             </div>
           </div>
         </div>
