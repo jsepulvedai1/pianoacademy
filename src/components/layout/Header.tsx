@@ -6,12 +6,13 @@ import { MobileNav } from '@/components/layout/MobileNav';
 export function Header() {
   return (
     <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="font-bold text-xl flex items-center gap-2">
-          🎹 PianoAcademy
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <img src="/icons/logo.svg" alt="Détaché Logo" className="h-24 w-auto" />
+
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-6 text-base font-medium">
           <Link href="/" className="hover:text-primary transition-colors">
             Inicio
           </Link>
@@ -35,7 +36,7 @@ export function Header() {
             <Link href="/book">Reservar Clase</Link>
           </Button>
           <div className="md:hidden">
-             <MobileNav />
+            <MobileNav />
           </div>
         </div>
       </div>

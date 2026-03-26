@@ -17,7 +17,7 @@ export default function AboutPage() {
               Pasión por el Piano
             </h1>
             <p className="text-xl text-muted-foreground max-w-[700px]">
-              Desde 2010, PianoAcademy se ha dedicado a formar músicos de todas las edades, 
+              Desde 2010, Détaché se ha dedicado a formar músicos de todas las edades, 
               creando un espacio donde la técnica se encuentra con la creatividad.
             </p>
           </div>

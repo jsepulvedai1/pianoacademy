@@ -3,7 +3,7 @@ export function Footer() {
     <footer className="bg-muted py-12 border-t">
       <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
         <div>
-          <h3 className="font-bold mb-4">🎹 PianoAcademy</h3>
+          <img src="/icons/logoampliado.svg" alt="Détaché Logo" className="h-12 w-auto mb-4" />
           <p className="text-sm text-muted-foreground">
             Formando músicos con pasión y excelencia desde 2010.
           </p>
@@ -30,14 +30,14 @@ export function Footer() {
         <div>
           <h4 className="font-semibold mb-4">Contacto</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>contacto@pianoacademy.com</li>
+            <li>contacto@detache.com</li>
             <li>+56 9 1234 5678</li>
             <li>Av. Música 123, Santiago</li>
           </ul>
         </div>
       </div>
       <div className="container mx-auto px-4 mt-12 pt-8 border-t border-muted-foreground/10 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} PianoAcademy. Todos los derechos reservados.
+        © {new Date().getFullYear()} Détaché. Todos los derechos reservados.
       </div>
     </footer>
   );

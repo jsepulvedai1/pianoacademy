@@ -6,22 +6,42 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-12 md:py-32 overflow-hidden bg-gradient-to-b from-primary/5 to-background">
-        <div className="container px-4 md:px-6 mx-auto text-center">
-          <div className="max-w-3xl mx-auto space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter sm:text-5xl">
-              Domina el Piano con los <span className="text-primary">Mejores Maestros</span>
-            </h1>
-            <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-              Reserva tu clase personalizada en segundos. Modalidad online o presencial. 
-              Empieza tu viaje musical hoy mismo.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-              <Button size="lg" asChild>
-                <Link href="/book">Reservar Clase Ahora</Link>
+      <section className="relative min-h-[420px] md:min-h-[600px] flex items-center overflow-hidden">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/images/piano-hero.png"
+            alt="Piano Background"
+            className="w-full h-full object-cover scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/60 to-primary/20" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_90%)] opacity-40" />
+        </div>
+
+        <div className="container relative z-10 px-4 md:px-6 mx-auto">
+          <div className="max-w-4xl space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/80 text-xs font-bold uppercase tracking-widest animate-fade-in">
+              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+              Inscripciones abiertas 2026
+            </div>
+
+            <div className="space-y-6">
+              <h1 className="text-5xl md:text-8xl font-bold tracking-tight text-white font-serif leading-[1.1] drop-shadow-2xl">
+                Detaché: <span className="text-secondary italic">El Arte</span> <br />
+                <span className="text-white/95">de Dominar la música</span>
+              </h1>
+              <p className="max-w-[700px] text-white/80 md:text-2xl leading-relaxed italic drop-shadow-lg font-light">
+                Eleva tu técnica y sensibilidad artística con formación de primer nivel.
+                Clases personalizadas diseñadas para transformar tu talento en maestría, estés donde estés.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-6 mt-12">
+              <Button size="lg" className="h-16 px-10 text-base font-bold uppercase tracking-wider shadow-2xl shadow-primary/40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all text-white border-none" asChild>
+                <Link href="/book">Reservar mi Clase</Link>
               </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/catalog">Ver Catálogo</Link>
+              <Button variant="outline" size="lg" className="h-16 px-10 text-base font-bold uppercase tracking-wider border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white hover:border-white/60 backdrop-blur-sm transition-all shadow-lg" asChild>
+                <Link href="/teachers">Nuestros Maestros</Link>
               </Button>
             </div>
           </div>
@@ -29,7 +49,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-muted/50">
+      <section className="pt-8 pb-16 md:pt-12 md:pb-24 bg-muted/50">
         <div className="container px-4 md:px-6 mx-auto">
           <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start space-y-4">

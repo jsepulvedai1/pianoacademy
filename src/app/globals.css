@@ -31,6 +31,9 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-montserrat), ui-serif, Georgia, serif;
 }
 
 @utility container {
@@ -60,48 +63,48 @@
 }
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --background: 0 0% 100%;      /* Neutral White */
+  --foreground: 222.2 84% 4.9%;  /* Dark Indigo-Black */
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --primary: 313 74% 35%;         /* Morado: #9b177e */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 51 90% 48%;       /* Amarillo: #ebca0c */
+  --secondary-foreground: 0 0% 0%;
+  --muted: 40 20% 90%;
+  --muted-foreground: 25 20% 40%;
+  --accent: 45 50% 65%;          /* Antique Brass */
+  --accent-foreground: 25 30% 15%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
+  --border: 25 20% 85%;
+  --input: 25 20% 85%;
+  --ring: 25 30% 15%;
+  --radius: 0.75rem;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
+  --background: 25 30% 5%;       /* Very Dark Wood */
+  --foreground: 40 30% 98%;      /* Parchment Text */
+  --card: 25 30% 7%;
+  --card-foreground: 40 30% 98%;
+  --popover: 25 30% 7%;
+  --popover-foreground: 40 30% 98%;
+  --primary: 313 74% 45%;         /* Slightly Lighter Morado for Dark Mode */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 51 90% 48%;       /* Amarillo */
+  --secondary-foreground: 0 0% 0%;
+  --muted: 25 20% 15%;
+  --muted-foreground: 40 10% 70%;
+  --accent: 45 50% 65%;          /* Antique Brass */
+  --accent-foreground: 25 30% 5%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --destructive-foreground: 40 30% 98%;
+  --border: 25 20% 20%;
+  --input: 25 20% 20%;
+  --ring: 45 50% 65%;
 }
 
 @layer base {

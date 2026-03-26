@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { fontMontserrat } from "@/lib/constants/fonts";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"] });
+// Font loading is handled in the constants file
+
+import { ApolloWrapper } from "@/lib/apollo-wrapper";
 
 export const metadata: Metadata = {
-  title: "PianoAcademy | Aprende Piano",
+  title: "Détaché | Academia de Música",
   description: "Reserva tus clases de piano con los mejores profesores.",
 };
 
@@ -20,19 +22,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={cn(inter.className, "min-h-screen flex flex-col bg-background font-sans antialiased")}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </ThemeProvider>
+      <body className={cn(
+        fontMontserrat.variable,
+        "min-h-screen flex flex-col bg-background font-sans antialiased"
+      )}>
+        <ApolloWrapper>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </ThemeProvider>
+        </ApolloWrapper>
       </body>
     </html>
   );
