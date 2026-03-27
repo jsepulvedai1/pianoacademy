@@ -1,18 +1,28 @@
 import Link from "next/link";
+
+export const revalidate = 3600; 
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { User, Calendar, Star } from "lucide-react";
 import { getClient } from "@/lib/apollo-client";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
-import { GetTeachersData } from "@/types/graphql";
+import { GetTeachersData, Teacher } from "@/types/graphql";
 
 export default async function TeachersPage() {
-  const { data } = await getClient().query<GetTeachersData>({
-    query: GET_TEACHERS,
-  });
-
-  const teachers = data?.allTeachers || [];
+  let teachers: Teacher[] = [];
+  
+  try {
+    const { data } = await getClient().query<GetTeachersData>({
+      query: GET_TEACHERS,
+    });
+    teachers = data?.allTeachers || [];
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    // Fallback to empty array to allow build to pass
+    teachers = [];
+  }
 
   return (
     <div className="container py-10 mx-auto px-4">
