@@ -5,7 +5,7 @@ import {
   ApolloNextAppProvider,
   ApolloClient,
   InMemoryCache,
-} from "@apollo/experimental-nextjs-app-support";
+} from "@apollo/client-integration-nextjs";
 
 /**
  * 🎻 Détaché - Apollo Wrapper (Client Side)
@@ -14,8 +14,8 @@ import {
 
 function makeClient() {
   const httpLink = new HttpLink({
-    // ⚠️ IMPORTANT: Replace with your actual Django GraphQL endpoint
-    uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:8000/graphql",
+    // 🎻 Use relative path for client side to leverage Next.js proxy (bypasses CORS)
+    uri: "/graphql",
     fetchOptions: { cache: "no-store" },
   });
 
