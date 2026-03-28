@@ -1,6 +1,6 @@
 "use client";
 
-import { Music, LayoutDashboard, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap } from "lucide-react";
+import { Music, LayoutDashboard, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/teachers", label: "Profesores", icon: Users },
     { href: "/admin/students", label: "Estudiantes", icon: GraduationCap },
+    { href: "/admin/rooms", label: "Salas", icon: Warehouse },
     { href: "/admin/lessons", label: "Clases", icon: Calendar },
   ];
 
