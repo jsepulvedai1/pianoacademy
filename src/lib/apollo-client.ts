@@ -1,9 +1,9 @@
 import { HttpLink } from "@apollo/client";
 import {
-  registerApolloClient,
   ApolloClient,
   InMemoryCache,
-} from "@apollo/experimental-nextjs-app-support";
+  registerApolloClient,
+} from "@apollo/client-integration-nextjs";
 
 /**
  * 🎻 Détaché - Apollo Client (Server Side)
