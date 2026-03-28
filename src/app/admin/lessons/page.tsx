@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Calendar, 
-  Search, 
-  Filter, 
-  Plus, 
-  MoreVertical, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Calendar,
+  Search,
+  Filter,
+  Plus,
+  MoreVertical,
+  CheckCircle2,
+  XCircle,
   Clock,
   User,
   Music,
@@ -134,7 +134,7 @@ export default function AdminLessonsPage() {
   const [viewMode, setViewMode] = useState<'TABLE' | 'CALENDAR'>('CALENDAR');
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // New Class State
   const [isNewClassOpen, setIsNewClassOpen] = useState(false);
   const [newClassTeacher, setNewClassTeacher] = useState("");
@@ -147,12 +147,12 @@ export default function AdminLessonsPage() {
   const MOCK_TYPES = ["Clase Individual", "Masterclass", "Teoría Musical", "Ensamble"];
 
   const filteredLessons = lessons.filter(lesson => {
-    const matchesSearch = 
+    const matchesSearch =
       lesson.teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lesson.student.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "ALL" || lesson.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -169,17 +169,17 @@ export default function AdminLessonsPage() {
     if (!newClassTeacher || !newClassDate) return [];
     const teacher = MOCK_TEACHERS.find(t => t.id === newClassTeacher);
     if (!teacher) return [];
-    
+
     const dayName = getDayName(newClassDate);
     const availability = teacher.availabilities.find(a => a.day === dayName);
     if (!availability) return [];
 
     const start = parseInt(availability.startTime.split(':')[0]);
     const end = parseInt(availability.endTime.split(':')[0]);
-    
+
     const slots = [];
     for (let h = start; h < end; h++) {
-      slots.push(`${h}:00 - ${h+1}:00`);
+      slots.push(`${h}:00 - ${h + 1}:00`);
     }
     return slots;
   };
@@ -218,7 +218,7 @@ export default function AdminLessonsPage() {
 
       {/* Toolbar */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-         <div className="lg:col-span-3 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <div className="lg:col-span-3 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div className="relative w-full sm:w-96 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <input type="text" placeholder="Buscar por profesor o alumno..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -263,7 +263,7 @@ export default function AdminLessonsPage() {
               </div>
             ))}
           </div>
-          
+
           <div className="relative h-[800px] overflow-y-auto">
             <div className="absolute inset-0 grid grid-rows-14 divide-y divide-slate-50 pointer-events-none">
               {hours.map((hour) => (
@@ -278,7 +278,7 @@ export default function AdminLessonsPage() {
               <div className="col-span-1" />
               {Array.from({ length: 7 }).map((_, dayIndex) => {
                 const dayLessons = filteredLessons.filter(l => new Date(l.date).getDay() === dayIndex);
-                
+
                 const groups: { [key: string]: any[] } = {};
                 dayLessons.forEach(l => {
                   const timeKey = l.time.split(' - ')[0];
@@ -294,15 +294,15 @@ export default function AdminLessonsPage() {
                         const startMin = parseInt(l.time.split(':')[1].split(' ')[0]);
                         const top = ((startHour - 8) * (800 / 14)) + ((startMin / 60) * (800 / 14));
                         const height = (800 / 14) * 1.2;
-                        
+
                         const widthIdx = 100 / groupLessons.length;
                         const leftOffset = lIndex * widthIdx;
 
                         return (
-                          <div key={l.id} 
+                          <div key={l.id}
                             onClick={() => handleLessonClick(l)}
                             className="absolute p-1.5 rounded-xl shadow-lg border border-white flex flex-col justify-between pointer-events-auto cursor-pointer hover:scale-[1.05] hover:z-50 transition-all ring-1 ring-inset"
-                            style={{ 
+                            style={{
                               top: `${top}px`, height: `${height}px`, left: `${leftOffset}%`, width: `${widthIdx}%`,
                               backgroundColor: l.status === 'CANCELLED' ? '#fff1f2' : l.status === 'COMPLETED' ? '#f0fdf4' : '#f0f9ff',
                               borderColor: l.status === 'CANCELLED' ? '#fda4af' : l.status === 'COMPLETED' ? '#86efac' : '#7dd3fc',
@@ -334,7 +334,7 @@ export default function AdminLessonsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
           <Card className="w-full max-w-lg bg-white border-none shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 rounded-3xl">
             <header className="p-8 bg-slate-900 text-white relative">
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors"
               >
@@ -351,7 +351,7 @@ export default function AdminLessonsPage() {
                 </div>
               </div>
             </header>
-            
+
             <CardContent className="p-8 space-y-8">
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-4">
@@ -369,7 +369,7 @@ export default function AdminLessonsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-slate-400">
                     <Calendar className="h-4 w-4" />
@@ -406,7 +406,7 @@ export default function AdminLessonsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
           <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 rounded-[2.5rem]">
             <header className="p-10 bg-primary text-white relative">
-              <button 
+              <button
                 onClick={() => setIsNewClassOpen(false)}
                 className="absolute top-8 right-8 p-3 rounded-full hover:bg-white/10 transition-colors"
               >
@@ -418,7 +418,7 @@ export default function AdminLessonsPage() {
                 <p className="text-white/70 italic text-sm mt-2">Completa los datos para crear una nueva sesión académica.</p>
               </div>
             </header>
-            
+
             <CardContent className="p-10 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Step 1: Teacher Selection */}
@@ -426,7 +426,7 @@ export default function AdminLessonsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                     <User className="h-3 w-3" /> Seleccionar Profesor
                   </label>
-                  <select 
+                  <select
                     className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 appearance-none shadow-sm"
                     value={newClassTeacher}
                     onChange={(e) => { setNewClassTeacher(e.target.value); setNewClassTime(""); }}
@@ -443,7 +443,7 @@ export default function AdminLessonsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                     <Calendar className="h-3 w-3" /> Fecha de Clase
                   </label>
-                  <input 
+                  <input
                     type="date"
                     className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 shadow-sm"
                     value={newClassDate}
@@ -456,7 +456,7 @@ export default function AdminLessonsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                     <Music className="h-3 w-3" /> Seleccionar Sala
                   </label>
-                  <select 
+                  <select
                     className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 appearance-none shadow-sm"
                     value={newClassRoom}
                     onChange={(e) => setNewClassRoom(e.target.value)}
@@ -473,7 +473,7 @@ export default function AdminLessonsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                     <BookOpen className="h-3 w-3" /> Tipo de Clase
                   </label>
-                  <select 
+                  <select
                     className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 appearance-none shadow-sm"
                     value={newClassType}
                     onChange={(e) => setNewClassType(e.target.value)}
@@ -484,59 +484,62 @@ export default function AdminLessonsPage() {
                     ))}
                   </select>
                 </div>
-              </div>
+              </div >
 
               {/* Step 3: Available Hours */}
-              {newClassTeacher && newClassDate && (
-                <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
-                  <header className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                      <Clock className="h-3 w-3" /> Horas Disponibles para {getDayName(newClassDate)}
-                    </label>
-                    <Badge variant="outline" className="text-[10px] font-bold uppercase text-primary border-primary/20">
-                      {MOCK_TEACHERS.find(t => t.id === newClassTeacher)?.availabilities.find(a => a.day === getDayName(newClassDate)) ? 'Disponible' : 'Sin Horarios'}
-                    </Badge>
-                  </header>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {getAvailableSlots().length > 0 ? getAvailableSlots().map((slot) => (
-                      <button
-                        key={slot}
-                        onClick={() => setNewClassTime(slot)}
-                        className={`p-4 rounded-2xl border transition-all text-xs font-bold uppercase tracking-widest ${newClassTime === slot 
-                          ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105' 
-                          : 'bg-white border-slate-100 text-slate-400 hover:border-primary/40 hover:text-primary hover:bg-primary/[0.02]'}`}
-                      >
-                        {slot.split(' - ')[0]}
-                      </button>
-                    )) : (
-                      <div className="col-span-full py-8 text-center text-slate-400 italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        El profesor no tiene disponibilidad configurada para este día.
-                      </div>
-                    )}
+              {
+                newClassTeacher && newClassDate && (
+                  <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
+                    <header className="flex items-center justify-between border-b border-slate-100 pb-4">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                        <Clock className="h-3 w-3" /> Horas Disponibles para {getDayName(newClassDate)}
+                      </label>
+                      <Badge variant="outline" className="text-[10px] font-bold uppercase text-primary border-primary/20">
+                        {MOCK_TEACHERS.find(t => t.id === newClassTeacher)?.availabilities.find(a => a.day === getDayName(newClassDate)) ? 'Disponible' : 'Sin Horarios'}
+                      </Badge>
+                    </header>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {getAvailableSlots().length > 0 ? getAvailableSlots().map((slot) => (
+                        <button
+                          key={slot}
+                          onClick={() => setNewClassTime(slot)}
+                          className={`p-4 rounded-2xl border transition-all text-xs font-bold uppercase tracking-widest ${newClassTime === slot
+                            ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105'
+                            : 'bg-white border-slate-100 text-slate-400 hover:border-primary/40 hover:text-primary hover:bg-primary/[0.02]'}`}
+                        >
+                          {slot.split(' - ')[0]}
+                        </button>
+                      )) : (
+                        <div className="col-span-full py-8 text-center text-slate-400 italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          El profesor no tiene disponibilidad configurada para este día.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              }
 
               <footer className="flex gap-4 pt-6 border-t border-slate-100 mt-10">
                 <Button variant="outline" className="flex-1 h-14 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsNewClassOpen(false)}>Cancelar</Button>
-                <Button 
+                <Button
                   disabled={!newClassTime}
                   className="flex-1 h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Confirmar Agendamiento
                 </Button>
               </footer>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
+            </CardContent >
+          </Card >
+        </div >
+      )
+      }
+
       <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-10">
         <div className="h-20 w-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-primary shrink-0"><Calendar className="h-10 w-10" /></div>
         <div className="flex-1 text-center md:text-left"><h4 className="font-bold text-xl font-serif">Algoritmo de Disponibilidad</h4><p className="text-slate-600 text-sm italic leading-relaxed">Al agendar una nueva clase, el sistema cruza los datos del profesor seleccionado con sus horarios de disponibilidad configurados en el módulo de staff para ofrecerte solo las opciones válidas.</p></div>
         <Button className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 font-bold uppercase tracking-widest text-[10px] h-14 px-10 rounded-2xl shadow-sm">Configurar Reglas</Button>
       </div>
-    </div>
+    </div >
   );
 }
