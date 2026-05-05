@@ -15,7 +15,7 @@ export const { getClient, query, PreloadQuery } = registerApolloClient(() => {
     cache: new InMemoryCache(),
     link: new HttpLink({
       // ⚠️ IMPORTANT: Replace with your actual Django GraphQL endpoint
-      uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:8000/graphql",
+      uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:8000/graphql/",
     }),
   });
 });

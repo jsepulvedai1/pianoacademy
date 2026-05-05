@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
-import { CLASS_TYPES, TEACHERS } from '@/lib/mock-data';
+import { CLASS_TYPES, MOCK_TEACHERS } from '@/lib/mock-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, User } from 'lucide-react';
@@ -26,7 +26,7 @@ export function StepOneClassSelection() {
     }
 
     if (teacherId && !selectedTeacher) {
-      const foundTeacher = TEACHERS.find(t => t.id === teacherId);
+      const foundTeacher = MOCK_TEACHERS.find(t => t.id === teacherId);
       if (foundTeacher) {
         setSelectedTeacher(foundTeacher);
         // Opcional: Si seleccionamos profesor, podríamos hacer scroll a la sección de continuar o clases
@@ -35,7 +35,7 @@ export function StepOneClassSelection() {
   }, [searchParams, selectedClass, setSelectedClass, selectedTeacher, setSelectedTeacher]);
 
   // Lógica simple de filtrado de profesores
-  const availableTeachers = TEACHERS; // Aquí podrías filtrar según la clase seleccionada
+  const availableTeachers = MOCK_TEACHERS; // Aquí podrías filtrar según la clase seleccionada
 
   const handleClassSelect = (classType: any) => {
     setSelectedClass(classType);
@@ -121,15 +121,15 @@ export function StepOneClassSelection() {
              >
                <div className="h-16 w-16 rounded-full bg-muted overflow-hidden relative">
                  {teacher.avatarUrl ? (
-                    <img src={teacher.avatarUrl} alt={teacher.firstName} className="object-cover h-full w-full" />
+                    <img src={teacher.avatarUrl} alt={teacher.nombre} className="w-full h-full object-cover" />
                  ) : (
                     <User className="h-8 w-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
                  )}
                </div>
                <div>
-                 <h3 className="font-medium">{teacher.firstName} {teacher.lastName}</h3>
+                 <h4 className="font-semibold text-slate-800">{teacher.nombre}</h4>
                  <div className="flex flex-wrap justify-center gap-1 mt-1">
-                   {teacher.specialties.slice(0, 2).map(s => (
+                   {teacher.especialidades.slice(0, 2).map(s => (
                      <span key={s} className="text-[10px] bg-secondary px-1.5 py-0.5 rounded-full text-secondary-foreground">
                        {s}
                      </span>

@@ -17,6 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@apollo/client/react/index.js";
+import { GET_ROOMS } from "@/graphql/queries/get-rooms";
 
 const MOCK_ROOMS = [
   {
@@ -50,12 +52,18 @@ const MOCK_ROOMS = [
 ];
 
 export default function AdminRoomsPage() {
+  const { data: roomsData, loading: roomsLoading } = useQuery<{ allRooms: any[] }>(GET_ROOMS);
+  
   const [rooms, setRooms] = useState(MOCK_ROOMS);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
 
-  const filteredRooms = rooms.filter(r => 
+  const displayRooms = (roomsData?.allRooms && roomsData.allRooms.length > 0)
+    ? roomsData.allRooms
+    : rooms;
+
+  const filteredRooms = displayRooms.filter((r: any) => 
     r.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -144,9 +152,9 @@ export default function AdminRoomsPage() {
                    <Music className="h-3 w-3" /> Inventario de Sala
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {room.instruments.map((ins) => (
-                    <Badge key={ins} variant="outline" className="border-slate-100 bg-white text-slate-500 font-bold uppercase text-[9px] tracking-tight px-3 py-1">
-                      {ins}
+                  {room.instruments.map((ins: any) => (
+                    <Badge key={ins.id || ins} variant="outline" className="border-slate-100 bg-white text-slate-500 font-bold uppercase text-[9px] tracking-tight px-3 py-1">
+                      {ins.name || ins}
                     </Badge>
                   ))}
                 </div>
@@ -238,22 +246,6 @@ export default function AdminRoomsPage() {
         </div>
       )}
 
-      {/* Info Banner */}
-      <div className="bg-primary border border-primary/20 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group">
-         <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-[100px] -ml-32 -mt-32"></div>
-         <div className="h-20 w-20 rounded-3xl bg-white shadow-2xl flex items-center justify-center text-primary group-hover:rotate-12 transition-transform duration-500 shrink-0">
-          <Info className="h-10 w-10" />
-        </div>
-        <div className="space-y-2 flex-1 text-center md:text-left text-white">
-          <h4 className="font-bold text-xl font-serif">Planificación de Recursos</h4>
-          <p className="text-white/80 text-sm italic leading-relaxed max-w-2xl">
-            Cada sala registrada se convierte en un nodo de agendamiento. El sistema valida automáticamente la capacidad y el inventario instrumental al momento de asignar una clase en el calendario.
-          </p>
-        </div>
-        <Button className="bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[10px] h-14 px-10 rounded-2xl shadow-xl transition-all hover:-translate-y-1">
-          Ver Inventario Total
-        </Button>
-      </div>
     </div>
   );
 }

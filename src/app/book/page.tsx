@@ -6,22 +6,37 @@ import { StepTwoTimeSelection } from '@/features/booking/components/StepTwoTimeS
 import { StepThreeConfirmation } from '@/features/booking/components/StepThreeConfirmation';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function BookingPage() {
-  const { step } = useBookingStore();
-  // Evitar hidratación mismatch en componentes que dependen de window/localstorage si usáramos persist
-  // Aunque zustand por defecto es en memoria, es buena práctica
+function BookingContent() {
+  const { step, setUtmParams } = useBookingStore();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Capture UTMs
+    const utm_source = searchParams.get('utm_source');
+    const utm_medium = searchParams.get('utm_medium');
+    const utm_campaign = searchParams.get('utm_campaign');
+    
+    if (utm_source || utm_medium || utm_campaign) {
+      setUtmParams({
+        source: utm_source || undefined,
+        medium: utm_medium || undefined,
+        campaign: utm_campaign || undefined,
+      });
+    }
+  }, [searchParams, setUtmParams]);
 
   // Scroll to top on step change
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [step]);
+    if (mounted) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [step, mounted]);
 
   const steps = [
     { number: 1, title: 'Clase y Profesor' },
@@ -79,5 +94,13 @@ export default function BookingPage() {
         {step === 3 && <StepThreeConfirmation />}
       </div>
     </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen"></div>}>
+      <BookingContent />
+    </Suspense>
   );
 }

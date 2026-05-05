@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import {
   Calendar,
   Search,
-  Filter,
-  Plus,
-  MoreVertical,
   CheckCircle2,
   XCircle,
   Clock,
@@ -14,180 +12,173 @@ import {
   Music,
   ChevronRight,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  Copy,
+  Plus,
+  MoreVertical,
+  ChevronLeft,
+  CalendarDays
 } from "lucide-react";
+import { 
+  format, 
+  startOfWeek, 
+  addDays, 
+  isSameDay, 
+  parseISO, 
+  addWeeks, 
+  subWeeks,
+  isToday
+} from "date-fns";
+import { es } from "date-fns/locale";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-const MOCK_TEACHERS = [
-  {
-    id: "T1",
-    name: "Sofía Martínez",
-    instrument: "Piano",
-    availabilities: [
-      { day: "Lunes", startTime: "10:00", endTime: "14:00" },
-      { day: "Miércoles", startTime: "15:00", endTime: "19:00" },
-      { day: "Viernes", startTime: "09:00", endTime: "13:00" }
-    ]
-  },
-  {
-    id: "T2",
-    name: "Carlos Ruiz",
-    instrument: "Violín",
-    availabilities: [
-      { day: "Martes", startTime: "11:00", endTime: "15:00" },
-      { day: "Jueves", startTime: "16:00", endTime: "20:00" }
-    ]
-  },
-  {
-    id: "T3",
-    name: "Ana Belén",
-    instrument: "Canto",
-    availabilities: [
-      { day: "Lunes", startTime: "08:00", endTime: "12:00" },
-      { day: "Miércoles", startTime: "14:00", endTime: "18:00" },
-      { day: "Sábado", startTime: "10:00", endTime: "14:00" }
-    ]
-  }
-];
-
-const MOCK_LESSONS = [
-  {
-    id: "L1",
-    teacher: { name: "Sofía Martínez", photo: null, instrument: "Piano" },
-    student: { name: "Lucas Gómez", photo: null, level: "Principiante" },
-    date: "2026-03-23", // Lunes
-    time: "10:00 - 11:00",
-    status: "PENDING",
-    type: "Individual"
-  },
-  {
-    id: "L2",
-    teacher: { name: "Carlos Ruiz", photo: null, instrument: "Violín" },
-    student: { name: "Elena Pérez", photo: null, level: "Intermedio" },
-    date: "2026-03-23", // Lunes (OVERLAP)
-    time: "11:30 - 12:30",
-    status: "COMPLETED",
-    type: "Individual"
-  },
-  {
-    id: "L7",
-    teacher: { name: "Ana Belén", photo: null, instrument: "Canto" },
-    student: { name: "Pedro Páramo", photo: null, level: "Principiante" },
-    date: "2026-03-23", // Lunes (OVERLAP)
-    time: "11:30 - 12:30",
-    status: "PENDING",
-    type: "Individual"
-  },
-  {
-    id: "L3",
-    teacher: { name: "Sofía Martínez", photo: null, instrument: "Piano" },
-    student: { name: "Mateo Rodríguez", photo: null, level: "Avanzado" },
-    date: "2026-03-24", // Martes
-    time: "15:00 - 16:00",
-    status: "CANCELLED",
-    type: "Masterclass"
-  },
-  {
-    id: "L8",
-    teacher: { name: "Carlos Ruiz", photo: null, instrument: "Violín" },
-    student: { name: "Clara Luna", photo: null, level: "Intermedio" },
-    date: "2026-03-24", // Martes (OVERLAP 2)
-    time: "15:00 - 16:00",
-    status: "PENDING",
-    type: "Individual"
-  },
-  {
-    id: "L9",
-    teacher: { name: "Ana Belén", photo: null, instrument: "Guitarra" },
-    student: { name: "Juan Rulfo", photo: null, level: "Avanzado" },
-    date: "2026-03-24", // Martes (OVERLAP 3)
-    time: "15:00 - 16:00",
-    status: "PENDING",
-    type: "Individual"
-  },
-  {
-    id: "L4",
-    teacher: { name: "Ana Belén", photo: null, instrument: "Canto" },
-    student: { name: "Isabel Torres", photo: null, level: "Principiante" },
-    date: "2026-03-24", // Martes
-    time: "09:00 - 10:00",
-    status: "PENDING",
-    type: "Individual"
-  },
-  {
-    id: "L6",
-    teacher: { name: "Sofía Martínez", photo: null, instrument: "Piano" },
-    student: { name: "DanielaSosa", photo: null, level: "Intermedio" },
-    date: "2026-03-26", // Jueves
-    time: "12:00 - 13:00",
-    status: "PENDING",
-    type: "Individual"
-  }
-];
+import { useQuery, useMutation } from "@apollo/client/react/index.js";
+import { GET_LESSONS } from "@/graphql/queries/get-lessons";
+import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
+import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
+import { GET_ROOMS } from "@/graphql/queries/get-rooms";
+import { CREATE_LESSON, UPDATE_LESSON_STATUS } from "@/graphql/mutations/lesson-mutations";
 
 export default function AdminLessonsPage() {
-  const [lessons, setLessons] = useState(MOCK_LESSONS);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<'TABLE' | 'CALENDAR'>('CALENDAR');
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+
+  // ── GraphQL Hooks ───────────────────────────────────────────
+  const { data: lessonsData, loading: lessonsLoading, refetch: refetchLessons } = useQuery<{ allLessons: any[] }>(GET_LESSONS);
+  const { data: teachersData } = useQuery<{ allTeachers: any[] }>(GET_TEACHERS);
+  const { data: studentsData } = useQuery<{ allStudents: any[] }>(GET_STUDENTS_LIST);
+  const { data: roomsData } = useQuery<{ allRooms: any[] }>(GET_ROOMS);
+
+  const [updateStatus, { loading: isUpdating }] = useMutation(UPDATE_LESSON_STATUS, {
+    onCompleted: () => {
+      toast.success("Estado actualizado (y crédito descontado si aplica) 🎻");
+      setIsModalOpen(false);
+      refetchLessons();
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const [createLesson, { loading: isCreating }] = useMutation(CREATE_LESSON, {
+    onCompleted: () => {
+      toast.success("Clase agendada en Django ✅");
+      setIsNewClassOpen(false);
+      refetchLessons();
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const displayLessons = lessonsData?.allLessons || [];
+  const currentTeachers = teachersData?.allTeachers || [];
+  const currentStudents = studentsData?.allStudents || [];
+  const currentRooms = roomsData?.allRooms || [];
 
   // New Class State
   const [isNewClassOpen, setIsNewClassOpen] = useState(false);
   const [newClassTeacher, setNewClassTeacher] = useState("");
+  const [newClassStudent, setNewClassStudent] = useState("");
   const [newClassDate, setNewClassDate] = useState("");
   const [newClassTime, setNewClassTime] = useState("");
   const [newClassRoom, setNewClassRoom] = useState("");
-  const [newClassType, setNewClassType] = useState("");
 
-  const MOCK_ROOMS = ["Sala de Piano", "Sala de Ensayo", "Cabina A", "Cabina B"];
-  const MOCK_TYPES = ["Clase Individual", "Masterclass", "Teoría Musical", "Ensamble"];
+  const filteredLessons = useMemo(() => {
+    return displayLessons.filter((lesson: any) => {
+      const teacherName = lesson.teacher?.name || "";
+      const studentName = lesson.student?.name || "";
+      const matchesSearch =
+        teacherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        studentName.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredLessons = lessons.filter(lesson => {
-    const matchesSearch =
-      lesson.teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lesson.student.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "ALL" || lesson.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [displayLessons, searchTerm, statusFilter]);
 
-    const matchesStatus = statusFilter === "ALL" || lesson.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const daysLabels = ["Dom 22", "Lun 23", "Mar 24", "Mié 25", "Jue 26", "Vie 27", "Sáb 28"];
-  const hours = Array.from({ length: 14 }, (_, i) => i + 8);
-
-  const getDayName = (dateStr: string) => {
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const d = new Date(dateStr);
-    return days[d.getDay()];
+  const handleStatusChange = (status: string) => {
+    if (!selectedLesson) return;
+    updateStatus({ variables: { lessonId: parseInt(selectedLesson.id), status } });
   };
 
-  const getAvailableSlots = () => {
-    if (!newClassTeacher || !newClassDate) return [];
-    const teacher = MOCK_TEACHERS.find(t => t.id === newClassTeacher);
-    if (!teacher) return [];
-
-    const dayName = getDayName(newClassDate);
-    const availability = teacher.availabilities.find(a => a.day === dayName);
-    if (!availability) return [];
-
-    const start = parseInt(availability.startTime.split(':')[0]);
-    const end = parseInt(availability.endTime.split(':')[0]);
-
-    const slots = [];
-    for (let h = start; h < end; h++) {
-      slots.push(`${h}:00 - ${h + 1}:00`);
+  const handleCreateLesson = () => {
+    if (!newClassTeacher || !newClassStudent || !newClassDate || !newClassTime || !newClassRoom) {
+      toast.error("Por favor completa todos los campos");
+      return;
     }
-    return slots;
+    
+    const [start, end] = newClassTime.split(' - ');
+    createLesson({
+      variables: {
+        teacherId: parseInt(newClassTeacher),
+        studentId: parseInt(newClassStudent),
+        roomId: parseInt(newClassRoom),
+        date: newClassDate,
+        startTime: start + ":00",
+        endTime: end + ":00",
+        lessonType: "INDIVIDUAL"
+      }
+    });
   };
 
   const handleLessonClick = (lesson: any) => {
     setSelectedLesson(lesson);
     setIsModalOpen(true);
   };
+
+  const nextWeek = () => setCurrentWeekStart(prev => addWeeks(prev, 1));
+  const prevWeek = () => setCurrentWeekStart(prev => subWeeks(prev, 1));
+  const goToToday = () => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+
+  const handleGridClick = (day: Date, hour: number) => {
+    setNewClassDate(format(day, "yyyy-MM-dd"));
+    setNewClassTime(`${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`);
+    setIsNewClassOpen(true);
+  };
+
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+  }, [currentWeekStart]);
+
+  const positionedLessons = useMemo(() => {
+    const result: any[] = [];
+    const lessonsByDay: Record<string, any[]> = {};
+
+    filteredLessons.forEach(lesson => {
+      if (!lessonsByDay[lesson.date]) lessonsByDay[lesson.date] = [];
+      lessonsByDay[lesson.date].push({ ...lesson });
+    });
+
+    Object.keys(lessonsByDay).forEach(date => {
+      const dayLessons = lessonsByDay[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      const columns: any[][] = [];
+
+      dayLessons.forEach(lesson => {
+        let placed = false;
+        for (let i = 0; i < columns.length; i++) {
+          const lastInCol = columns[i][columns[i].length - 1];
+          if (lesson.startTime >= (lastInCol.endTime || lastInCol.startTime)) {
+            columns[i].push(lesson);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) columns.push([lesson]);
+      });
+
+      columns.forEach((col, colIndex) => {
+        col.forEach(lesson => {
+          lesson.colIndex = colIndex;
+          lesson.totalCols = columns.length;
+          result.push(lesson);
+        });
+      });
+    });
+    return result;
+  }, [filteredLessons]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -199,6 +190,9 @@ export default function AdminLessonsPage() {
         return <Badge className="bg-amber-50 text-amber-700 ring-1 ring-amber-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><Clock className="mr-1.5 h-3 w-3" /> Pendiente</Badge>;
     }
   };
+
+  const daysLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const hours = Array.from({ length: 14 }, (_, i) => i + 8);
 
   return (
     <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -216,7 +210,6 @@ export default function AdminLessonsPage() {
         </div>
       </header>
 
-      {/* Toolbar */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div className="relative w-full sm:w-96 group">
@@ -230,20 +223,26 @@ export default function AdminLessonsPage() {
             <option value="CANCELLED">Canceladas</option>
           </select>
         </div>
-        <Button onClick={() => setIsNewClassOpen(true)} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-full font-bold uppercase tracking-[0.1em] rounded-2xl group"><Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" /> Nueva Clase</Button>
+        <div className="flex gap-4">
+          <Button onClick={() => setIsNewClassOpen(true)} className="flex-1 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-full font-bold uppercase tracking-[0.1em] rounded-2xl group">
+            <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" /> Nueva Clase
+          </Button>
+        </div>
       </div>
 
       {viewMode === 'TABLE' ? (
         <Card className="border-none shadow-sm overflow-hidden bg-white">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead><tr className="bg-slate-50/50 border-b border-slate-100 italic"><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Profesor / Alumno</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Instrumento</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Fecha y Hora</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Estado</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th></tr></thead>
+              <thead><tr className="bg-slate-50/50 border-b border-slate-100 italic"><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Profesor / Alumno</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Fecha</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Hora</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Estado</th><th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th></tr></thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredLessons.map((l) => (
+                {lessonsLoading ? (
+                   <tr><td colSpan={5} className="py-20 text-center italic text-slate-400">Sincronizando agenda...</td></tr>
+                ) : filteredLessons.map((l: any) => (
                   <tr key={l.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => handleLessonClick(l)}>
-                    <td className="px-8 py-6"><div className="flex items-center gap-6"><div className="flex -space-x-3 shrink-0"><div className="h-10 w-10 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-primary shadow-sm ring-1 ring-slate-100"><User className="h-5 w-5" /></div><div className="h-10 w-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-slate-400 shadow-sm ring-1 ring-slate-100"><GraduationCap className="h-5 w-5" /></div></div><div className="space-y-1"><div className="flex items-center gap-2"><span className="font-bold text-slate-900 text-sm leading-none">{l.teacher.name}</span><ChevronRight className="h-3 w-3 text-slate-300" /><span className="font-medium text-slate-600 text-sm leading-none">{l.student.name}</span></div><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{l.type} • {l.student.level}</p></div></div></td>
-                    <td className="px-8 py-6"><Badge variant="outline" className="border-slate-100 bg-white text-slate-600 font-bold uppercase text-[9px] tracking-widest py-1 px-3"><Music className="mr-1.5 h-3 w-3 text-primary" /> {l.teacher.instrument}</Badge></td>
-                    <td className="px-8 py-6 font-bold text-slate-900 text-xs">{l.date} <span className="block font-medium text-slate-400 italic mt-1">{l.time}</span></td>
+                    <td className="px-8 py-6"><div className="flex items-center gap-6"><div className="flex -space-x-3 shrink-0"><div className="h-10 w-10 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-primary shadow-sm"><User className="h-5 w-5" /></div><div className="h-10 w-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-slate-400 shadow-sm"><GraduationCap className="h-5 w-5" /></div></div><div className="space-y-1"><div className="flex items-center gap-2"><span className="font-bold text-slate-900 text-sm">{l.teacher?.name}</span><ChevronRight className="h-3 w-3 text-slate-300" /><span className="font-medium text-slate-600 text-sm">{l.student?.name}</span></div><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{l.lessonType || 'Individual'}</p></div></div></td>
+                    <td className="px-8 py-6 font-bold text-slate-900 text-xs">{l.date}</td>
+                    <td className="px-8 py-6 font-medium text-slate-500 italic text-xs">{l.startTime}</td>
                     <td className="px-8 py-6">{getStatusBadge(l.status)}</td>
                     <td className="px-8 py-6 text-right"><Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400"><MoreVertical className="h-5 w-5" /></Button></td>
                   </tr>
@@ -253,293 +252,222 @@ export default function AdminLessonsPage() {
           </div>
         </Card>
       ) : (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-          <div className="grid grid-cols-8 divide-x divide-slate-100 border-b border-slate-100">
-            <div className="p-4 bg-slate-50/50 flex items-center justify-center"><span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Hora</span></div>
-            {daysLabels.map((day, i) => (
-              <div key={day} className={`p-4 text-center ${i === 2 || i === 3 ? 'bg-primary/5' : 'bg-white'}`}>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{day.split(' ')[0]}</p>
-                <p className={`text-sm font-bold font-serif ${i === 2 || i === 3 ? 'text-primary' : 'text-slate-900'}`}>{day.split(' ')[1]}</p>
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden flex flex-col min-h-[800px] animate-in fade-in zoom-in-95 duration-500">
+          {/* Calendar Header / Navigation */}
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-4">
+              <div className="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                <Button variant="ghost" size="icon" onClick={prevWeek} className="h-9 w-9 rounded-lg hover:bg-slate-50"><ChevronLeft className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={nextWeek} className="h-9 w-9 rounded-lg hover:bg-slate-50"><ChevronRight className="h-4 w-4" /></Button>
               </div>
-            ))}
+              <Button variant="outline" onClick={goToToday} className="h-11 px-6 font-bold uppercase text-[10px] tracking-widest rounded-xl bg-white shadow-sm hover:bg-slate-50 border-slate-200">Hoy</Button>
+              <h2 className="text-xl font-bold font-serif ml-2">
+                {format(currentWeekStart, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase())}
+                <span className="text-slate-400 font-sans text-sm ml-3 font-normal italic">
+                  Semana del {format(currentWeekStart, "d 'de' MMMM", { locale: es })}
+                </span>
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm">
+              <CalendarDays className="h-3 w-3" /> {filteredLessons.length} Clases en Filtro
+            </div>
           </div>
 
-          <div className="relative h-[800px] overflow-y-auto">
-            <div className="absolute inset-0 grid grid-rows-14 divide-y divide-slate-50 pointer-events-none">
-              {hours.map((hour) => (
-                <div key={hour} className="grid grid-cols-8 divide-x divide-slate-50 h-full">
-                  <div className="flex items-start justify-center p-2"><span className="text-[10px] font-bold text-slate-300">{hour}:00</span></div>
-                  {Array.from({ length: 7 }).map((_, i) => (<div key={i} className={`h-full ${i === 2 || i === 3 ? 'bg-primary/[0.01]' : ''}`} />))}
+          <div className="flex-1 overflow-auto relative">
+            {/* The Grid */}
+            <div className="min-w-[1000px] grid grid-cols-[100px_repeat(7,1fr)]">
+              {/* Day Headers */}
+              <div className="h-16 border-b border-slate-100 bg-slate-50/30 sticky top-0 z-20"></div>
+              {weekDays.map((day) => (
+                <div key={day.toString()} className={cn(
+                  "h-16 border-b border-l border-slate-100 flex flex-col items-center justify-center sticky top-0 z-20 bg-slate-50/30 backdrop-blur-sm",
+                  isToday(day) && "bg-primary/5 border-l-primary/10"
+                )}>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    {format(day, "eee", { locale: es })}
+                  </span>
+                  <span className={cn(
+                    "text-lg font-bold font-serif",
+                    isToday(day) ? "text-primary" : "text-slate-900"
+                  )}>
+                    {format(day, "d")}
+                  </span>
+                  {isToday(day) && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary"></div>}
                 </div>
               ))}
-            </div>
 
-            <div className="absolute inset-0 grid grid-cols-8 pointer-events-none pr-4">
-              <div className="col-span-1" />
-              {Array.from({ length: 7 }).map((_, dayIndex) => {
-                const dayLessons = filteredLessons.filter(l => new Date(l.date).getDay() === dayIndex);
-
-                const groups: { [key: string]: any[] } = {};
-                dayLessons.forEach(l => {
-                  const timeKey = l.time.split(' - ')[0];
-                  if (!groups[timeKey]) groups[timeKey] = [];
-                  groups[timeKey].push(l);
-                });
-
-                return (
-                  <div key={dayIndex} className="relative h-full">
-                    {Object.values(groups).map((groupLessons) => (
-                      groupLessons.map((l, lIndex) => {
-                        const startHour = parseInt(l.time.split(':')[0]);
-                        const startMin = parseInt(l.time.split(':')[1].split(' ')[0]);
-                        const top = ((startHour - 8) * (800 / 14)) + ((startMin / 60) * (800 / 14));
-                        const height = (800 / 14) * 1.2;
-
-                        const widthIdx = 100 / groupLessons.length;
-                        const leftOffset = lIndex * widthIdx;
-
-                        return (
-                          <div key={l.id}
-                            onClick={() => handleLessonClick(l)}
-                            className="absolute p-1.5 rounded-xl shadow-lg border border-white flex flex-col justify-between pointer-events-auto cursor-pointer hover:scale-[1.05] hover:z-50 transition-all ring-1 ring-inset"
-                            style={{
-                              top: `${top}px`, height: `${height}px`, left: `${leftOffset}%`, width: `${widthIdx}%`,
-                              backgroundColor: l.status === 'CANCELLED' ? '#fff1f2' : l.status === 'COMPLETED' ? '#f0fdf4' : '#f0f9ff',
-                              borderColor: l.status === 'CANCELLED' ? '#fda4af' : l.status === 'COMPLETED' ? '#86efac' : '#7dd3fc',
-                              color: l.status === 'CANCELLED' ? '#9f1239' : l.status === 'COMPLETED' ? '#166534' : '#075985'
-                            }}
-                          >
-                            <div className="space-y-0.5">
-                              <p className="text-[8px] font-bold uppercase tracking-tight opacity-60 flex items-center gap-1"><Clock className="h-2 w-2" /> {l.time.split(' - ')[0]}</p>
-                              <p className="text-[10px] font-bold line-clamp-1 leading-tight">{l.teacher.name}</p>
-                            </div>
-                            <div className="flex items-center justify-between gap-1 overflow-hidden opacity-80">
-                              <p className="text-[9px] font-medium truncate italic">{l.student.name}</p>
-                              <ChevronRight className="h-2 w-2 shrink-0" />
-                            </div>
-                          </div>
-                        );
-                      })
-                    ))}
+              {/* Time Slots */}
+              {hours.map((hour) => (
+                <React.Fragment key={hour}>
+                  <div className="h-20 border-b border-slate-50 flex items-start justify-end pr-4 pt-2 group">
+                    <span className="text-[10px] font-bold text-slate-300 group-hover:text-slate-500 transition-colors">
+                      {hour}:00
+                    </span>
                   </div>
-                );
-              })}
+                  {weekDays.map((day) => (
+                    <div 
+                      key={`${day}-${hour}`} 
+                      onClick={() => handleGridClick(day, hour)}
+                      className={cn(
+                        "h-20 border-b border-l border-slate-50 relative group transition-colors hover:bg-slate-50/50 cursor-pointer",
+                        isToday(day) && "bg-primary/[0.01]"
+                      )}
+                    >
+                      {/* Grid line indicator on hover */}
+                      <div className="absolute top-0 left-0 w-full h-[1px] bg-primary/0 group-hover:bg-primary/10 transition-colors"></div>
+                    </div>
+                  ))}
+                </React.Fragment>
+              ))}
+
+              {/* Current Time Indicator */}
+              {weekDays.map((day, dayIdx) => isToday(day) && (
+                <div 
+                  key="time-indicator"
+                  className="absolute left-0 right-0 border-t-2 border-rose-500 z-30 pointer-events-none flex items-center shadow-[0_0_8px_rgba(244,63,94,0.3)]"
+                  style={{
+                    top: `${64 + (new Date().getHours() - 8 + new Date().getMinutes() / 60) * 80}px`,
+                    left: `calc(100px + ${dayIdx} * (100% - 100px) / 7)`,
+                    width: `calc((100% - 100px) / 7)`,
+                  }}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white shadow-sm" style={{ marginLeft: '-5px' }}></div>
+                  <div className="bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm ml-1 animate-pulse">
+                    {format(new Date(), "HH:mm")}
+                  </div>
+                </div>
+              ))}
+
+              {/* Lessons Overlay */}
+              <div className="contents pointer-events-none">
+                {positionedLessons.map((lesson: any) => {
+                  const lessonDate = parseISO(lesson.date);
+                  const dayIndex = weekDays.findIndex(d => isSameDay(d, lessonDate));
+                  
+                  if (dayIndex === -1) return null;
+
+                  // Parse time: "HH:MM:SS" -> HH.decimal
+                  const [h, m] = lesson.startTime.split(':').map(Number);
+                  const [eh, em] = (lesson.endTime || "00:00:00").split(':').map(Number);
+                  
+                  const startOffset = h - 8 + (m / 60);
+                  const duration = eh ? (eh + em/60) - (h + m/60) : 1;
+
+                  const colWidth = `(100% - 100px) / 7 - 8px`;
+                  const lessonWidth = `calc((${colWidth}) / ${lesson.totalCols})`;
+                  const lessonLeft = `calc(100px + ${dayIndex} * (100% - 100px) / 7 + 4px + (${lesson.colIndex} * (${colWidth}) / ${lesson.totalCols}))`;
+                  
+                  return (
+                    <div
+                      key={lesson.id}
+                      onClick={() => handleLessonClick(lesson)}
+                      className={cn(
+                        "absolute z-10 pointer-events-auto cursor-pointer p-2 transition-all hover:scale-[1.02] hover:z-20 overflow-hidden",
+                        "rounded-xl shadow-md border-l-4 flex flex-col gap-1",
+                        lesson.status === 'COMPLETED' ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-200/50" :
+                        lesson.status === 'CANCELLED' ? "bg-rose-50 border-rose-500 text-rose-900 shadow-rose-200/50" :
+                        "bg-amber-50 border-amber-500 text-amber-900 shadow-amber-200/50"
+                      )}
+                      style={{
+                        top: `${64 + startOffset * 80}px`, 
+                        left: lessonLeft,
+                        width: lessonWidth,
+                        height: `${duration * 80 - 4}px`,
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">
+                          {lesson.startTime.substring(0, 5)} - {lesson.endTime?.substring(0, 5)}
+                        </span>
+                        {lesson.status === 'COMPLETED' && <CheckCircle2 className="h-3 w-3" />}
+                      </div>
+                      <p className="text-[11px] font-bold leading-tight truncate">
+                        {lesson.teacher?.name}
+                      </p>
+                      <p className="text-[10px] font-medium opacity-70 truncate italic">
+                        {lesson.student?.name}
+                      </p>
+                      <div className="mt-auto flex items-center gap-1 opacity-50">
+                        <Music className="h-2.5 w-2.5" />
+                        <span className="text-[8px] font-bold uppercase tracking-widest">{lesson.room?.name || 'Sala'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Lesson Detail Modal */}
       {isModalOpen && selectedLesson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg bg-white border-none shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 rounded-3xl">
+          <Card className="w-full max-w-lg bg-white border-none shadow-2xl overflow-hidden rounded-3xl">
             <header className="p-8 bg-slate-900 text-white relative">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors"
-              >
-                <XCircle className="h-6 w-6" />
-              </button>
+              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10"><XCircle className="h-6 w-6" /></button>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Detalles de la Sesión</p>
-                <h2 className="text-3xl font-bold font-serif">{selectedLesson.teacher.name}</h2>
-                <div className="flex items-center gap-2 text-slate-400 mt-2">
-                  <Badge variant="outline" className="bg-white/5 border-white/20 text-white font-bold uppercase text-[9px] tracking-widest px-3 py-1">
-                    <Music className="mr-1.5 h-3 w-3 text-primary" /> {selectedLesson.teacher.instrument}
-                  </Badge>
-                  <span className="text-xs italic">• {selectedLesson.type}</span>
-                </div>
+                <h2 className="text-3xl font-bold font-serif">{selectedLesson.teacher?.name}</h2>
               </div>
             </header>
-
             <CardContent className="p-8 space-y-8">
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-slate-400">
-                    <User className="h-4 w-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Alumno</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                      {selectedLesson.student.name[0]}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-sm">{selectedLesson.student.name}</p>
-                      <p className="text-xs text-slate-500 italic">{selectedLesson.student.level}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-slate-400">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Horario</span>
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">{selectedLesson.date}</p>
-                    <p className="text-xs text-slate-500 italic flex items-center gap-1.5 mt-1">
-                      <Clock className="h-3 w-3" /> {selectedLesson.time}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado Actual</p>
-                  <p className="text-sm font-medium text-slate-700">La clase está marcada como:</p>
+                  <p className="text-sm font-medium text-slate-700">{selectedLesson.status}</p>
                 </div>
                 {getStatusBadge(selectedLesson.status)}
               </div>
-
-              <footer className="flex gap-4 pt-4">
-                <Button variant="outline" className="flex-1 h-12 rounded-xl text-slate-600 border-slate-200 font-bold uppercase text-[10px] tracking-widest">Reprogramar</Button>
-                <Button className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 text-center">Ver Perfil Alumno</Button>
-              </footer>
+              <div className="grid grid-cols-3 gap-4 pt-4">
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("CANCELLED")} variant="outline" className="h-12 rounded-xl text-rose-600 border-rose-100 font-bold uppercase text-[9px] tracking-widest">Cancelar</Button>
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("COMPLETED")} className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[9px] tracking-widest shadow-lg">Asistencia</Button>
+                <Button onClick={() => setIsModalOpen(false)} variant="ghost" className="h-12 rounded-xl text-slate-400 font-bold uppercase text-[9px] tracking-widest">Cerrar</Button>
+              </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* New Class Modal */}
       {isNewClassOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-          <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 rounded-[2.5rem]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem]">
             <header className="p-10 bg-primary text-white relative">
-              <button
-                onClick={() => setIsNewClassOpen(false)}
-                className="absolute top-8 right-8 p-3 rounded-full hover:bg-white/10 transition-colors"
-              >
-                <XCircle className="h-6 w-6" />
-              </button>
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Operaciones de Agenda</p>
-                <h3 className="text-3xl font-bold font-serif whitespace-nowrap">Agendar Nueva Clase</h3>
-                <p className="text-white/70 italic text-sm mt-2">Completa los datos para crear una nueva sesión académica.</p>
-              </div>
+              <button onClick={() => setIsNewClassOpen(false)} className="absolute top-8 right-8 p-3 rounded-full hover:bg-white/10"><XCircle className="h-6 w-6" /></button>
+              <h3 className="text-3xl font-bold font-serif">Agendar Clase</h3>
             </header>
-
-            <CardContent className="p-10 space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Step 1: Teacher Selection */}
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                    <User className="h-3 w-3" /> Seleccionar Profesor
-                  </label>
-                  <select
-                    className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 appearance-none shadow-sm"
-                    value={newClassTeacher}
-                    onChange={(e) => { setNewClassTeacher(e.target.value); setNewClassTime(""); }}
-                  >
-                    <option value="">Elige un profesor...</option>
-                    {MOCK_TEACHERS.map(t => (
-                      <option key={t.id} value={t.id}>{t.name} ({t.instrument})</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Step 2: Date Selection */}
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Fecha de Clase
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 shadow-sm"
-                    value={newClassDate}
-                    onChange={(e) => { setNewClassDate(e.target.value); setNewClassTime(""); }}
-                  />
-                </div>
-
-                {/* Step 3: Room Selection */}
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                    <Music className="h-3 w-3" /> Seleccionar Sala
-                  </label>
-                  <select
-                    className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 appearance-none shadow-sm"
-                    value={newClassRoom}
-                    onChange={(e) => setNewClassRoom(e.target.value)}
-                  >
-                    <option value="">Elige una sala...</option>
-                    {MOCK_ROOMS.map(r => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Step 4: Class Type Selection */}
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                    <BookOpen className="h-3 w-3" /> Tipo de Clase
-                  </label>
-                  <select
-                    className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 outline-none focus:ring-2 focus:ring-primary/20 font-medium text-slate-700 appearance-none shadow-sm"
-                    value={newClassType}
-                    onChange={(e) => setNewClassType(e.target.value)}
-                  >
-                    <option value="">Elige un tipo...</option>
-                    {MOCK_TYPES.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-              </div >
-
-              {/* Step 3: Available Hours */}
-              {
-                newClassTeacher && newClassDate && (
-                  <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
-                    <header className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                        <Clock className="h-3 w-3" /> Horas Disponibles para {getDayName(newClassDate)}
-                      </label>
-                      <Badge variant="outline" className="text-[10px] font-bold uppercase text-primary border-primary/20">
-                        {MOCK_TEACHERS.find(t => t.id === newClassTeacher)?.availabilities.find(a => a.day === getDayName(newClassDate)) ? 'Disponible' : 'Sin Horarios'}
-                      </Badge>
-                    </header>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {getAvailableSlots().length > 0 ? getAvailableSlots().map((slot) => (
-                        <button
-                          key={slot}
-                          onClick={() => setNewClassTime(slot)}
-                          className={`p-4 rounded-2xl border transition-all text-xs font-bold uppercase tracking-widest ${newClassTime === slot
-                            ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105'
-                            : 'bg-white border-slate-100 text-slate-400 hover:border-primary/40 hover:text-primary hover:bg-primary/[0.02]'}`}
-                        >
-                          {slot.split(' - ')[0]}
-                        </button>
-                      )) : (
-                        <div className="col-span-full py-8 text-center text-slate-400 italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                          El profesor no tiene disponibilidad configurada para este día.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              }
-
-              <footer className="flex gap-4 pt-6 border-t border-slate-100 mt-10">
-                <Button variant="outline" className="flex-1 h-14 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsNewClassOpen(false)}>Cancelar</Button>
-                <Button
-                  disabled={!newClassTime}
-                  className="flex-1 h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  Confirmar Agendamiento
+            <CardContent className="p-10 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassTeacher} onChange={(e) => setNewClassTeacher(e.target.value)}>
+                    <option value="">Profesor...</option>
+                    {currentTeachers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassStudent} onChange={(e) => setNewClassStudent(e.target.value)}>
+                    <option value="">Alumno...</option>
+                    {currentStudents.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <input type="date" className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassDate} onChange={(e) => setNewClassDate(e.target.value)} />
+                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassRoom} onChange={(e) => setNewClassRoom(e.target.value)}>
+                    <option value="">Sala...</option>
+                    {currentRooms.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none col-span-full" value={newClassTime} onChange={(e) => setNewClassTime(e.target.value)}>
+                    <option value="">Horario...</option>
+                    {hours.map(h => {
+                      const slot = `${h.toString().padStart(2, '0')}:00 - ${(h + 1).toString().padStart(2, '0')}:00`;
+                      return <option key={slot} value={slot}>{slot}</option>
+                    })}
+                </select>
+              </div>
+              <footer className="flex gap-4 pt-6 border-t">
+                <Button variant="outline" className="flex-1 h-14 rounded-2xl" onClick={() => setIsNewClassOpen(false)}>Cancelar</Button>
+                <Button disabled={isCreating} onClick={handleCreateLesson} className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-bold uppercase text-[10px] tracking-widest">
+                  {isCreating ? "Agendando..." : "Confirmar"}
                 </Button>
               </footer>
-            </CardContent >
-          </Card >
-        </div >
-      )
-      }
-
-      <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-10">
-        <div className="h-20 w-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-primary shrink-0"><Calendar className="h-10 w-10" /></div>
-        <div className="flex-1 text-center md:text-left"><h4 className="font-bold text-xl font-serif">Algoritmo de Disponibilidad</h4><p className="text-slate-600 text-sm italic leading-relaxed">Al agendar una nueva clase, el sistema cruza los datos del profesor seleccionado con sus horarios de disponibilidad configurados en el módulo de staff para ofrecerte solo las opciones válidas.</p></div>
-        <Button className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 font-bold uppercase tracking-widest text-[10px] h-14 px-10 rounded-2xl shadow-sm">Configurar Reglas</Button>
-      </div>
-    </div >
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }

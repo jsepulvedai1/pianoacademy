@@ -15,7 +15,7 @@ import {
 function makeClient() {
   const httpLink = new HttpLink({
     // 🎻 Use relative path for client side to leverage Next.js proxy (bypasses CORS)
-    uri: "/graphql",
+    uri: "/graphql/",
     fetchOptions: { cache: "no-store" },
   });
 

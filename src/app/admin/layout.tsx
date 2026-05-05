@@ -1,6 +1,6 @@
 "use client";
 
-import { Music, LayoutDashboard, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse } from "lucide-react";
+import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,15 +9,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/tasks", label: "Bitácora", icon: ClipboardList },
+    { href: "/admin/leads", label: "Leads / CRM", icon: TrendingUp },
+    { href: "/admin/reservations", label: "Reservas", icon: CalendarCheck },
+    { href: "/admin/packs", label: "Packs", icon: Package },
+    { href: "/admin/payments", label: "Pagos", icon: CreditCard },
     { href: "/admin/teachers", label: "Profesores", icon: Users },
     { href: "/admin/students", label: "Estudiantes", icon: GraduationCap },
     { href: "/admin/rooms", label: "Salas", icon: Warehouse },
     { href: "/admin/lessons", label: "Clases", icon: Calendar },
+    { href: "/admin/plans", label: "Programas", icon: BookOpen },
+    { href: "/admin/instruments", label: "Instrumentos", icon: Music },
   ];
 
-  const secondaryItems = [
-    { href: "#", label: "Programas", icon: BookOpen },
-  ];
+  const secondaryItems: any[] = [];
 
   return (
     <div className="flex min-h-screen bg-slate-50/50">

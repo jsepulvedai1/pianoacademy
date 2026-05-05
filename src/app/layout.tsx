@@ -2,13 +2,10 @@ import type { Metadata } from "next";
 import { fontMontserrat } from "@/lib/constants/fonts";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { cn } from "@/lib/utils";
-
-// Font loading is handled in the constants file
-
+import { Toaster } from "sonner";
 import { ApolloWrapper } from "@/lib/apollo-wrapper";
+import { HeaderWrapper, FooterWrapper } from "@/components/layout/BackofficeWrapper";
 
 export const metadata: Metadata = {
   title: "Détaché | Academia de Música",
@@ -33,11 +30,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
+            <HeaderWrapper />
             <main className="flex-1">
               {children}
             </main>
-            <Footer />
+            <FooterWrapper />
+            <Toaster position="top-center" richColors />
           </ThemeProvider>
         </ApolloWrapper>
       </body>

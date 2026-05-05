@@ -12,14 +12,35 @@ export interface Student {
   // Campos futuros: avatarUrl, createdAt, etc.
 }
 
+export interface Payment {
+  id: string;
+  alumnoId: string;
+  alumnoNombre: string;
+  packId: string;
+  amount: number;
+  status: 'PAID' | 'PENDING' | 'OVERDUE' | 'FAILED';
+  dueDate: string;
+  paymentDate?: string;
+  method?: string;
+}
+
 export interface Teacher {
   id: string;
-  firstName: string;
-  lastName: string;
-  bio?: string;
-  specialties: string[]; // e.g. ["Piano Jazz", "Piano Clasico"]
-  availableModalities: ClassModalality[];
+  nombre: string;
+  rut: string;
+  email: string;
+  telefono: string;
+  direccion: string;
+  fechaNacimiento: string;
+  bio: string;
+  especialidades: string[];
+  modalidades: ('PRESENCIAL' | 'ONLINE' | 'HIBRIDO')[];
   avatarUrl?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  disponibilidad: {
+    dia: 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado';
+    bloques: { inicio: string; fin: string; sala?: string }[];
+  }[];
 }
 
 export interface Room {

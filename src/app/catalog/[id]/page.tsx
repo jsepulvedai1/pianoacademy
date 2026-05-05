@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CLASS_TYPES, TEACHERS } from '@/lib/mock-data';
+import { CLASS_TYPES, MOCK_TEACHERS } from '@/lib/mock-data';
 import { Clock, DollarSign, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 interface ClassDetailPageProps {
@@ -21,7 +21,7 @@ export default function ClassDetailPage({ params }: ClassDetailPageProps) {
 
   // Filtrar profesores que pueden dar esta clase (lógica simple por ahora)
   // En un caso real, esto dependería de relaciones en BD
-  const availableTeachers = TEACHERS; 
+  const availableTeachers = MOCK_TEACHERS; 
 
   return (
     <div className="container py-10 mx-auto px-4 max-w-4xl">
@@ -104,12 +104,11 @@ export default function ClassDetailPage({ params }: ClassDetailPageProps) {
               {availableTeachers.slice(0, 3).map((teacher) => (
                 <div key={teacher.id} className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                     <img src={teacher.avatarUrl} alt={teacher.firstName} className="h-full w-full object-cover" />
+                      <img src={teacher.avatarUrl} alt={teacher.nombre} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{teacher.firstName} {teacher.lastName}</p>
                     <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                      {teacher.specialties[0]}
+                      {teacher.especialidades[0]}
                     </p>
                   </div>
                 </div>
