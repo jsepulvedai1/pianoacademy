@@ -13,7 +13,7 @@ export function Footer() {
             Formando músicos con pasión y excelencia desde 2010. Tu camino hacia la maestría comienza aquí.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="p-2 bg-white rounded-lg border shadow-sm hover:text-primary transition-colors">
+            <a href="https://instagram.com/academia.detache" target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-lg border shadow-sm hover:text-primary transition-colors">
               <Instagram className="h-5 w-5" />
             </a>
             <a href="#" className="p-2 bg-white rounded-lg border shadow-sm hover:text-primary transition-colors">
@@ -49,15 +49,15 @@ export function Footer() {
           <ul className="space-y-4 text-sm text-muted-foreground">
             <li className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-primary" />
-              <span>contacto@detache.cl</span>
+              <span>academia@detache.cl</span>
             </li>
             <li className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-primary" />
-              <span>+56 9 1234 5678</span>
+              <span>+56 9 9477 5636</span>
             </li>
-            <li className="flex items-center gap-3 font-semibold">
-              <MapPin className="h-4 w-4 text-primary" />
-              <span>Av. Música 123, Providencia</span>
+            <li className="flex items-start gap-3 font-semibold">
+              <MapPin className="h-4 w-4 text-primary mt-1 shrink-0" />
+              <span>Gran Avenida José Miguel Carrera 8520, Of. C, La Cisterna</span>
             </li>
           </ul>
         </div>

@@ -49,6 +49,7 @@ import { apiClient } from "@/lib/api-client";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_LEADS } from "@/graphql/queries/get-leads";
 import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
+import { normalizePhoneNumber } from "@/lib/utils";
 
 // ─── CONFIG ─────────────────────────────────────────────────
 const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: React.ElementType; dot: string }[] = [
@@ -169,9 +170,10 @@ export default function AdminLeadsPage() {
   };
 
   const filtered = useMemo(() => {
-    return leads.filter((l: any) => {
-      const matchSearch = l.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        l.telefono.includes(search);
+    return (leads || []).filter((l: any) => {
+      if (!l) return false;
+      const matchSearch = (l.nombre || "").toLowerCase().includes(search.toLowerCase()) ||
+        (l.telefono || "").includes(search);
       const matchSource = sourceFilter === 'ALL' || l.fuente === sourceFilter;
       const matchService = serviceFilter === 'ALL' || l.servicio === serviceFilter;
       return matchSearch && matchSource && matchService;
@@ -252,7 +254,7 @@ export default function AdminLeadsPage() {
     createLeadMutation({
       variables: {
         nombre: newLead.nombre,
-        telefono: newLead.telefono,
+        telefono: normalizePhoneNumber(newLead.telefono),
         email: newLead.email,
         servicio: newLead.servicio,
         fuente: newLead.fuente

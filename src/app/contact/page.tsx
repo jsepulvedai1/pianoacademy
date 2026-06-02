@@ -29,8 +29,10 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-bold">WhatsApp & Teléfono</h4>
-                      <p className="text-muted-foreground">+56 9 1234 5678</p>
-                      <Button variant="link" className="px-0 h-auto text-primary font-bold">Enviar mensaje ahora →</Button>
+                      <p className="text-muted-foreground">+56 9 9477 5636</p>
+                      <Button variant="link" className="px-0 h-auto text-primary font-bold" asChild>
+                        <a href="https://wa.me/56994775636" target="_blank" rel="noopener noreferrer">Enviar mensaje ahora →</a>
+                      </Button>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
@@ -39,7 +41,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-bold">Email Directo</h4>
-                      <p className="text-muted-foreground">hola@detache.cl</p>
+                      <p className="text-muted-foreground">academia@detache.cl</p>
                       <p className="text-muted-foreground text-sm leading-tight">Respondemos en menos de 24 horas hábiles.</p>
                     </div>
                   </div>
@@ -59,11 +61,15 @@ export default function ContactPage() {
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-serif">Síguenos en redes</h3>
                 <div className="flex gap-4">
-                  {[Instagram, Facebook, Youtube].map((Icon, i) => (
-                    <a key={i} href="#" className="p-4 bg-muted/50 rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1">
-                      <Icon className="h-6 w-6" />
-                    </a>
-                  ))}
+                  <a href="https://instagram.com/academia.detache" target="_blank" rel="noopener noreferrer" className="p-4 bg-muted/50 rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1">
+                    <Instagram className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="p-4 bg-muted/50 rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1">
+                    <Facebook className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="p-4 bg-muted/50 rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1">
+                    <Youtube className="h-6 w-6" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -125,7 +131,7 @@ export default function ContactPage() {
             <div className="space-y-6">
               <h2 className="text-3xl font-bold font-serif tracking-tight">Nuestra Academia</h2>
               <p className="text-muted-foreground text-lg">
-                Visítanos en nuestra sede de Providencia. Ambientes diseñados para la concentración y el arte.
+                Visítanos en nuestra sede de La Cisterna. Ambientes diseñados para la concentración y el arte.
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -133,9 +139,9 @@ export default function ContactPage() {
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-bold">Providencia</h4>
-                    <p className="text-muted-foreground">Av. Música 123, Piso 2</p>
-                    <p className="text-xs text-primary font-medium mt-1">SANTIAGO, CHILE</p>
+                    <h4 className="font-bold">La Cisterna</h4>
+                    <p className="text-muted-foreground">Gran Avenida José Miguel Carrera 8520, Of. C</p>
+                    <p className="text-xs text-primary font-medium mt-1">LA CISTERNA, SANTIAGO</p>
                   </div>
                 </div>
               </div>

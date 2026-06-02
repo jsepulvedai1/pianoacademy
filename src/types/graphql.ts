@@ -28,3 +28,59 @@ export interface Teacher {
 export interface GetTeachersData {
   allTeachers: Teacher[];
 }
+
+export interface Plan {
+  id: string;
+  name: string;
+  price: string;
+  duration: number;
+  classesCount: number;
+  isFeatured: boolean;
+}
+
+export interface GetPlansData {
+  allPlans: Plan[];
+}
+
+export interface Material {
+  id: string;
+  title: string;
+  type: string;
+  url: string;
+  createdAt: string;
+}
+
+export interface StudentPrivateNote {
+  id: string;
+  text: string;
+  author: string;
+  createdAt: string;
+}
+
+export interface StudentWallMessage {
+  id: string;
+  text: string;
+  author: string;
+  attachedMaterial: Material | null;
+  createdAt: string;
+}
+
+export interface LandingPage {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  problem: string;
+  solution: string;
+  benefits: string[];
+  imageUrl: string | null;
+  cta: string;
+}
+
+export interface GetAllLandingPagesData {
+  allLandingPages: LandingPage[];
+}
+
+export interface GetLandingPageBySlugData {
+  landingPageBySlug: LandingPage | null;
+}

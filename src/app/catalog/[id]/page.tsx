@@ -7,13 +7,14 @@ import { CLASS_TYPES, MOCK_TEACHERS } from '@/lib/mock-data';
 import { Clock, DollarSign, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 interface ClassDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function ClassDetailPage({ params }: ClassDetailPageProps) {
-  const classType = CLASS_TYPES.find((c) => c.id === params.id);
+export default async function ClassDetailPage({ params }: ClassDetailPageProps) {
+  const { id } = await params;
+  const classType = CLASS_TYPES.find((c) => c.id === id);
 
   if (!classType) {
     notFound();
@@ -114,9 +115,9 @@ export default function ClassDetailPage({ params }: ClassDetailPageProps) {
                 </div>
               ))}
             </div>
-            <Button className="w-full text-lg h-12" asChild>
-              <Link href={`/book?classId=${classType.id}`}>
-                Reservar Hora
+            <Button className="w-full text-lg h-14 bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest rounded-2xl shadow-lg shadow-primary/20" asChild>
+              <Link href={`/book?service=${encodeURIComponent(classType.name)}`}>
+                Solicitar Clase de Prueba
               </Link>
             </Button>
             <p className="text-xs text-center text-muted-foreground mt-4">

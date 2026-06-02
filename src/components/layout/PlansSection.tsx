@@ -1,12 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@apollo/client/react/index.js";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GetPlansData, Plan } from "@/types/graphql";
 
 export function PlansSection() {
-  const { data, loading } = useQuery(GET_PLANS);
+  const { data, loading } = useQuery<GetPlansData>(GET_PLANS);
 
   const plans = data?.allPlans || [];
 
@@ -31,7 +33,7 @@ export function PlansSection() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-3 max-w-6xl mx-auto items-stretch">
-      {plans.map((plan: any) => {
+      {plans.map((plan: Plan) => {
         const isFeatured = plan.isFeatured;
         return (
           <div 
@@ -80,12 +82,15 @@ export function PlansSection() {
             </ul>
 
             <Button 
+              asChild
               variant={isFeatured ? "secondary" : "outline"}
               className={`w-full h-12 font-bold uppercase tracking-wider ${
                 !isFeatured && 'border-primary text-primary hover:bg-primary/5'
               }`}
             >
-              Empezar hoy
+              <Link href={`/book?service=${encodeURIComponent(plan.name)}`}>
+                Empezar hoy
+              </Link>
             </Button>
           </div>
         );
@@ -93,3 +98,4 @@ export function PlansSection() {
     </div>
   );
 }
+

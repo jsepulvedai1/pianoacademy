@@ -4,12 +4,12 @@ import { ModeToggle } from '@/components/mode-toggle';
 import { MobileNav } from '@/components/layout/MobileNav';
 
 export function Header() {
+
   return (
     <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <img src="/icons/logo.svg" alt="Détaché Logo" className="h-24 w-auto" />
-
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-base font-medium">
@@ -35,8 +35,8 @@ export function Header() {
           <Link href="/login" className="text-sm font-medium hover:underline hidden sm:block">
             Ingresar
           </Link>
-          <Button asChild className="hidden sm:inline-flex">
-            <Link href="/book">Reservar Clase</Link>
+          <Button asChild className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest px-6 h-10 rounded-xl">
+            <Link href="/book">Solicitar Clase</Link>
           </Button>
           <div className="md:hidden">
             <MobileNav />

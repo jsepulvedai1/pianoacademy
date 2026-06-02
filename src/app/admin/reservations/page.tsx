@@ -13,6 +13,7 @@ import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
 import { UPDATE_LESSON_STATUS } from "@/graphql/mutations/lesson-mutations";
 import { toast } from "sonner";
+import { normalizePhoneNumber } from "@/lib/utils";
 import {
   EVOLUTION_API_CONFIG, WA_TEMPLATES,
   serviceLabel, type Reservation, type ReservationStatus, type LeadService
@@ -192,7 +193,7 @@ export default function AdminReservationsPage() {
     const res: Reservation = {
       id: `RES${Date.now()}`,
       nombre: newRes.nombre,
-      telefono: newRes.telefono,
+      telefono: normalizePhoneNumber(newRes.telefono),
       email: newRes.email || undefined,
       servicio: newRes.servicio,
       profesorId: `T${Date.now()}`,

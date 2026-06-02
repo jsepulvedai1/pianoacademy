@@ -91,9 +91,9 @@ export function MobileNav() {
             </nav>
 
             <div className="mt-auto">
-              <Button asChild className="w-full" size="lg">
+              <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-14 rounded-2xl" size="lg">
                 <Link href="/book" onClick={() => setOpen(false)}>
-                  Reservar Clase
+                  Solicitar Clase
                 </Link>
               </Button>
             </div>

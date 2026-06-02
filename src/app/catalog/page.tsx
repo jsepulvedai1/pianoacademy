@@ -54,8 +54,11 @@ export default function CatalogPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button className="w-full" asChild>
+            <CardFooter className="flex flex-col gap-2">
+              <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-xl h-11" asChild>
+                <Link href={`/book?service=${encodeURIComponent(classType.name)}`}>Solicitar Prueba</Link>
+              </Button>
+              <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest text-slate-400" asChild>
                 <Link href={`/catalog/${classType.id}`}>Ver Detalle</Link>
               </Button>
             </CardFooter>

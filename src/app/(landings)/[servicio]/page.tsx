@@ -1,15 +1,35 @@
-import { LANDING_DATA } from '@/lib/landing-data';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Check, Star, ArrowRight, PlayCircle } from 'lucide-react';
+import { Check, Star, ArrowRight, PlayCircle, Music2 } from 'lucide-react';
+import { getClient } from '@/lib/apollo-client';
+import { GET_LANDING_PAGE_BY_SLUG } from '@/graphql/queries/get-landings';
+import { GetLandingPageBySlugData } from '@/types/graphql';
 
-export default async function ServiceLandingPage({ params }: { params: { servicio: string } }) {
-  const data = LANDING_DATA[params.servicio];
+export default async function ServiceLandingPage({ params }: { params: Promise<{ servicio: string }> }) {
+  const { servicio } = await params;
+  
+  const { data: queryData } = await getClient().query<GetLandingPageBySlugData>({
+    query: GET_LANDING_PAGE_BY_SLUG,
+    variables: { slug: servicio },
+    fetchPolicy: 'no-cache', // Important for dynamic previews from admin
+  });
+
+  const data = queryData.landingPageBySlug;
 
   if (!data) {
     notFound();
   }
+
+  const SLUG_TO_SERVICE: Record<string, string> = {
+    'piano-ninos': 'PIANO_NINOS',
+    'piano-adultos': 'PIANO_ADULTOS',
+    'canto': 'CANTO',
+    'clases-grupales': 'CLASE_GRUPAL',
+    'clase-prueba': 'CLASE_PRUEBA'
+  };
+
+  const serviceKey = SLUG_TO_SERVICE[servicio] || 'CLASE_PRUEBA';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -30,7 +50,7 @@ export default async function ServiceLandingPage({ params }: { params: { servici
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="h-16 px-8 text-lg font-bold shadow-xl shadow-primary/20" asChild>
-                  <Link href="/book">{data.cta}</Link>
+                  <Link href={`/book?service=${serviceKey}`}>{data.cta}</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="h-16 px-8 text-lg font-bold group">
                   Ver Video <PlayCircle className="ml-2 h-5 w-5 transition-transform group-hover:scale-110" />
@@ -52,7 +72,7 @@ export default async function ServiceLandingPage({ params }: { params: { servici
               <div className="absolute -inset-10 bg-primary/10 rounded-full blur-3xl opacity-50" />
               <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white aspect-[4/5] md:aspect-square">
                 <img 
-                  src={data.image} 
+                  src={data.imageUrl || '/images/piano-hero.png'} 
                   alt={data.title} 
                   className="w-full h-full object-cover transition-transform duration-1000 hover:scale-110"
                 />
@@ -157,20 +177,4 @@ export default async function ServiceLandingPage({ params }: { params: { servici
   );
 }
 
-const Music2 = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <circle cx="8" cy="18" r="4" />
-    <path d="M12 18V2l7 2" />
-  </svg>
-);
+

@@ -118,9 +118,9 @@ export function StepThreeConfirmation() {
                     <MapPin className="h-4 w-4 text-primary" />
                  </div>
                  <div>
-                    <p className="font-bold text-sm">Sede Providencia</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">Av. Música 123, Piso 2, Providencia, Santiago.</p>
-                    <p className="text-[10px] text-primary font-bold mt-1">A PASOS DE METRO SALVADOR</p>
+                    <p className="font-bold text-sm">Sede La Cisterna</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">Gran Avenida José Miguel Carrera 8520, Of. C, La Cisterna, Santiago.</p>
+                    <p className="text-[10px] text-primary font-bold mt-1">A PASOS DE METRO LA CISTERNA</p>
                  </div>
                </div>
             </CardContent>
@@ -163,7 +163,7 @@ export function StepThreeConfirmation() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">WhatsApp</Label>
-              <Input id="phone" placeholder="+56 9 1234 5678" {...register("phone")} className="h-12 rounded-xl" />
+              <Input id="phone" placeholder="+56 9 9477 5636" {...register("phone")} className="h-12 rounded-xl" />
               {errors.phone && <p className="text-xs text-destructive mt-1 font-medium">{errors.phone.message}</p>}
             </div>
           </div>

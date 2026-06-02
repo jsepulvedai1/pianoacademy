@@ -1,6 +1,7 @@
 "use client";
 
-import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck } from "lucide-react";
+import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck, Globe } from "lucide-react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -20,7 +21,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/lessons", label: "Clases", icon: Calendar },
     { href: "/admin/plans", label: "Programas", icon: BookOpen },
     { href: "/admin/instruments", label: "Instrumentos", icon: Music },
+    { href: "/admin/landings", label: "Páginas Web", icon: Globe },
   ];
+
 
   const secondaryItems: any[] = [];
 
