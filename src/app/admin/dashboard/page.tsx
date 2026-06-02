@@ -29,7 +29,7 @@ import { toast } from "sonner";
 export default function AdminDashboard() {
   const [noteText, setNoteText] = useState("");
   const { data, loading } = useQuery<any>(GET_DASHBOARD_STATS);
-  const { data: notesData, refetch: refetchNotes } = useQuery(GET_DASHBOARD_NOTES);
+  const { data: notesData, refetch: refetchNotes } = useQuery<any>(GET_DASHBOARD_NOTES);
 
   const [createNote] = useMutation(CREATE_NOTE, {
     onCompleted: () => {

@@ -41,7 +41,7 @@ export default function AdminTasksPage() {
     log: ""
   });
 
-  const { data, loading, refetch } = useQuery(GET_ACADEMY_TASKS);
+  const { data, loading, refetch } = useQuery<any>(GET_ACADEMY_TASKS);
   const tasks = data?.allAcademyTasks || [];
 
   const [createTask, { loading: creating }] = useMutation(CREATE_ACADEMY_TASK, {

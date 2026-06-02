@@ -16,14 +16,14 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
   const { id } = use(params);
   const studentId = parseInt(id, 10);
   
-  const { data, loading, error, refetch } = useQuery(GET_STUDENT_PORTAL_DATA, {
+  const { data, loading, error, refetch } = useQuery<any>(GET_STUDENT_PORTAL_DATA, {
     variables: { id: studentId },
     skip: isNaN(studentId)
   });
 
-  const [createPrivateNote] = useMutation(CREATE_STUDENT_PRIVATE_NOTE);
-  const [createWallMessage] = useMutation(CREATE_STUDENT_WALL_MESSAGE);
-  const [createMaterial] = useMutation(CREATE_MATERIAL);
+  const [createPrivateNote] = useMutation<any, any>(CREATE_STUDENT_PRIVATE_NOTE);
+  const [createWallMessage] = useMutation<any, any>(CREATE_STUDENT_WALL_MESSAGE);
+  const [createMaterial] = useMutation<any, any>(CREATE_MATERIAL);
 
   const [privateNote, setPrivateNote] = useState("");
   const [publicNote, setPublicNote] = useState("");

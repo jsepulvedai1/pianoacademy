@@ -46,11 +46,11 @@ function ProgressBar({ used, total }: { used: number; total: number }) {
 }
 
 export default function AdminPacksPage() {
-  const { data: plansData } = useQuery(GET_PLANS);
-  const { data: studentsData } = useQuery(GET_STUDENTS_LIST);
-  const { data: teachersData } = useQuery(GET_TEACHERS);
-  const { data: instrumentsData } = useQuery(GET_INSTRUMENTS);
-  const { data: packsData, loading: packsLoading, refetch: refetchPacks } = useQuery(GET_STUDENT_PACKS);
+  const { data: plansData } = useQuery<any>(GET_PLANS);
+  const { data: studentsData } = useQuery<any>(GET_STUDENTS_LIST);
+  const { data: teachersData } = useQuery<any>(GET_TEACHERS);
+  const { data: instrumentsData } = useQuery<any>(GET_INSTRUMENTS);
+  const { data: packsData, loading: packsLoading, refetch: refetchPacks } = useQuery<any>(GET_STUDENT_PACKS);
 
   const plans = plansData?.allPlans || [];
   const students = studentsData?.allStudents || [];
@@ -206,8 +206,8 @@ export default function AdminPacksPage() {
 
       {/* Pack Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {filtered.map(pack => {
-          const cfg = statusConfig[pack.estado];
+        {filtered.map((pack: any) => {
+          const cfg = statusConfig[pack.estado as keyof typeof statusConfig];
           const Icon = cfg.icon;
           const isAlmostDone = pack.clasesRestantes <= Math.ceil(pack.totalClases * 0.2) && pack.estado === 'ACTIVO';
           return (

@@ -19,7 +19,7 @@ export default function AdminInstrumentsPage() {
   const [editingInstrument, setEditingInstrument] = useState<any | null>(null);
   const [newName, setNewName] = useState("");
 
-  const { data, loading, refetch } = useQuery(GET_INSTRUMENTS);
+  const { data, loading, refetch } = useQuery<any>(GET_INSTRUMENTS);
   const instruments = data?.allInstruments || [];
 
   const [createInstrument] = useMutation(CREATE_INSTRUMENT, {

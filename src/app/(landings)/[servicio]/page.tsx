@@ -15,7 +15,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
     fetchPolicy: 'no-cache', // Important for dynamic previews from admin
   });
 
-  const data = queryData.landingPageBySlug;
+  const data = queryData?.landingPageBySlug;
 
   if (!data) {
     notFound();

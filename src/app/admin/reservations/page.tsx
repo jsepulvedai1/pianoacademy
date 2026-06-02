@@ -75,7 +75,7 @@ function CountdownBadge({ expiry }: { expiry?: string }) {
 }
 
 export default function AdminReservationsPage() {
-  const { data, loading, refetch } = useQuery(GET_RESERVATIONS);
+  const { data, loading, refetch } = useQuery<any>(GET_RESERVATIONS);
   const [updateStatus] = useMutation(UPDATE_LESSON_STATUS);
 
   const reservations: Reservation[] = useMemo(() => {

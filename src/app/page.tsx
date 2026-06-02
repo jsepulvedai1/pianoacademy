@@ -22,7 +22,7 @@ function safeArray(v: any): any[] {
 export default async function Home() {
   let hp: any = null;
   try {
-    const { data } = await getClient().query({
+    const { data } = await getClient().query<any>({
       query: GET_HOMEPAGE_CONTENT,
       fetchPolicy: 'no-cache',
     });

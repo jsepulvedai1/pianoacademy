@@ -117,7 +117,7 @@ export default function AdminLeadsPage() {
   });
 
   // ── GraphQL Hooks ───────────────────────────────────────────
-  const { data, loading, refetch } = useQuery(GET_LEADS);
+  const { data, loading, refetch } = useQuery<any>(GET_LEADS);
   const [createLeadMutation, { loading: isCreating }] = useMutation(CREATE_LEAD, {
     onCompleted: () => {
       toast.success("Lead creado exitosamente 🎻");
@@ -384,7 +384,7 @@ export default function AdminLeadsPage() {
                           <div className="flex items-start justify-between mb-3">
                             <div>
                               <p className="font-bold text-slate-900 text-sm leading-tight">{lead.nombre}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{serviceLabel[lead.servicio]}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{serviceLabel[lead.servicio as LeadService]}</p>
                             </div>
                             <div className="flex items-center gap-1 text-slate-300">
                               <SrcIcon className="h-3.5 w-3.5" />
@@ -482,18 +482,18 @@ export default function AdminLeadsPage() {
                       </td>
                       <td className="px-8 py-5">
                         <Badge variant="outline" className="border-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-widest">
-                          {serviceLabel[lead.servicio]}
+                          {serviceLabel[lead.servicio as LeadService]}
                         </Badge>
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-2 text-slate-400">
                           <SrcIcon className="h-4 w-4" />
-                          <span className="text-xs font-bold uppercase tracking-widest">{sourceLabel[lead.fuente]}</span>
+                          <span className="text-xs font-bold uppercase tracking-widest">{sourceLabel[lead.fuente as LeadSource]}</span>
                         </div>
                       </td>
                       <td className="px-8 py-5">
                         <Badge className={`font-bold uppercase text-[9px] tracking-widest px-3 py-1 border-0 ${config.bg} ${config.color}`}>
-                          {statusLabel[lead.estado]}
+                          {statusLabel[lead.estado as LeadStatus]}
                         </Badge>
                       </td>
                       <td className="px-8 py-5 text-xs text-slate-400 italic">{formatDate(lead.fechaIngreso)}</td>
@@ -530,14 +530,14 @@ export default function AdminLeadsPage() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Ficha de Prospecto</p>
                 <h2 className="text-2xl font-bold font-serif">{selectedLead.nombre}</h2>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  <Badge className={`text-[9px] font-bold uppercase tracking-widest border-0 ${getColConfig(selectedLead.estado).bg} ${getColConfig(selectedLead.estado).color}`}>
-                    {statusLabel[selectedLead.estado]}
+                  <Badge className={`text-[9px] font-bold uppercase tracking-widest border-0 ${getColConfig(selectedLead.estado as LeadStatus).bg} ${getColConfig(selectedLead.estado as LeadStatus).color}`}>
+                    {statusLabel[selectedLead.estado as LeadStatus]}
                   </Badge>
                   <Badge className="bg-white/10 text-white/70 text-[9px] font-bold uppercase tracking-widest border-0">
-                    {serviceLabel[selectedLead.servicio]}
+                    {serviceLabel[selectedLead.servicio as LeadService]}
                   </Badge>
                   <Badge className="bg-white/10 text-white/70 text-[9px] font-bold uppercase tracking-widest border-0">
-                    {sourceLabel[selectedLead.fuente]}
+                    {sourceLabel[selectedLead.fuente as LeadSource]}
                   </Badge>
                 </div>
               </div>

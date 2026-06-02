@@ -15,7 +15,7 @@ import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { CREATE_PLAN, DELETE_PLAN, UPDATE_PLAN } from "@/graphql/mutations/plan-mutations";
 
 export default function AdminPlansMasterPage() {
-  const { data, loading, refetch } = useQuery(GET_PLANS);
+  const { data, loading, refetch } = useQuery<any>(GET_PLANS);
   const [createPlan, { loading: isCreating }] = useMutation(CREATE_PLAN, {
     onCompleted: () => {
       toast.success("Programa creado con éxito ✅");

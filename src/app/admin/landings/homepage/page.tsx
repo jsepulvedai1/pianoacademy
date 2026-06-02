@@ -81,7 +81,7 @@ const inputCls = "w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px
 const textareaCls = "w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all resize-none leading-relaxed";
 
 export default function HomepageEditorPage() {
-  const { data, loading } = useQuery(GET_HOMEPAGE);
+  const { data, loading } = useQuery<any>(GET_HOMEPAGE);
   const hp = data?.homepageContent;
 
   const [hero, setHero] = useState<any>({});
