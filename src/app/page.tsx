@@ -33,10 +33,10 @@ export default async function Home() {
 
   // Fallbacks in case DB is empty
   const heroImage = hp?.heroImage || '/images/piano-hero.png';
-  const heroTitle1 = hp?.heroTitle1 || '';
-  const heroHighlight = hp?.heroTitleHighlight || '';
-  const heroTitle2 = hp?.heroTitle2 || '';
-  const heroSubtitle = hp?.heroSubtitle || '';
+  const heroTitle1 = hp?.heroTitle1 || 'El arte de';
+  const heroHighlight = hp?.heroTitleHighlight || 'dominar';
+  const heroTitle2 = hp?.heroTitle2 || 'el piano';
+  const heroSubtitle = hp?.heroSubtitle || 'La música como nunca te la habían explicado.';
   const cta1Text = hp?.heroCta1Text || 'Solicitar Clase de Prueba';
   const cta1Link = hp?.heroCta1Link || '/book';
   const cta2Text = hp?.heroCta2Text || 'Nuestros Maestros';
