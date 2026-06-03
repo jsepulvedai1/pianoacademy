@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const revalidate = 3600; 
+export const revalidate = 10; 
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

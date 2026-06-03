@@ -5,6 +5,8 @@ import { PlansSection } from '@/components/layout/PlansSection';
 import { getClient } from '@/lib/apollo-client';
 import { GET_HOMEPAGE_CONTENT } from '@/graphql/queries/get-homepage';
 
+export const dynamic = 'force-dynamic';
+
 const FEATURE_ICONS: Record<string, React.ReactNode> = {
   Calendar: <Calendar className="h-6 w-6 text-primary" />,
   Music: <Music className="h-6 w-6 text-primary" />,
