@@ -17,7 +17,7 @@ interface TrialClassModalProps {
 export function TrialClassModal({ isOpen, onClose, defaultService = "Clase de Prueba General" }: TrialClassModalProps) {
   const [formData, setFormData] = useState({
     nombre: "",
-    telefono: "",
+    telefono: "+569",
     email: "",
     servicio: defaultService
   });
@@ -31,7 +31,7 @@ export function TrialClassModal({ isOpen, onClose, defaultService = "Clase de Pr
       setTimeout(() => {
         onClose();
         setIsSuccess(false);
-        setFormData({ nombre: "", telefono: "", email: "", servicio: defaultService });
+        setFormData({ nombre: "", telefono: "+569", email: "", servicio: defaultService });
       }, 3000);
     },
     onError: (err) => {
@@ -42,9 +42,23 @@ export function TrialClassModal({ isOpen, onClose, defaultService = "Clase de Pr
 
   if (!isOpen) return null;
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    if (!value.startsWith("+569")) {
+      value = "+569";
+    }
+    const suffix = value.slice(4);
+    const cleanSuffix = suffix.replace(/\D/g, "");
+    const limitedSuffix = cleanSuffix.slice(0, 8);
+    setFormData({
+      ...formData,
+      telefono: "+569" + limitedSuffix
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre || !formData.telefono) return;
+    if (!formData.nombre || formData.telefono.length !== 12) return;
 
     createLead({
       variables: {
@@ -108,10 +122,10 @@ export function TrialClassModal({ isOpen, onClose, defaultService = "Clase de Pr
                   <input 
                     type="tel" 
                     required
-                    placeholder="+56 9 1234 5678" 
+                    placeholder="+569 XXXXXXXX" 
                     className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     value={formData.telefono}
-                    onChange={e => setFormData({...formData, telefono: e.target.value})}
+                    onChange={handlePhoneChange}
                   />
                 </div>
 
@@ -128,7 +142,7 @@ export function TrialClassModal({ isOpen, onClose, defaultService = "Clase de Pr
 
                 <Button 
                   type="submit" 
-                  disabled={loading || !formData.nombre || !formData.telefono} 
+                  disabled={loading || !formData.nombre || formData.telefono.length !== 12} 
                   className="w-full h-14 mt-4 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-xs tracking-widest shadow-lg shadow-primary/20"
                 >
                   {loading ? (

@@ -35,10 +35,10 @@ export default async function Home() {
 
   // Fallbacks in case DB is empty
   const heroImage = hp?.heroImage || '/images/piano-hero.png';
-  const heroTitle1 = hp?.heroTitle1 || 'El arte de';
-  const heroHighlight = hp?.heroTitleHighlight || 'dominar';
+  const heroTitle1 = hp?.heroTitle1 || '';
+  const heroHighlight = hp?.heroTitleHighlight || '';
   const heroTitle2 = hp?.heroTitle2 || 'el piano';
-  const heroSubtitle = hp?.heroSubtitle || 'La música como nunca te la habían explicado.';
+  const heroSubtitle = hp?.heroSubtitle || '';
   const cta1Text = hp?.heroCta1Text || 'Solicitar Clase de Prueba';
   const cta1Link = hp?.heroCta1Link || '/book';
   const cta2Text = hp?.heroCta2Text || 'Nuestros Maestros';
@@ -119,6 +119,12 @@ export default async function Home() {
               <Button variant="outline" size="lg" className="h-16 px-10 text-base font-bold uppercase tracking-wider border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white hover:border-white/60 backdrop-blur-sm transition-all shadow-lg" asChild>
                 <Link href={cta2Link}>{cta2Text}</Link>
               </Button>
+            </div>
+            <div className='flex flex-row'>
+              <div>
+
+              </div>
+
             </div>
           </div>
         </div>
@@ -239,26 +245,37 @@ export default async function Home() {
                 </div>
               </div>
               <Button variant="link" className="px-0 text-primary font-bold group" asChild>
-                <a href={locationMapUrl} target="_blank" rel="noopener noreferrer">
+                <a href={locationMapUrl && locationMapUrl !== 'https://maps.google.com' ? locationMapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationAddress)}`} target="_blank" rel="noopener noreferrer">
                   Cómo llegar <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                 </a>
               </Button>
             </div>
-            <div className="h-[400px] rounded-3xl overflow-hidden shadow-xl border bg-white relative">
-              <div className="absolute inset-0 bg-[#f8f9fa] flex items-center justify-center">
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                <div className="relative">
-                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center animate-ping" />
-                  <div className="absolute inset-0 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                    <MapPin className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/80 backdrop-blur-md rounded-2xl border shadow-lg">
-                  <p className="text-sm font-bold">{locationAddress}</p>
-                  <p className="text-xs text-muted-foreground">{locationAddressDetail}</p>
-                </div>
+            <a 
+              href={locationMapUrl && locationMapUrl !== 'https://maps.google.com' ? locationMapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationAddress)}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="h-[400px] rounded-3xl overflow-hidden shadow-xl border bg-white relative block group cursor-pointer"
+            >
+              <iframe
+                title="Google Maps"
+                width="100%"
+                height="100%"
+                className="border-0 pointer-events-none filter grayscale opacity-90 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-300"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(locationAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                allowFullScreen
+                loading="lazy"
+              ></iframe>
+
+              <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300 pointer-events-none" />
+
+              <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl border shadow-lg group-hover:bg-white transition-colors duration-300">
+                <p className="text-sm font-bold text-slate-800">{locationAddress}</p>
+                <p className="text-xs text-primary font-semibold mt-1 uppercase tracking-wider">{locationAddressDetail}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2 group-hover:text-primary transition-colors">
+                  Haga clic para abrir en Google Maps ↗
+                </p>
               </div>
-            </div>
+            </a>
           </div>
         </div>
       </section>

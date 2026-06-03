@@ -163,9 +163,19 @@ export default function AdminTasksPage() {
                 <h4 className="px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Tareas Listas</h4>
                 <div className="bg-slate-100/50 rounded-[2rem] border border-slate-100 overflow-hidden divide-y divide-slate-100/50 grayscale-[0.8] opacity-60">
                    {completedTasks.map((task: any) => (
-                     <div key={task.id} className="p-5 flex gap-4 items-center">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                        <span className="text-sm font-medium text-slate-500 line-through">{task.title}</span>
+                     <div key={task.id} className="p-5 flex gap-4 items-center justify-between group">
+                        <div className="flex gap-4 items-center">
+                           <button onClick={() => handleToggleComplete(task)} className="transition-transform active:scale-90 text-emerald-500">
+                             <CheckCircle2 className="h-5 w-5" />
+                           </button>
+                           <span className="text-sm font-medium text-slate-500 line-through">{task.title}</span>
+                        </div>
+                        <button 
+                          onClick={() => { if(confirm("¿Eliminar tarea permanentemente?")) deleteTask({ variables: { id: parseInt(task.id) } }) }}
+                          className="p-1.5 rounded-xl hover:bg-rose-500/10 text-rose-500 transition-all opacity-0 group-hover:opacity-100 shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                      </div>
                    ))}
                 </div>

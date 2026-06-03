@@ -6,6 +6,7 @@ export const GET_ROOMS = gql`
       id
       name
       capacity
+      status
       instruments {
         id
         name

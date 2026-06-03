@@ -27,9 +27,9 @@ function TrialBookingContent() {
 
   const [formData, setFormData] = useState({
     nombre: "",
-    telefono: "",
+    telefono: "+569",
     email: "",
-    servicio: initialService
+    servicio: "CLASE_PRUEBA"
   });
 
   const [isSuccess, setIsSuccess] = useState(false);
@@ -45,16 +45,30 @@ function TrialBookingContent() {
     }
   });
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    if (!value.startsWith("+569")) {
+      value = "+569";
+    }
+    const suffix = value.slice(4);
+    const cleanSuffix = suffix.replace(/\D/g, "");
+    const limitedSuffix = cleanSuffix.slice(0, 8);
+    setFormData({
+      ...formData,
+      telefono: "+569" + limitedSuffix
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre || !formData.telefono) return;
+    if (!formData.nombre || formData.telefono.length !== 12) return;
 
     createLead({
       variables: {
         nombre: formData.nombre,
         telefono: normalizePhoneNumber(formData.telefono),
         email: formData.email,
-        servicio: formData.servicio,
+        servicio: "CLASE_PRUEBA",
         fuente: "WEB"
       }
     });
@@ -176,10 +190,10 @@ function TrialBookingContent() {
                     <input 
                       type="tel" 
                       required
-                      placeholder="+56 9 1234 5678" 
+                      placeholder="+569 XXXXXXXX" 
                       className="w-full h-14 bg-slate-50 border-slate-100 rounded-2xl px-5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
                       value={formData.telefono}
-                      onChange={e => setFormData({...formData, telefono: e.target.value})}
+                      onChange={handlePhoneChange}
                     />
                   </div>
 
@@ -194,24 +208,12 @@ function TrialBookingContent() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Área de Interés (Clase de Prueba)</label>
-                    <select 
-                      className="w-full h-14 bg-slate-50 border-slate-100 rounded-2xl px-5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all appearance-none cursor-pointer"
-                      value={formData.servicio}
-                      onChange={e => setFormData({...formData, servicio: e.target.value})}
-                    >
-                      <option value="Clase de Prueba General">Clase de Prueba (General)</option>
-                      <option value="Piano Clásico">Piano Clásico</option>
-                      <option value="Teoría y Composición">Teoría y Composición</option>
-                      <option value="Producción Musical">Producción Musical</option>
-                    </select>
-                  </div>
+
 
                   <div className="pt-4">
                     <Button 
                       type="submit" 
-                      disabled={loading || !formData.nombre || !formData.telefono}
+                      disabled={loading || !formData.nombre || formData.telefono.length !== 12}
                       className="w-full h-16 rounded-2xl bg-slate-900 hover:bg-primary text-white font-black uppercase text-xs tracking-[0.2em] shadow-xl transition-all group"
                     >
                       {loading ? (

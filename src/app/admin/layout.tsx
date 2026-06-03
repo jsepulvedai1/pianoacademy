@@ -22,6 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/plans", label: "Programas", icon: BookOpen },
     { href: "/admin/instruments", label: "Instrumentos", icon: Music },
     { href: "/admin/landings", label: "Páginas Web", icon: Globe },
+    { href: "/admin/catalog", label: "Catálogo Web", icon: BookOpen },
   ];
 
 
