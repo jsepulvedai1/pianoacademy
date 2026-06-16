@@ -158,7 +158,9 @@ export default function AdminLeadsPage() {
         limit: 30
       });
       console.log('Evolution API findMessages response:', data);
-      const messages = Array.isArray(data) ? data : (data.records || []);
+      const messages = Array.isArray(data) 
+        ? data 
+        : (data.messages?.records || data.records || []);
       const sorted = messages.sort((a: any, b: any) => 
         (a.messageTimestamp || 0) - (b.messageTimestamp || 0)
       );
