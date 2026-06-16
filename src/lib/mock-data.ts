@@ -377,9 +377,9 @@ export const MOCK_ATTENDANCE: AttendanceRecord[] = [
 
 // ─── EVOLUTION API CONFIG ──────────────────────────────────
 export const EVOLUTION_API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_EVOLUTION_URL || 'http://localhost:8080',
+  baseUrl: process.env.NEXT_PUBLIC_EVOLUTION_API_URL || process.env.NEXT_PUBLIC_EVOLUTION_URL || 'http://localhost:8080',
   apiKey: process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || 'admin_apikey_123',
-  instanceName: process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE || 'detache'
+  instanceName: process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE || 'MainInstance'
 };
 
 // ─── PLANTILLAS WHATSAPP ───────────────────────────────────
