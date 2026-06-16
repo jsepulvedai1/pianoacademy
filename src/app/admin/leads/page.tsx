@@ -46,10 +46,12 @@ import {
   type LeadSource
 } from "@/lib/mock-data";
 import { apiClient } from "@/lib/api-client";
-import { useQuery, useMutation } from "@apollo/client/react/index.js";
+import { useQuery, useMutation, useSubscription } from "@apollo/client/react/index.js";
 import { GET_LEADS } from "@/graphql/queries/get-leads";
 import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
+import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
 import { normalizePhoneNumber } from "@/lib/utils";
+
 
 // ─── CONFIG ─────────────────────────────────────────────────
 const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: React.ElementType; dot: string }[] = [
@@ -117,7 +119,25 @@ export default function AdminLeadsPage() {
   });
 
   // ── GraphQL Hooks ───────────────────────────────────────────
-  const { data, loading, refetch } = useQuery<any>(GET_LEADS);
+  const { data, loading, refetch } = useQuery<any>(GET_LEADS, {
+    fetchPolicy: 'network-only' // Evita usar caché obsoleto
+  });
+
+  useSubscription<any>(ON_LEAD_UPDATED, {
+    onData: ({ data: subData }) => {
+      const payload = subData.data?.onLeadUpdated;
+      if (payload) {
+        const leadName = payload.lead?.nombre;
+        const eventType = payload.eventType;
+        if (eventType === 'created') {
+          toast.info(`Nuevo lead registrado: ${leadName || 'Contacto WA'} 🎻`);
+        } else if (eventType === 'updated') {
+          toast.info(`Lead actualizado: ${leadName || 'Contacto WA'}`);
+        }
+      }
+      refetch();
+    }
+  });
   const [createLeadMutation, { loading: isCreating }] = useMutation(CREATE_LEAD, {
     onCompleted: () => {
       toast.success("Lead creado exitosamente 🎻");
