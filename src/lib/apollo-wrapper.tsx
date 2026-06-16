@@ -35,9 +35,7 @@ function makeClient() {
           },
           new GraphQLWsLink(
             createClient({
-              url: typeof window !== "undefined"
-                ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/graphql/`
-                : "ws://localhost:8000/ws/graphql/",
+              url: (process.env.NEXT_PUBLIC_DJANGO_URL || "http://localhost:8000").replace(/^http/, "ws") + "/ws/graphql/",
             })
           ),
           httpLink
