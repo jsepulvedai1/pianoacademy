@@ -1,260 +1,257 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Calendar, Music, UserCheck, Star, Check, MapPin, Award } from 'lucide-react';
-import { PlansSection } from '@/components/layout/PlansSection';
-import { getClient } from '@/lib/apollo-client';
-import { GET_HOMEPAGE_CONTENT } from '@/graphql/queries/get-homepage';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Calendar, Music, UserCheck, Star, Check, MapPin, Award, Mic, Drum, ArrowRight, Heart } from "lucide-react";
+import { PlansSection } from "@/components/layout/PlansSection";
+import { InstrumentsCarousel } from "@/components/layout/InstrumentsCarousel";
+import { getClient } from "@/lib/apollo-client";
+import { GET_HOMEPAGE_CONTENT } from "@/graphql/queries/get-homepage";
+import { cn, safeArray } from "@/lib/utils";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-const FEATURE_ICONS: Record<string, React.ReactNode> = {
-  Calendar: <Calendar className="h-6 w-6 text-primary" />,
-  Music: <Music className="h-6 w-6 text-primary" />,
-  UserCheck: <UserCheck className="h-6 w-6 text-primary" />,
-  Award: <Award className="h-6 w-6 text-primary" />,
-  MapPin: <MapPin className="h-6 w-6 text-primary" />,
-};
-
-function safeArray(v: any): any[] {
-  if (Array.isArray(v)) return v;
-  if (typeof v === 'string') { try { return JSON.parse(v); } catch { return []; } }
-  return [];
-}
 
 export default async function Home() {
   let hp: any = null;
   try {
     const { data } = await getClient().query<any>({
       query: GET_HOMEPAGE_CONTENT,
-      fetchPolicy: 'no-cache',
+      fetchPolicy: "no-cache",
     });
     hp = data?.homepageContent;
   } catch (e) {
-    console.error('Could not load homepage content:', e);
+    console.error("Could not load homepage content:", e);
   }
 
   // Fallbacks in case DB is empty
-  const heroImage = hp?.heroImage || '/images/piano-hero.png';
-  const heroTitle1 = hp?.heroTitle1 || '';
-  const heroHighlight = hp?.heroTitleHighlight || '';
-  const heroTitle2 = hp?.heroTitle2 || 'el piano';
-  const heroSubtitle = hp?.heroSubtitle || '';
-  const cta1Text = hp?.heroCta1Text || 'Solicitar Clase de Prueba';
-  const cta1Link = hp?.heroCta1Link || '/book';
-  const cta2Text = hp?.heroCta2Text || 'Nuestros Maestros';
-  const cta2Link = hp?.heroCta2Link || '/teachers';
+  const heroImage = hp?.heroImage || "/images/piano-hero.png";
+  const heroTitle1 = hp?.heroTitle1 || "Aprende";
+  const heroHighlight = hp?.heroTitleHighlight || "música";
+  const heroTitle2 = hp?.heroTitle2 || "con un método claro, cercano y sin frustraciones.";
+  const heroSubtitle = hp?.heroSubtitle || "Acompañamos a personas de todas las edades en su camino musical, respetando el ritmo y los objetivos de cada estudiante.";
+  const cta1Text = hp?.heroCta1Text || "Ver Planes";
+  const cta1Link = hp?.heroCta1Link || "#plans";
 
-  const features = safeArray(hp?.features).length > 0
-    ? safeArray(hp.features)
-    : [
-      { icon: 'Calendar', title: 'Reserva Flexible', description: 'Elige el horario que más te acomode. Reprograma fácilmente si surgen imprevistos.' },
-      { icon: 'UserCheck', title: 'Profesores Expertos', description: 'Aprende de músicos profesionales activos en la escena. Todos los niveles bienvenidos.' },
-      { icon: 'Music', title: 'Tu Ritmo, Tu Estilo', description: 'Clásico, Jazz, Pop o teoría musical. Adaptamos el contenido a tus objetivos.' },
-    ];
-
-  const methodBadge = hp?.methodBadge || 'Nuestro Método Técnico';
-  const methodTitle = hp?.methodTitle || 'No son clases sueltas, es un proceso de maestría';
-  const methodDescription = hp?.methodDescription || 'En Détaché, no creemos en el aprendizaje fragmentado. Hemos diseñado una metodología integral que guía al alumno desde la sensibilización hasta la interpretación avanzada.';
-  const methodImage = hp?.methodImage || '/images/method.png';
-  const methodItems = safeArray(hp?.methodItems).length > 0
-    ? safeArray(hp.methodItems)
-    : [
-      { title: 'Evaluación Personalizada', desc: 'Entendemos tus metas antes de tocar la primera nota.' },
-      { title: 'Técnica Orgánica', desc: 'Desarrollo de postura y digitación sin tensiones.' },
-      { title: 'Repertorio Evolutivo', desc: 'Piezas seleccionadas para desafiarte en el punto justo.' },
-    ];
+  const methodTitle = hp?.methodTitle || "Siguiendo el Compás";
+  const methodDescription = hp?.methodDescription ||
+    "En Academia Détaché creemos que aprender música es un proceso que debe disfrutarse. Por eso, nuestra metodología combina una enseñanza estructurada con un acompañamiento cercano y personalizado, adaptándose al ritmo, los intereses y los objetivos de cada estudiante.\n\nA través de clases didácticas y un aprendizaje progresivo, buscamos desarrollar habilidades musicales sólidas mientras fomentamos la creatividad, la confianza y el gusto por la música.";
+  const methodImage = "/imagesfooter/4.png";
 
   const testimonials = safeArray(hp?.testimonials).length > 0
     ? safeArray(hp.testimonials)
     : [
-      { quote: 'Increíble experiencia. El sistema de reservas es súper fácil y mi profesor es un genio.', author: 'Alumno Feliz' },
-      { quote: 'Nunca creí que aprendería tan rápido. La metodología es completamente diferente.', author: 'Alumno Feliz 2' },
-      { quote: 'Lo mejor de Santiago para aprender piano. Instalaciones de primer nivel.', author: 'Alumno Feliz 3' },
+      { quote: "Increíble experiencia. El sistema de reservas es súper fácil y mi profesor es un genio.", author: "Carolina R." },
+      { quote: "Nunca creí que aprendería tan rápido. La metodología es completamente diferente.", author: "Matías V." },
+      { quote: "Lo mejor de Santiago para aprender piano. Instalaciones de primer nivel.", author: "Sofía M." },
     ];
 
-  const locationTitle = hp?.locationTitle || 'Estamos cerca de ti';
-  const locationDescription = hp?.locationDescription || 'Nuestra academia se encuentra en un punto estratégico para tu comodidad, con espacios acústicamente tratados y el mejor equipamiento.';
-  const locationAddress = hp?.locationAddress || 'Gran Avenida José Miguel Carrera 8520, Of. C, La Cisterna';
-  const locationAddressDetail = hp?.locationAddressDetail || 'A pasos de Metro La Cisterna';
-  const locationMapUrl = hp?.locationMapUrl || 'https://maps.google.com';
+  const locationTitle = hp?.locationTitle || "Estamos cerca de ti";
+  const locationDescription = hp?.locationDescription || "Nuestra academia se encuentra en un punto estratégico para tu comodidad, con espacios acústicamente tratados y el mejor equipamiento.";
+  const locationAddress = hp?.locationAddress || "Gran Avenida José Miguel Carrera 8520, Of. C, La Cisterna";
+  const locationAddressDetail = hp?.locationAddressDetail || "A pasos de Metro La Cisterna";
+  const locationMapUrl = hp?.locationMapUrl || "https://maps.google.com";
 
-  const finalCtaTitle = hp?.finalCtaTitle || '¿Listo para empezar?';
-  const finalCtaDescription = hp?.finalCtaDescription || 'Déjanos tus datos y te contactaremos para agendar tu primera experiencia.';
-  const finalCtaButtonText = hp?.finalCtaButtonText || 'Solicitar Clase de Prueba';
+
+
+  const galleryImages = [
+    "/imagesfooter/1.png",
+    "/imagesfooter/2.png",
+    "/imagesfooter/3.png",
+    "/imagesfooter/4.png",
+  ];
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* ── Hero Section ── */}
-      <section className="relative min-h-[420px] md:min-h-[600px] flex items-center overflow-hidden">
+      {/* ── 1. Hero Section ── */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src={heroImage}
             alt="Piano Background"
-            className="w-full h-full object-cover scale-105"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/60 to-primary/20" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_90%)] opacity-40" />
+          <div className="absolute inset-0 bg-black/60 md:bg-black/55 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
         </div>
 
-        <div className="container relative z-10 px-4 md:px-6 mx-auto">
-          <div className="max-w-4xl space-y-8">
-            <div className="space-y-6">
-              <h1 className="text-5xl md:text-8xl font-bold tracking-tight text-white font-serif leading-[1.1] drop-shadow-2xl">
-                {heroTitle1} <span className="text-secondary italic">{heroHighlight}</span> <br />
-                <span className="text-white/95">{heroTitle2}</span>
-              </h1>
-              <p className="max-w-[700px] text-white/80 md:text-2xl leading-relaxed italic drop-shadow-lg font-light">
-                {heroSubtitle}
-              </p>
-            </div>
+        <div className="container relative z-10 px-4 md:px-6 mx-auto text-center md:text-left mt-24">
+          <div className="max-w-4xl space-y-6">
+            <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.15] font-sans">
+              {heroTitle1} <span className="text-secondary">{heroHighlight}</span><br />
+              <span className="text-white/95">{heroTitle2}</span>
+            </h1>
+            <p className="max-w-2xl text-white/80 text-sm md:text-lg leading-relaxed font-normal">
+              {heroSubtitle}
+            </p>
 
-            <div className="flex flex-col sm:flex-row gap-6 mt-12">
+            <div className="pt-4 flex justify-center md:justify-start">
               <Button
                 size="lg"
-                className="h-16 px-10 text-base font-bold uppercase tracking-wider shadow-2xl shadow-primary/40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all text-white border-none"
+                className="h-14 px-10 text-xs font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary/20 bg-primary hover:bg-primary/95 text-white border-none rounded-full transition-transform hover:scale-105"
                 asChild
               >
                 <Link href={cta1Link}>{cta1Text}</Link>
               </Button>
-              <Button variant="outline" size="lg" className="h-16 px-10 text-base font-bold uppercase tracking-wider border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white hover:border-white/60 backdrop-blur-sm transition-all shadow-lg" asChild>
-                <Link href={cta2Link}>{cta2Text}</Link>
-              </Button>
-            </div>
-            <div className='flex flex-row'>
-              <div>
-
-              </div>
-
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Features Section ── */}
-      <section className="pt-8 pb-16 md:pt-12 md:pb-24 bg-muted/50">
+      {/* ── 2. Polaroid / Methodology Section ("Siguiendo el Compás") ── */}
+      <section className="py-20 md:py-32 bg-[#F8F7F4] text-slate-800 overflow-hidden">
         <div className="container px-4 md:px-6 mx-auto">
-          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3 text-center md:text-left">
-            {features.map((f: any, i: number) => (
-              <div key={i} className="flex flex-col items-center md:items-start space-y-4">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  {FEATURE_ICONS[f.icon] || <Music className="h-6 w-6 text-primary" />}
-                </div>
-                <h3 className="text-xl font-bold">{f.title}</h3>
-                <p className="text-muted-foreground">{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Methodology Section ── */}
-      <section className="py-20 bg-muted/30">
-        <div className="container px-4 md:px-6 mx-auto">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            {/* Texts */}
             <div className="lg:w-1/2 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
-                <Award className="h-4 w-4" />
-                {methodBadge}
-              </div>
-              <h2 className="text-3xl md:text-5xl font-bold font-serif leading-tight">
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-primary font-sans">
                 {methodTitle}
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {methodDescription}
-              </p>
-              <div className="grid gap-4 mt-8">
-                {methodItems.map((item: any, i: number) => (
-                  <div key={i} className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm border border-muted ring-offset-background transition-colors hover:border-primary/20">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 text-primary">
-                      <Check className="h-5 w-5" />
-                    </div>
-                    <div className="grid gap-1">
-                      <h4 className="font-bold">{item.title}</h4>
-                      <p className="text-sm text-muted-foreground">{item.desc}</p>
-                    </div>
-                  </div>
+              <div className="text-sm md:text-base text-slate-600 leading-loose space-y-4 font-normal">
+                {methodDescription.split("\n\n").map((para: string, idx: number) => (
+                  <p key={idx}>{para}</p>
                 ))}
               </div>
+              <div className="pt-2">
+                <Button
+                  asChild
+                  className="bg-primary hover:bg-primary/90 text-white font-bold px-10 h-12 rounded-full border-none shadow-md uppercase tracking-wider text-[14px] transition-transform hover:scale-105"
+                >
+                  <Link href="/about">Conoce más</Link>
+                </Button>
+              </div>
             </div>
-            <div className="lg:w-1/2 relative">
-              <div className="absolute -inset-4 bg-primary/10 rounded-full blur-3xl opacity-30 animate-pulse" />
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-                <img
-                  src={methodImage}
-                  alt="Metodología Détaché"
-                  className="w-full h-full object-cover aspect-[4/3] hover:scale-105 transition-transform duration-700"
-                />
+
+            {/* Polaroid Graphic */}
+            <div className="lg:w-1/2 relative flex justify-center py-10">
+              <div className="relative w-full max-w-[494px]">
+                {/* Hand-drawn purple rays at the top-right */}
+                <svg className="absolute -top-6 -right-6 w-16 h-16 text-primary rotate-[15deg] select-none z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="6" y1="18" x2="2" y2="8" />
+                  <line x1="12" y1="16" x2="16" y2="4" />
+                  <line x1="16" y1="18" x2="24" y2="12" />
+                </svg>
+
+                {/* Hand-drawn yellow star/sparkle at the bottom-left */}
+                <svg className="absolute -bottom-8 -left-8 w-26 h-26 text-[#DFB012] fill-current select-none z-10" viewBox="0 0 100 100">
+                  <path d="M50 0 L54 35 L85 15 L62 42 L100 50 L62 58 L85 85 L54 65 L50 100 L46 65 L15 85 L38 58 L0 50 L38 42 L15 15 L46 35 Z" />
+                </svg>
+
+                <div className="relative bg-white p-5 pb-16 shadow-[0_15px_40px_rgba(0,0,0,0.12)] border border-slate-100 rounded-lg w-full rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-slate-50 relative">
+                    <img
+                      src={methodImage}
+                      alt="Metodología Détaché"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute bottom-5 left-8 text-slate-400 font-sans italic text-sm">
+                    Academia Détaché
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Pricing / Plans Section ── */}
-      <section id="plans" className="py-20 md:py-32 bg-background relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+      {/* ── 3. Nuestros Planes (Yellow Container) ── */}
+      <section id="plans" className="py-20 md:py-32 bg-[#E2B612] text-slate-900 relative overflow-hidden">
         <div className="container px-4 md:px-6 mx-auto relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold font-serif tracking-tight">Nuestros Planes</h2>
-            <p className="text-muted-foreground text-lg italic">
-              Invierte en tu talento. Elige el programa que mejor se adapte a tus metas musicales.
+            <h2 className="text-3xl md:text-5xl font-bold font-sans text-slate-900">
+              Nuestros Planes
+            </h2>
+            <p className="text-slate-800 text-sm md:text-base font-medium leading-relaxed max-w-xl mx-auto">
+              Haz espacio para la música en tu vida y encuentra el programa perfecto para ti.
             </p>
           </div>
+
           <PlansSection />
+        </div>
+
+        {/* SVG Wave Divider at the bottom */}
+        <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none z-0 transform translate-y-[1px] pointer-events-none">
+          <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="w-full h-[60px] md:h-[100px] text-white fill-current">
+            <path d="M0,120 L0,60 C100,0 250,0 350,70 C450,140 650,90 850,90 C1050,90 1250,50 1440,90 L1440,120 Z" />
+          </svg>
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 md:px-6 mx-auto text-center">
-          <h2 className="text-3xl font-bold tracking-tighter mb-12">Lo que dicen nuestros alumnos</h2>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {testimonials.map((t: any, i: number) => (
-              <div key={i} className="flex flex-col items-center space-y-4 p-6 bg-card rounded-xl shadow-sm border">
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="h-4 w-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground italic">"{t.quote}"</p>
-                <p className="font-semibold text-sm">- {t.author}</p>
+      {/* ── 4. Aprende con Nosotros (Instruments Carousel) ── */}
+      <section className="py-20 md:py-32 bg-white text-slate-900 overflow-hidden">
+        <div className="container px-4 md:px-6 mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#8E44AD]">
+              Aprende con Nosotros
+            </h2>
+            <p className="text-slate-500 text-sm md:text-base">
+              La música comienza con una primera nota. Nosotros te acompañamos en el resto del camino.
+            </p>
+          </div>
+
+          <InstrumentsCarousel />
+        </div>
+      </section>
+
+      {/* ── 5. Photo Strips and Typographic Section ── */}
+      <section className="py-20 md:py-32 bg-amber-50/30 overflow-hidden border-t">
+        <div className="container px-4 md:px-6 mx-auto text-center max-w-5xl space-y-16">
+          <h2 className="text-4xl md:text-7xl font-extrabold leading-none tracking-tighter text-primary uppercase max-w-4xl mx-auto">
+            LA <span className="text-[#DFB012]">MÚSICA</span> COMO NUNCA <br className="hidden md:block" />
+            TE LA HABÍAN <span className="text-[#DFB012]">EXPLICADO</span>
+          </h2>
+
+          {/* Horizontal Gallery */}
+          <div className="flex flex-col md:flex-row gap-6 md:overflow-x-auto pb-6 md:scrollbar-none md:snap-x md:snap-mandatory">
+            {galleryImages.map((img, i) => (
+              <div
+                key={i}
+                className="flex-shrink-0 w-full md:w-[468px] aspect-[4/3] rounded-3xl overflow-hidden shadow-lg md:snap-center relative group"
+              >
+                <img
+                  src={img}
+                  alt="Galería Academia"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Location Section ── */}
-      <section id="location" className="py-20 bg-muted/50 border-y">
+      {/* ── 6. Testimonials (Premium layout) ── */}
+
+
+      {/* ── 7. Location Section ── */}
+      {/* <section id="location" className="py-20 bg-slate-50 border-y">
         <div className="container px-4 md:px-6 mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold font-serif tracking-tight">{locationTitle}</h2>
-              <p className="text-muted-foreground text-lg italic">{locationDescription}</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800">{locationTitle}</h2>
+              <p className="text-slate-500 text-sm md:text-base leading-relaxed">{locationDescription}</p>
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-white rounded-xl shadow-sm border">
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-bold">Dirección Principal</h4>
-                    <p className="text-muted-foreground">{locationAddress}</p>
-                    <p className="text-xs text-primary font-medium mt-1 uppercase tracking-wider">{locationAddressDetail}</p>
+                    <h4 className="font-bold text-sm text-slate-800">Dirección Principal</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">{locationAddress}</p>
+                    <p className="text-[10px] text-primary font-bold mt-1.5 uppercase tracking-wider">{locationAddressDetail}</p>
                   </div>
                 </div>
               </div>
-              <Button variant="link" className="px-0 text-primary font-bold group" asChild>
-                <a href={locationMapUrl && locationMapUrl !== 'https://maps.google.com' ? locationMapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationAddress)}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="link" className="px-0 text-primary font-bold group text-xs uppercase tracking-widest" asChild>
+                <a href={locationMapUrl && locationMapUrl !== "https://maps.google.com" ? locationMapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationAddress)}`} target="_blank" rel="noopener noreferrer">
                   Cómo llegar <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                 </a>
               </Button>
             </div>
-            <a 
-              href={locationMapUrl && locationMapUrl !== 'https://maps.google.com' ? locationMapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationAddress)}`} 
-              target="_blank" 
+
+            <a
+              href={locationMapUrl && locationMapUrl !== "https://maps.google.com" ? locationMapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationAddress)}`}
+              target="_blank"
               rel="noopener noreferrer"
-              className="h-[400px] rounded-3xl overflow-hidden shadow-xl border bg-white relative block group cursor-pointer"
+              className="h-[360px] rounded-[2rem] overflow-hidden shadow-lg border bg-white relative block group cursor-pointer"
             >
               <iframe
                 title="Google Maps"
@@ -268,28 +265,17 @@ export default async function Home() {
 
               <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300 pointer-events-none" />
 
-              <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl border shadow-lg group-hover:bg-white transition-colors duration-300">
-                <p className="text-sm font-bold text-slate-800">{locationAddress}</p>
-                <p className="text-xs text-primary font-semibold mt-1 uppercase tracking-wider">{locationAddressDetail}</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2 group-hover:text-primary transition-colors">
+              <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl border shadow-md group-hover:bg-white transition-colors duration-300">
+                <p className="text-xs font-bold text-slate-800">{locationAddress}</p>
+                <p className="text-[10px] text-primary font-semibold mt-0.5 uppercase tracking-wider">{locationAddressDetail}</p>
+                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-2 group-hover:text-primary transition-colors">
                   Haga clic para abrir en Google Maps ↗
                 </p>
               </div>
             </a>
           </div>
         </div>
-      </section>
-
-      {/* ── Final CTA ── */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground">
-        <div className="container px-4 md:px-6 mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">{finalCtaTitle}</h2>
-          <p className="mx-auto max-w-[600px] text-primary-foreground/90 md:text-xl">{finalCtaDescription}</p>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/book">{finalCtaButtonText}</Link>
-          </Button>
-        </div>
-      </section>
+      </section> */}
     </div>
   );
 }

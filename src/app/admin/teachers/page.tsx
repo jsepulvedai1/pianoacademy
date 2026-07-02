@@ -7,7 +7,7 @@ import {
   ChevronRight, CheckCircle2, XCircle, GraduationCap,
   Activity, Mail, Phone, MapPin, CalendarDays, Award,
   FileText, X, Loader2, Filter, Download, Edit2, TrendingUp,
-  History, CalendarCheck
+  History, CalendarCheck, Trash2
 } from "lucide-react";
 import { format, parseISO, isAfter, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -20,6 +20,7 @@ import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_LESSONS } from "@/graphql/queries/get-lessons";
 import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { CREATE_TEACHER, UPDATE_TEACHER } from "@/graphql/mutations/create-teacher";
+import { CREATE_AVAILABILITY, DELETE_AVAILABILITY } from "@/graphql/mutations/availability-mutations";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -28,14 +29,71 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   PENDING:  { label: 'Pendiente',  color: 'text-amber-700',   bg: 'bg-amber-50' }
 };
 
+const DAY_MAP_ES_TO_EN: Record<string, string> = {
+  "Lunes": "MONDAY",
+  "Martes": "TUESDAY",
+  "Miércoles": "WEDNESDAY",
+  "Jueves": "THURSDAY",
+  "Viernes": "FRIDAY",
+  "Sábado": "SATURDAY",
+  "Domingo": "SUNDAY"
+};
+
+const DAY_MAP_EN_TO_ES: Record<string, string> = {
+  "MONDAY": "Lunes",
+  "TUESDAY": "Martes",
+  "WEDNESDAY": "Miércoles",
+  "THURSDAY": "Jueves",
+  "FRIDAY": "Viernes",
+  "SATURDAY": "Sábado",
+  "SUNDAY": "Domingo"
+};
+
 export default function AdminTeachersPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTeacher, setSelectedTeacher] = useState<any | null>(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'PERFIL' | 'AGENDA' | 'ALUMNOS' | 'STATS'>('PERFIL');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
+
+  // Availability Editor States
+  const [isAddingAvail, setIsAddingAvail] = useState(false);
+  const [availFormData, setAvailFormData] = useState({
+    day: "Lunes",
+    startTime: "09:00",
+    endTime: "14:00"
+  });
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (teacherId: string, file: File) => {
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append("teacher_id", teacherId);
+    formData.append("photo", file);
+
+    try {
+      const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || "http://localhost:8000";
+      const response = await fetch(`${djangoUrl}/api/teachers/upload-photo/`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.status === "SUCCESS") {
+        toast.success("Foto de perfil actualizada ✅");
+        refetchTeachers();
+      } else {
+        toast.error(result.message || "Error al subir la foto");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error de red al subir la foto");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -69,10 +127,29 @@ export default function AdminTeachersPage() {
     onError: (err: any) => toast.error(err.message)
   });
 
+  const [createAvailability, { loading: creatingAvail }] = useMutation(CREATE_AVAILABILITY, {
+    onCompleted: () => {
+      toast.success("Horario agregado exitosamente ✅");
+      setIsAddingAvail(false);
+      refetchTeachers();
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
+  const [deleteAvailability, { loading: deletingAvail }] = useMutation(DELETE_AVAILABILITY, {
+    onCompleted: () => {
+      toast.success("Horario eliminado exitosamente ✅");
+      refetchTeachers();
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
   const teachers = teachersData?.allTeachers || [];
   const lessons = lessonsData?.allLessons || [];
   const studentPacks = studentsData?.allStudentPacks || [];
   const instruments = instrumentsData?.allInstruments || [];
+
+  const selectedTeacher = useMemo(() => teachers.find((t: any) => t.id === selectedTeacherId) || null, [selectedTeacherId, teachers]);
 
   const filteredTeachers = teachers.filter((t: any) =>
     t.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -239,11 +316,19 @@ export default function AdminTeachersPage() {
               ) : filteredTeachers.map((teacher: any) => {
                 const cfg = statusConfig[teacher.status] || statusConfig.PENDING;
                 return (
-                  <tr key={teacher.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => { setSelectedTeacher(teacher); setIsDetailOpen(true); setActiveTab('PERFIL'); }}>
+                  <tr key={teacher.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => { setSelectedTeacherId(teacher.id); setIsDetailOpen(true); setActiveTab('PERFIL'); }}>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="h-11 w-11 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-300">
-                          <User className="h-6 w-6" />
+                        <div className="h-11 w-11 rounded-2xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300">
+                          {teacher.photo ? (
+                            <img 
+                              src={teacher.photo.startsWith('http') ? teacher.photo : `${process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000'}${teacher.photo}`} 
+                              alt={teacher.name} 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <User className="h-6 w-6" />
+                          )}
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 leading-none group-hover:text-primary transition-colors">{teacher.name}</p>
@@ -280,10 +365,37 @@ export default function AdminTeachersPage() {
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="w-full max-w-2xl bg-white h-full overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-right-10 duration-500">
             <header className="bg-slate-900 text-white p-10 relative">
-              <button onClick={() => setIsDetailOpen(false)} className="absolute top-8 right-8 p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6" /></button>
+              <button onClick={() => { setIsDetailOpen(false); setSelectedTeacherId(null); }} className="absolute top-8 right-8 p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6" /></button>
               <div className="flex items-center gap-6">
-                 <div className="h-20 w-20 rounded-[2rem] bg-white/5 flex items-center justify-center border border-white/10">
-                    <User className="h-10 w-10 text-primary" />
+                 <div className="h-20 w-20 rounded-[2rem] bg-white/5 overflow-hidden flex items-center justify-center border border-white/10 relative group/avatar">
+                     {selectedTeacher.photo ? (
+                        <img 
+                           src={selectedTeacher.photo.startsWith('http') ? selectedTeacher.photo : `${process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000'}${selectedTeacher.photo}`} 
+                           alt={selectedTeacher.name} 
+                           className="w-full h-full object-cover" 
+                        />
+                     ) : (
+                        <User className="h-10 w-10 text-primary" />
+                     )}
+                     
+                     {/* Overlay button to trigger photo upload */}
+                     <label className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+                        {uploadingPhoto ? (
+                           <Loader2 className="h-5 w-5 text-white animate-spin" />
+                        ) : (
+                           <Edit2 className="h-5 w-5 text-white" />
+                        )}
+                        <input 
+                           type="file" 
+                           accept="image/*" 
+                           className="hidden" 
+                           disabled={uploadingPhoto}
+                           onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handlePhotoUpload(selectedTeacher.id, file);
+                           }} 
+                        />
+                     </label>
                  </div>
                  <div>
                     <h2 className="text-3xl font-bold font-serif">{selectedTeacher.name}</h2>
@@ -373,18 +485,111 @@ export default function AdminTeachersPage() {
                     </div>
 
                     {/* Sección de Disponibilidad */}
-                    <div className="space-y-4 pt-4 border-t border-slate-100">
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 px-2">
-                          <Activity className="h-3 w-3" /> Disponibilidad Base
-                       </p>
+                    <div className="space-y-4 pt-6 border-t border-slate-100">
+                       <div className="flex items-center justify-between px-2">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                             <Activity className="h-3 w-3" /> Disponibilidad Base
+                          </p>
+                          {!isAddingAvail && (
+                             <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsAddingAvail(true)}
+                                className="h-7 px-3 text-[10px] font-bold rounded-lg uppercase tracking-wider text-primary border-primary/20 hover:bg-primary/5"
+                             >
+                                <Plus className="h-3 w-3 mr-1" /> Añadir Horario
+                             </Button>
+                          )}
+                       </div>
+
+                       {isAddingAvail && (
+                          <div className="bg-[#F8F7F4] rounded-[1.5rem] p-5 border border-slate-200 space-y-4 animate-in fade-in duration-300 text-left">
+                             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Nuevo Bloque de Horario</h4>
+                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase text-slate-400">Día</label>
+                                   <select
+                                      value={availFormData.day}
+                                      onChange={(e) => setAvailFormData(prev => ({ ...prev, day: e.target.value }))}
+                                      className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 focus:outline-none focus:border-primary"
+                                   >
+                                      {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map((d) => (
+                                         <option key={d} value={d}>{d}</option>
+                                      ))}
+                                   </select>
+                                </div>
+                                <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase text-slate-400">Hora Inicio</label>
+                                   <input
+                                      type="time"
+                                      value={availFormData.startTime}
+                                      onChange={(e) => setAvailFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                                      className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-mono font-bold text-slate-700 focus:outline-none focus:border-primary"
+                                   />
+                                </div>
+                                <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase text-slate-400">Hora Fin</label>
+                                   <input
+                                      type="time"
+                                      value={availFormData.endTime}
+                                      onChange={(e) => setAvailFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                                      className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-mono font-bold text-slate-700 focus:outline-none focus:border-primary"
+                                   />
+                                </div>
+                             </div>
+                             <div className="flex gap-2 justify-end pt-2">
+                                <Button
+                                   size="sm"
+                                   variant="ghost"
+                                   onClick={() => setIsAddingAvail(false)}
+                                   className="h-8 px-4 text-[10px] font-bold uppercase rounded-lg text-slate-500 hover:bg-slate-100"
+                                >
+                                   Cancelar
+                                </Button>
+                                <Button
+                                   size="sm"
+                                   disabled={creatingAvail}
+                                   onClick={() => {
+                                      createAvailability({
+                                         variables: {
+                                            teacherId: parseInt(selectedTeacher.id),
+                                            day: DAY_MAP_ES_TO_EN[availFormData.day] || availFormData.day,
+                                            startTime: `${availFormData.startTime}:00`,
+                                            endTime: `${availFormData.endTime}:00`
+                                         }
+                                      });
+                                   }}
+                                   className="h-8 px-4 text-[10px] font-bold uppercase rounded-lg bg-primary hover:bg-primary/95 text-white flex items-center gap-1.5"
+                                >
+                                   {creatingAvail && <Loader2 className="h-3 w-3 animate-spin" />}
+                                   Guardar
+                                </Button>
+                             </div>
+                          </div>
+                       )}
+
                        <div className="grid grid-cols-1 gap-3">
                           {selectedTeacher.availabilities?.map((d: any) => (
-                             <div key={d.id} className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 flex items-center justify-between">
+                             <div key={d.id} className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 flex items-center justify-between hover:bg-slate-50 transition-colors group/item">
                                 <div className="flex items-center gap-3">
                                    <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                                   <span className="text-xs font-bold text-slate-700">{d.day}</span>
+                                   <span className="text-xs font-bold text-slate-700">{DAY_MAP_EN_TO_ES[d.day] || d.day}</span>
                                 </div>
-                                <span className="text-[10px] font-mono font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">{d.startTime} - {d.endTime}</span>
+                                <div className="flex items-center gap-4">
+                                   <span className="text-[10px] font-mono font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">{d.startTime?.substring(0, 5)} - {d.endTime?.substring(0, 5)}</span>
+                                   <button
+                                      disabled={deletingAvail}
+                                      onClick={() => {
+                                         if (confirm(`¿Estás seguro de que deseas eliminar la disponibilidad del día ${DAY_MAP_EN_TO_ES[d.day] || d.day} de ${d.startTime?.substring(0, 5)} a ${d.endTime?.substring(0, 5)}?`)) {
+                                            deleteAvailability({ variables: { id: parseInt(d.id) } });
+                                         }
+                                      }}
+                                      className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-300 hover:text-rose-600 transition-all cursor-pointer opacity-0 group-hover/item:opacity-100"
+                                      title="Eliminar Horario"
+                                   >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                   </button>
+                                </div>
                              </div>
                           ))}
                           {selectedTeacher.availabilities?.length === 0 && (

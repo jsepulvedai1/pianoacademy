@@ -196,7 +196,7 @@ export default async function ClassDetailPage({ params }: ClassDetailPageProps) 
             </div>
             
             <Button className="w-full h-12 bg-fuchsia-700 hover:bg-fuchsia-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-xl shadow-md shadow-fuchsia-200/50" asChild>
-              <Link href={`/book?service=${encodeURIComponent(classType.name)}`}>
+              <Link href={`/contact?service=${encodeURIComponent(classType.name)}`}>
                 Solicitar Clase de Prueba
               </Link>
             </Button>

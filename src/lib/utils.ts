@@ -23,3 +23,20 @@ export function normalizePhoneNumber(phone: string): string {
   return cleaned;
 }
 
+/**
+ * Safely parses array fields that might be returned as JSON-stringified arrays from Django backend.
+ */
+export function safeArray(v: any): any[] {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+

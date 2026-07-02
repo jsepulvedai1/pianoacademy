@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { CREATE_PLAN, DELETE_PLAN, UPDATE_PLAN } from "@/graphql/mutations/plan-mutations";
+import { safeArray } from "@/lib/utils";
 
 export default function AdminPlansMasterPage() {
   const { data, loading, refetch } = useQuery<any>(GET_PLANS);
@@ -44,12 +45,20 @@ export default function AdminPlansMasterPage() {
 
   const [search, setSearch] = useState('');
   const [isNewOpen, setIsNewOpen] = useState(false);
-  const [newPlan, setNewPlan] = useState({
+  const [newPlan, setNewPlan] = useState<{
+    name: string;
+    price: number;
+    duration: number;
+    classesCount: number;
+    isFeatured: boolean;
+    benefits: string[];
+  }>({
     name: '',
     price: 0,
     duration: 1,
     classesCount: 4,
-    isFeatured: false
+    isFeatured: false,
+    benefits: []
   });
   const [isEditing, setIsEditing] = useState<string | null>(null);
 
@@ -70,7 +79,8 @@ export default function AdminPlansMasterPage() {
           price: parseFloat(newPlan.price.toString()),
           duration: parseInt(newPlan.duration.toString()),
           classesCount: parseInt(newPlan.classesCount.toString()),
-          isFeatured: newPlan.isFeatured
+          isFeatured: newPlan.isFeatured,
+          benefits: newPlan.benefits
         }
       });
     } else {
@@ -80,7 +90,8 @@ export default function AdminPlansMasterPage() {
           price: parseFloat(newPlan.price.toString()),
           duration: parseInt(newPlan.duration.toString()),
           classesCount: parseInt(newPlan.classesCount.toString()),
-          isFeatured: newPlan.isFeatured
+          isFeatured: newPlan.isFeatured,
+          benefits: newPlan.benefits
         }
       });
     }
@@ -98,7 +109,8 @@ export default function AdminPlansMasterPage() {
       price: parseFloat(plan.price),
       duration: plan.duration,
       classesCount: plan.classesCount,
-      isFeatured: plan.isFeatured
+      isFeatured: plan.isFeatured,
+      benefits: safeArray(plan.benefits)
     });
     setIsEditing(plan.id);
     setIsNewOpen(true);
@@ -110,7 +122,8 @@ export default function AdminPlansMasterPage() {
       price: 0,
       duration: 1,
       classesCount: 4,
-      isFeatured: false
+      isFeatured: false,
+      benefits: []
     });
     setIsEditing(null);
     setIsNewOpen(true);
@@ -277,6 +290,55 @@ export default function AdminPlansMasterPage() {
                     onChange={e => setNewPlan({...newPlan, isFeatured: e.target.checked})}
                   />
                   <label htmlFor="isFeatured" className="text-xs font-bold text-slate-600 cursor-pointer">Marcar como plan RECOMENDADO</label>
+                </div>
+
+                {/* Benefits List Editor */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Beneficios (checkmarks)</label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewPlan({ ...newPlan, benefits: [...newPlan.benefits, ''] })}
+                      className="rounded-xl h-7 px-3 text-[9px] font-bold uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5"
+                    >
+                      + Añadir
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                    {newPlan.benefits.map((b, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-primary bg-primary/10 w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={b}
+                          onChange={(e) => {
+                            const updated = [...newPlan.benefits];
+                            updated[idx] = e.target.value;
+                            setNewPlan({ ...newPlan, benefits: updated });
+                          }}
+                          placeholder={`Beneficio ${idx + 1}`}
+                          className="flex-1 h-9 bg-slate-50 border-none rounded-xl px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = newPlan.benefits.filter((_, i) => i !== idx);
+                            setNewPlan({ ...newPlan, benefits: updated });
+                          }}
+                          className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors shrink-0"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {newPlan.benefits.length === 0 && (
+                      <p className="text-[10px] text-slate-350 italic py-2 text-center">No hay beneficios agregados. Usa fallbacks por defecto.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

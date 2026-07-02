@@ -36,3 +36,23 @@ export const UPDATE_LANDING_PAGE = gql`
     }
   }
 `;
+
+export const CLONE_LANDING_PAGE = gql`
+  mutation CloneLandingPage($sourceSlug: String!, $newSlug: String!, $newTitle: String!) {
+    cloneLandingPage(sourceSlug: $sourceSlug, newSlug: $newSlug, newTitle: $newTitle) {
+      success
+      error
+      landingPage {
+        id
+        slug
+        title
+        subtitle
+        problem
+        solution
+        benefits
+        imageUrl
+        cta
+      }
+    }
+  }
+`;

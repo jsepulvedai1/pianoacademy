@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { safeArray } from "@/lib/utils";
 
 export default function EditLandingPage({
   params,
@@ -40,7 +41,7 @@ export default function EditLandingPage({
   useEffect(() => {
     if (landing) {
       setForm(landing);
-      setBenefits([...landing.benefits]);
+      setBenefits(safeArray(landing.benefits));
     }
   }, [landing]);
 

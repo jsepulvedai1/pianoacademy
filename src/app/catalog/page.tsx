@@ -62,7 +62,7 @@ export default async function CatalogPage() {
           Nuestra oferta académica se está actualizando. Por favor, vuelve a ingresar más tarde o contáctanos para agendar tu clase personalizada.
         </p>
         <Button className="bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-xl h-11 px-6" asChild>
-          <Link href="/book">Solicitar Clase de Prueba</Link>
+          <Link href="/#plans">Ver planes</Link>
         </Button>
       </div>
     );
@@ -96,7 +96,7 @@ export default async function CatalogPage() {
               <CardDescription className="mb-6 text-sm text-slate-500 leading-relaxed">
                 {ct.description}
               </CardDescription>
-              
+
               <div className="space-y-2.5 text-xs text-slate-500 pt-4 border-t border-slate-50">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-slate-400" />
@@ -118,7 +118,7 @@ export default async function CatalogPage() {
             </CardContent>
             <CardFooter className="p-6 pt-0 flex flex-col gap-2 shrink-0">
               <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-xl h-11" asChild>
-                <Link href={`/book?service=${encodeURIComponent(ct.name)}`}>Solicitar Prueba</Link>
+                <Link href={`/contact?service=${encodeURIComponent(ct.name)}`}>Solicitar Prueba</Link>
               </Button>
               <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest text-slate-400" asChild>
                 <Link href={`/catalog/${ct.id}`}>Ver Detalle</Link>

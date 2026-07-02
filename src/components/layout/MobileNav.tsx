@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export function MobileNav() {
+export function MobileNav({ isTransparent = false }: { isTransparent?: boolean }) {
   const [open, setOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
@@ -29,8 +29,16 @@ export function MobileNav() {
 
   return (
     <div className="md:hidden">
-      <Button variant="outline" size="icon" onClick={() => setOpen(true)} className="md:hidden">
-        <Menu className="h-5 w-5" />
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => setOpen(true)} 
+        className={cn(
+          "md:hidden h-10 w-10 p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0",
+          isTransparent ? "text-white hover:text-white/85" : "text-slate-800 hover:text-slate-600"
+        )}
+      >
+        <Menu className="h-6 w-6" />
         <span className="sr-only">Abrir menú</span>
       </Button>
 
@@ -92,7 +100,7 @@ export function MobileNav() {
 
             <div className="mt-auto">
               <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-14 rounded-2xl" size="lg">
-                <Link href="/book" onClick={() => setOpen(false)}>
+                <Link href="/contact" onClick={() => setOpen(false)}>
                   Solicitar Clase
                 </Link>
               </Button>

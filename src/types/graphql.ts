@@ -36,6 +36,7 @@ export interface Plan {
   duration: number;
   classesCount: number;
   isFeatured: boolean;
+  benefits: string[];
 }
 
 export interface GetPlansData {

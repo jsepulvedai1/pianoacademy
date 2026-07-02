@@ -98,7 +98,7 @@ export default async function TeachersPage() {
 
               <CardFooter className="pt-4 pb-8 px-8">
                 <Button asChild className="w-full h-12 text-sm font-bold uppercase tracking-wider shadow-lg shadow-primary/10 border-b-4 border-primary/80 active:border-b-0 hover:translate-y-[1px] transition-all" size="lg">
-                  <Link href={`/book?teacherId=${teacher.id}`}>
+                  <Link href={`/contact?teacherId=${teacher.id}`}>
                     <Calendar className="mr-2 h-4 w-4" />
                     Reservar ahora
                   </Link>

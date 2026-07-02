@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Check, Star, ArrowRight, PlayCircle, Music2 } from 'lucide-react';
 import { getClient } from '@/lib/apollo-client';
+import { safeArray } from '@/lib/utils';
 import { GET_LANDING_PAGE_BY_SLUG } from '@/graphql/queries/get-landings';
 import { GetLandingPageBySlugData } from '@/types/graphql';
 
@@ -50,7 +51,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="h-16 px-8 text-lg font-bold shadow-xl shadow-primary/20" asChild>
-                  <Link href={`/book?service=${serviceKey}`}>{data.cta}</Link>
+                  <Link href={`/contact?service=${serviceKey}`}>{data.cta}</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="h-16 px-8 text-lg font-bold group">
                   Ver Video <PlayCircle className="ml-2 h-5 w-5 transition-transform group-hover:scale-110" />
@@ -114,7 +115,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {data.benefits.map((benefit, i) => (
+            {safeArray(data.benefits).map((benefit, i) => (
               <div key={i} className="p-8 bg-white rounded-3xl border border-muted shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group">
                 <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
                   <Check className="h-6 w-6" />
@@ -162,7 +163,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
           </h2>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <Button size="lg" className="h-16 px-12 text-lg font-bold shadow-2xl shadow-primary/30" asChild>
-              <Link href="/book">{data.cta}</Link>
+              <Link href="/contact">{data.cta}</Link>
             </Button>
             <Button variant="outline" size="lg" className="h-16 px-12 text-lg font-bold bg-white" asChild>
               <Link href="/catalog">Ver Otros Programas</Link>

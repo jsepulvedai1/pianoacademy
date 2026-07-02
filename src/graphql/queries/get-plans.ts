@@ -9,6 +9,7 @@ export const GET_PLANS = gql`
       duration
       classesCount
       isFeatured
+      benefits
     }
   }
 `;
