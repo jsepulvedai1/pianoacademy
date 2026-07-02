@@ -21,7 +21,7 @@ export const LANDING_DATA: Record<string, LandingContent> = {
       'Profesores especializados en pedagogía infantil.'
     ],
     image: '/images/piano-kids.png',
-    cta: 'Agendar Clase de Prueba Gratis'
+    cta: 'Agendar Clase de Prueba'
   },
   'piano-adultos': {
     title: 'Piano para Adultos',

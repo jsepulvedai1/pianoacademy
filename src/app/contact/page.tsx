@@ -10,13 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizePhoneNumber } from "@/lib/utils";
-import { 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  Phone,
+  Mail,
+  MapPin,
   ChevronLeft,
   ChevronRight,
-  Loader2, 
+  Loader2,
   CheckCircle2,
   Calendar as CalendarIcon,
   Clock,
@@ -245,7 +245,7 @@ export default function ContactPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-slate-800 font-sans">
-      
+
       {/* 1. Hero Section (CON LA FOTO DE ARRIBA) */}
       <section className="relative min-h-[50vh] flex items-center justify-start overflow-hidden bg-black text-white py-20">
         <div className="absolute inset-0 z-0">
@@ -276,9 +276,8 @@ export default function ContactPage() {
           <div className="flex items-center justify-center relative">
             {/* Step 1 */}
             <div className="flex flex-col items-center z-10">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                step >= 1 ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20" : "bg-slate-200 text-slate-500"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= 1 ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20" : "bg-slate-200 text-slate-500"
+                }`}>
                 {step > 1 ? <CheckCircle2 className="h-5 w-5" /> : "1"}
               </div>
               <span className="text-[10px] md:text-xs font-bold mt-2 text-slate-600">Elige Profesor</span>
@@ -291,9 +290,8 @@ export default function ContactPage() {
 
             {/* Step 2 */}
             <div className="flex flex-col items-center z-10">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                step >= 2 ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20" : "bg-slate-200 text-slate-500"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= 2 ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20" : "bg-slate-200 text-slate-500"
+                }`}>
                 {step > 2 ? <CheckCircle2 className="h-5 w-5" /> : "2"}
               </div>
               <span className="text-[10px] md:text-xs font-bold mt-2 text-slate-600">Fecha y Hora</span>
@@ -306,9 +304,8 @@ export default function ContactPage() {
 
             {/* Step 3 */}
             <div className="flex flex-col items-center z-10">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                step >= 3 ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20" : "bg-slate-200 text-slate-500"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= 3 ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20" : "bg-slate-200 text-slate-500"
+                }`}>
                 3
               </div>
               <span className="text-[10px] md:text-xs font-bold mt-2 text-slate-600">Confirmación</span>
@@ -320,7 +317,7 @@ export default function ContactPage() {
       {/* 2. Wizard Body (Consistente con la estética de las demás páginas) */}
       <section className="py-12 md:py-20 bg-white">
         <div className="container px-4 mx-auto max-w-5xl">
-          
+
           {isSuccess ? (
             <div className="bg-[#F8F7F4] border border-slate-100 p-12 rounded-[2.5rem] text-center max-w-xl mx-auto flex flex-col items-center justify-center space-y-6 shadow-md">
               <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center shadow-sm">
@@ -333,7 +330,7 @@ export default function ContactPage() {
               <div className="p-4 bg-white border border-slate-200 rounded-2xl w-full text-xs text-slate-500 leading-relaxed">
                 Nuestra coordinación académica validará tu solicitud y se pondrá en contacto contigo a la brevedad vía WhatsApp para confirmar los detalles.
               </div>
-              <Button 
+              <Button
                 onClick={() => {
                   setIsSuccess(false);
                   setStep(1);
@@ -349,7 +346,7 @@ export default function ContactPage() {
             </div>
           ) : (
             <div className="bg-[#F8F7F4] border border-slate-200/50 rounded-[3.5rem] p-6 md:p-12 shadow-sm relative overflow-hidden">
-              
+
               {/* STEP 1: Profesor */}
               {step === 1 && (
                 <div className="space-y-8">
@@ -373,11 +370,10 @@ export default function ContactPage() {
                         <div
                           key={t.id}
                           onClick={() => setSelectedTeacherId(t.id)}
-                          className={`p-6 rounded-[2.5rem] border text-center cursor-pointer transition-all flex flex-col justify-between min-h-[220px] bg-white ${
-                            isSelected 
-                              ? "border-[#70125F] bg-[#70125F]/5 ring-1 ring-[#70125F]/30 shadow-md" 
+                          className={`p-6 rounded-[2.5rem] border text-center cursor-pointer transition-all flex flex-col justify-between min-h-[220px] bg-white ${isSelected
+                              ? "border-[#70125F] bg-[#70125F]/5 ring-1 ring-[#70125F]/30 shadow-md"
                               : "border-slate-200 hover:border-slate-300"
-                          }`}
+                            }`}
                         >
                           <div className="flex flex-col items-center space-y-4">
                             {/* Avatar */}
@@ -390,7 +386,7 @@ export default function ContactPage() {
                             </div>
                             <h3 className="font-extrabold text-base text-slate-800">{t.name}</h3>
                           </div>
-                          
+
                           {/* Specialty tags */}
                           <div className="flex flex-wrap gap-1.5 justify-center mt-3">
                             {specialties.slice(0, 2).map((sp: string, idx: number) => (
@@ -422,7 +418,7 @@ export default function ContactPage() {
               {step === 2 && (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
+
                     {/* Left: Datepicker Calendar */}
                     <div className="lg:col-span-7 bg-white p-6 rounded-[2.5rem] border border-slate-200 space-y-6">
                       <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -471,15 +467,14 @@ export default function ContactPage() {
                                 setSelectedDateStr(dateStr);
                                 setSelectedSlot(null); // Reset slot
                               }}
-                              className={`aspect-square rounded-full font-bold transition-all relative flex items-center justify-center ${
-                                isSelected 
-                                  ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20 scale-105" 
-                                  : isPast 
-                                    ? "text-slate-300 cursor-not-allowed opacity-30" 
+                              className={`aspect-square rounded-full font-bold transition-all relative flex items-center justify-center ${isSelected
+                                  ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20 scale-105"
+                                  : isPast
+                                    ? "text-slate-300 cursor-not-allowed opacity-30"
                                     : isToday
                                       ? "bg-[#F8F7F4] border border-[#70125F]/30 text-[#70125F] hover:bg-slate-100"
                                       : "text-slate-600 hover:bg-slate-100"
-                              }`}
+                                }`}
                             >
                               {day.getDate()}
                               {isSelected && <span className="absolute bottom-1 w-1.5 h-1.5 bg-white rounded-full" />}
@@ -498,7 +493,7 @@ export default function ContactPage() {
 
                     {/* Right: Slot Selection list */}
                     <div className="lg:col-span-5 bg-white p-6 rounded-[2.5rem] border border-slate-200 min-h-[300px] flex flex-col justify-between space-y-6">
-                      
+
                       <div className="space-y-4">
                         <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 text-left">
                           <Clock className="h-4 w-4 text-[#70125F]" />
@@ -517,7 +512,7 @@ export default function ContactPage() {
                           </div>
                         ) : freeSlots.length > 0 ? (
                           <div className="space-y-6 max-h-[300px] overflow-y-auto pr-1">
-                            
+
                             {/* Morning Slots */}
                             {morningSlots.length > 0 && (
                               <div className="space-y-2 text-left">
@@ -531,11 +526,10 @@ export default function ContactPage() {
                                       <button
                                         key={idx}
                                         onClick={() => setSelectedSlot(slot)}
-                                        className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
-                                          isSlotSelected
+                                        className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${isSlotSelected
                                             ? "bg-[#70125F] border-[#70125F] text-white shadow-sm"
                                             : "border-slate-200 bg-[#F8F7F4] text-slate-700 hover:border-[#70125F]"
-                                        }`}
+                                          }`}
                                       >
                                         {slot.start}
                                       </button>
@@ -558,11 +552,10 @@ export default function ContactPage() {
                                       <button
                                         key={idx}
                                         onClick={() => setSelectedSlot(slot)}
-                                        className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
-                                          isSlotSelected
+                                        className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${isSlotSelected
                                             ? "bg-[#70125F] border-[#70125F] text-white shadow-sm"
                                             : "border-slate-200 bg-[#F8F7F4] text-slate-700 hover:border-[#70125F]"
-                                        }`}
+                                          }`}
                                       >
                                         {slot.start}
                                       </button>
@@ -610,7 +603,7 @@ export default function ContactPage() {
               {step === 3 && (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
+
                     {/* Left: Input Form */}
                     <form onSubmit={handleConfirmReservation} className="lg:col-span-7 space-y-6 text-left">
                       <h3 className="font-extrabold text-xl text-[#70125F] pb-3 border-b border-slate-200">
@@ -696,7 +689,7 @@ export default function ContactPage() {
                         </span>
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-extrabold text-slate-800">Clase de Prueba</span>
-                          <span className="text-xs font-bold text-[#70125F]">Gratis</span>
+                          <span className="text-xs font-bold text-[#70125F]"></span>
                         </div>
                       </div>
 
@@ -776,7 +769,7 @@ export default function ContactPage() {
       <section className="py-20 bg-white">
         <div className="container px-4 md:px-6 mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            
+
             {/* Left Location Info */}
             <div className="space-y-8 text-left">
               <h2 className="text-4xl font-extrabold text-[#70125F] tracking-tight">

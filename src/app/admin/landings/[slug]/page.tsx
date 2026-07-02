@@ -207,7 +207,7 @@ export default function EditLandingPage({
                   value={form.cta || ""}
                   onChange={(e) => setForm({ ...form, cta: e.target.value })}
                   className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
-                  placeholder="Ej: Agendar Clase de Prueba Gratis"
+                  placeholder="Ej: Agendar Clase de Prueba"
                 />
               </div>
 
