@@ -39,4 +39,20 @@ export function safeArray(v: any): any[] {
   return [];
 }
 
+/**
+ * Resolves local assets vs Django media paths.
+ */
+export function getImageUrl(path?: string): string {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) {
+    return path;
+  }
+  if (path.startsWith("/media/")) {
+    const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || "http://localhost:8000";
+    return `${djangoUrl}${path}`;
+  }
+  return path;
+}
+
+
 

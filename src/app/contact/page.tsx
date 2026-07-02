@@ -7,6 +7,7 @@ import { CREATE_LEAD, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutati
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
 import { GET_CONTACT_CONTENT } from "@/graphql/queries/get-contact";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -404,7 +405,7 @@ export default function ContactPage() {
                             {/* Avatar */}
                             <div className="w-20 h-20 rounded-full overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center">
                               <img
-                                src={t.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${t.name}`}
+                                src={getImageUrl(t.photo) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${t.name}`}
                                 alt={t.name}
                                 className="w-full h-full object-cover"
                               />
@@ -732,7 +733,7 @@ export default function ContactPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-50 border">
                             <img
-                              src={selectedTeacher?.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTeacher?.name}`}
+                              src={getImageUrl(selectedTeacher?.photo) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedTeacher?.name}`}
                               alt={selectedTeacher?.name}
                               className="w-full h-full object-cover"
                             />

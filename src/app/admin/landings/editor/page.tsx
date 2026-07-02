@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/utils";
 
 // Queries
 const GET_ALL_CONTENT = gql`
@@ -361,7 +362,7 @@ export default function UnifiedWebEditor() {
                   <div className="space-y-3">
                     {hp_hero.image && (
                       <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative group">
-                        <img src={hp_hero.image} alt="Hero Background" className="w-full h-full object-cover" />
+                        <img src={getImageUrl(hp_hero.image)} alt="Hero Background" className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="flex items-center gap-3">
@@ -423,7 +424,7 @@ export default function UnifiedWebEditor() {
                   <div className="space-y-3">
                     {hp_method.image && (
                       <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
-                        <img src={hp_method.image} alt="Methodology" className="w-full h-full object-cover" />
+                        <img src={getImageUrl(hp_method.image)} alt="Methodology" className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="flex items-center gap-3">
@@ -501,7 +502,7 @@ export default function UnifiedWebEditor() {
                   {hp_galleryImages.map((imgUrl, idx) => (
                     <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 relative">
                       <div className="aspect-[4/3] rounded-xl overflow-hidden border">
-                        <img src={imgUrl} alt={`Galería ${idx}`} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(imgUrl)} alt={`Galería ${idx}`} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex gap-2">
                         <input
@@ -671,7 +672,7 @@ export default function UnifiedWebEditor() {
                   <div className="space-y-3">
                     {about_hero.image && (
                       <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
-                        <img src={about_hero.image} alt="Hero About" className="w-full h-full object-cover grayscale" />
+                        <img src={getImageUrl(about_hero.image)} alt="Hero About" className="w-full h-full object-cover grayscale" />
                       </div>
                     )}
                     <div className="flex items-center gap-3">
@@ -720,7 +721,7 @@ export default function UnifiedWebEditor() {
                   <div className="space-y-3">
                     {about_history.image && (
                       <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
-                        <img src={about_history.image} alt="History About" className="w-full h-full object-cover" />
+                        <img src={getImageUrl(about_history.image)} alt="History About" className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="flex items-center gap-3">
@@ -823,7 +824,7 @@ export default function UnifiedWebEditor() {
                   {about_teamImages.map((imgUrl, idx) => (
                     <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 relative">
                       <div className="aspect-[3/4] rounded-xl overflow-hidden border">
-                        <img src={imgUrl} alt={`Docente ${idx}`} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(imgUrl)} alt={`Docente ${idx}`} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex gap-2">
                         <input
@@ -893,7 +894,7 @@ export default function UnifiedWebEditor() {
                   <div className="space-y-3">
                     {about_final.image && (
                       <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
-                        <img src={about_final.image} alt="Final Section About" className="w-full h-full object-cover" />
+                        <img src={getImageUrl(about_final.image)} alt="Final Section About" className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="flex items-center gap-3">

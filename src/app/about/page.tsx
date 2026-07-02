@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Music, Users, Award, Heart, ChevronRight, Loader2 } from "lucide-react";
 import { useQuery } from "@apollo/client/react/index.js";
 import { GET_ABOUT_CONTENT } from "@/graphql/queries/get-about";
+import { getImageUrl } from "@/lib/utils";
 
 export default function AboutPage() {
   const { data, loading } = useQuery<any>(GET_ABOUT_CONTENT);
@@ -71,7 +72,7 @@ export default function AboutPage() {
         {/* Background image (grayscale, desaturated, dark overlay) */}
         <div className="absolute inset-0 z-0">
           <img
-            src={heroImage}
+            src={getImageUrl(heroImage)}
             alt="Clase de piano Détaché"
             className="w-full h-full object-cover filter grayscale contrast-125 opacity-40"
           />
@@ -104,7 +105,7 @@ export default function AboutPage() {
                 <div className="relative bg-white p-5 pb-16 shadow-[0_15px_40px_rgba(0,0,0,0.12)] border border-slate-100 rounded-lg w-full -rotate-3 hover:rotate-0 transition-transform duration-500">
                   <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-slate-50 relative">
                     <img
-                      src={historyImage}
+                      src={getImageUrl(historyImage)}
                       alt="Academia Détaché Recepción"
                       className="w-full h-full object-cover"
                     />
@@ -305,7 +306,7 @@ export default function AboutPage() {
               {teamImages.map((imgSrc, idx) => (
                 <div key={idx} className="aspect-[3/4] w-full rounded-[2.5rem] overflow-hidden shadow-lg border border-slate-100 relative group">
                   <img
-                    src={imgSrc}
+                    src={getImageUrl(imgSrc)}
                     alt={`Miembro Equipo ${idx + 1}`}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -340,7 +341,7 @@ export default function AboutPage() {
             {/* Right side image */}
             <div className="relative flex justify-center">
               <img
-                src={finalImage}
+                src={getImageUrl(finalImage)}
                 alt="Conoce una nueva forma de aprender"
                 className="w-full h-auto object-contain max-w-[480px] md:max-w-[550px] block translate-y-[2px]"
               />

@@ -5,7 +5,7 @@ import { PlansSection } from "@/components/layout/PlansSection";
 import { InstrumentsCarousel } from "@/components/layout/InstrumentsCarousel";
 import { getClient } from "@/lib/apollo-client";
 import { GET_HOMEPAGE_CONTENT } from "@/graphql/queries/get-homepage";
-import { cn, safeArray } from "@/lib/utils";
+import { cn, safeArray, getImageUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -80,7 +80,7 @@ export default async function Home() {
       <section className="relative min-h-screen flex items-end pb-24 md:pb-0 md:items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src={heroImage}
+            src={getImageUrl(heroImage)}
             alt="Piano Background"
             className="w-full h-full object-cover filter grayscale contrast-[1.10]"
           />
@@ -152,7 +152,7 @@ export default async function Home() {
                 <div className="relative bg-white p-5 pb-16 shadow-[0_15px_40px_rgba(0,0,0,0.12)] border border-slate-100 rounded-lg w-full rotate-3 hover:rotate-0 transition-transform duration-500">
                   <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-slate-50 relative">
                     <img
-                      src={methodImage}
+                      src={getImageUrl(methodImage)}
                       alt="Metodología Détaché"
                       className="w-full h-full object-cover"
                     />
@@ -219,7 +219,7 @@ export default async function Home() {
                 className="flex-shrink-0 w-full md:w-[468px] aspect-[4/3] rounded-3xl overflow-hidden shadow-lg md:snap-center relative group"
               >
                 <img
-                  src={img}
+                  src={getImageUrl(img)}
                   alt="Galería Academia"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
