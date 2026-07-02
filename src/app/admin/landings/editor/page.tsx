@@ -147,6 +147,10 @@ export default function UnifiedWebEditor() {
   const [hp_testimonials, setHp_testimonials] = useState<Testimonial[]>([]);
   const [hp_location, setHp_location] = useState<any>({});
   const [hp_finalCta, setHp_finalCta] = useState<any>({});
+  const [hp_planes, setHp_planes] = useState<any>({});
+  const [hp_instruments, setHp_instruments] = useState<any>({});
+  const [hp_gallery, setHp_gallery] = useState<any>({});
+  const [hp_galleryImages, setHp_galleryImages] = useState<string[]>([]);
 
   // --- Nosotros States ---
   const [about_hero, setAbout_hero] = useState<any>({});
@@ -181,6 +185,10 @@ export default function UnifiedWebEditor() {
       setHp_testimonials(parseJSON(hp.testimonials));
       setHp_location({ title: hp.locationTitle, description: hp.locationDescription, address: hp.locationAddress, addressDetail: hp.locationAddressDetail, mapUrl: hp.locationMapUrl });
       setHp_finalCta({ title: hp.finalCtaTitle, description: hp.finalCtaDescription, buttonText: hp.finalCtaButtonText });
+      setHp_planes({ title: hp.planesTitle, description: hp.planesDescription });
+      setHp_instruments({ title: hp.instrumentsTitle, description: hp.instrumentsDescription });
+      setHp_gallery({ title: hp.galleryTitle });
+      setHp_galleryImages(parseJSON(hp.galleryImages));
     }
 
     // Nosotros
@@ -222,6 +230,9 @@ export default function UnifiedWebEditor() {
             methodItems: JSON.stringify(hp_methodItems), testimonials: JSON.stringify(hp_testimonials),
             locationTitle: hp_location.title, locationDescription: hp_location.description, locationAddress: hp_location.address, locationAddressDetail: hp_location.addressDetail, locationMapUrl: hp_location.mapUrl,
             finalCtaTitle: hp_finalCta.title, finalCtaDescription: hp_finalCta.description, finalCtaButtonText: hp_finalCta.buttonText,
+            planesTitle: hp_planes.title, planesDescription: hp_planes.description,
+            instrumentsTitle: hp_instruments.title, instrumentsDescription: hp_instruments.description,
+            galleryTitle: hp_gallery.title, galleryImages: JSON.stringify(hp_galleryImages),
           }
         });
         toast.success("¡Página de Inicio guardada con éxito!");
@@ -450,6 +461,105 @@ export default function UnifiedWebEditor() {
                   <Field label="Descripción Larga">
                     <textarea rows={4} value={hp_method.description || ""} onChange={(e) => setHp_method({ ...hp_method, description: e.target.value })} className={textareaCls} />
                   </Field>
+                </div>
+              </div>
+            </SectionCard>
+
+            {/* PLANES SECTION */}
+            <SectionCard title="Sección de Planes" icon={<Award className="h-4 w-4" />}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Título de la Sección">
+                  <input type="text" value={hp_planes.title || ""} onChange={(e) => setHp_planes({ ...hp_planes, title: e.target.value })} className={inputCls} />
+                </Field>
+                <Field label="Descripción de la Sección">
+                  <input type="text" value={hp_planes.description || ""} onChange={(e) => setHp_planes({ ...hp_planes, description: e.target.value })} className={inputCls} />
+                </Field>
+              </div>
+            </SectionCard>
+
+            {/* INSTRUMENTOS SECTION */}
+            <SectionCard title="Sección de Instrumentos (Aprende con Nosotros)" icon={<BookOpen className="h-4 w-4" />}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Título de la Sección">
+                  <input type="text" value={hp_instruments.title || ""} onChange={(e) => setHp_instruments({ ...hp_instruments, title: e.target.value })} className={inputCls} />
+                </Field>
+                <Field label="Descripción de la Sección">
+                  <input type="text" value={hp_instruments.description || ""} onChange={(e) => setHp_instruments({ ...hp_instruments, description: e.target.value })} className={inputCls} />
+                </Field>
+              </div>
+            </SectionCard>
+
+            {/* GALERIA SECTION */}
+            <SectionCard title="Sección de Galería y Título Tipográfico" icon={<Sparkles className="h-4 w-4" />}>
+              <Field label="Título Tipográfico (Soporta HTML, ej: LA <span class='text-[#DFB012]'>MÚSICA</span>...)">
+                <input type="text" value={hp_gallery.title || ""} onChange={(e) => setHp_gallery({ ...hp_gallery, title: e.target.value })} className={inputCls} />
+              </Field>
+
+              <div className="space-y-4 border-t border-slate-100 pt-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Imágenes de la Galería Horizontal (Máx. 4):</p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {hp_galleryImages.map((imgUrl, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 relative">
+                      <div className="aspect-[4/3] rounded-xl overflow-hidden border">
+                        <img src={imgUrl} alt={`Galería ${idx}`} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={imgUrl}
+                          onChange={(e) => {
+                            const updated = [...hp_galleryImages];
+                            updated[idx] = e.target.value;
+                            setHp_galleryImages(updated);
+                          }}
+                          className={`${inputCls} text-[10px] h-8 px-2`}
+                        />
+                        <label className="flex items-center justify-center p-1.5 bg-white border rounded-lg cursor-pointer hover:bg-slate-50 shrink-0">
+                          <Upload className="h-3 w-3 text-slate-500" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleImageUpload(e.target.files[0], (url) => {
+                                  const updated = [...hp_galleryImages];
+                                  updated[idx] = url;
+                                  setHp_galleryImages(updated);
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          onClick={() => setHp_galleryImages(hp_galleryImages.filter((_, i) => i !== idx))}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg shrink-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {hp_galleryImages.length < 4 && (
+                    <div className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-4 gap-2 min-h-[140px]">
+                      <label className="flex flex-col items-center gap-1 cursor-pointer text-slate-400 hover:text-[#70125F] transition-colors">
+                        <Plus className="h-6 w-6 stroke-[1.5]" />
+                        <span className="text-[9px] font-bold uppercase tracking-wider">Añadir Imagen</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              handleImageUpload(e.target.files[0], (url) => {
+                                setHp_galleryImages([...hp_galleryImages, url]);
+                              });
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
             </SectionCard>
