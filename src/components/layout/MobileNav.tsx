@@ -69,20 +69,6 @@ export function MobileNav({ isTransparent = false }: { isTransparent?: boolean }
                 Inicio
               </Link>
               <Link 
-                href="/catalog" 
-                className="text-lg font-medium hover:text-primary transition-colors py-2 border-b"
-                onClick={() => setOpen(false)}
-              >
-                Clases
-              </Link>
-              <Link 
-                href="/teachers" 
-                className="text-lg font-medium hover:text-primary transition-colors py-2 border-b"
-                onClick={() => setOpen(false)}
-              >
-                Profesores
-              </Link>
-              <Link 
                 href="/about" 
                 className="text-lg font-medium hover:text-primary transition-colors py-2 border-b"
                 onClick={() => setOpen(false)}
@@ -90,21 +76,13 @@ export function MobileNav({ isTransparent = false }: { isTransparent?: boolean }
                 Nosotros
               </Link>
               <Link 
-                href="/login" 
+                href="/contact" 
                 className="text-lg font-medium hover:text-primary transition-colors py-2 border-b"
                 onClick={() => setOpen(false)}
               >
-                Ingresar
+                Contáctanos
               </Link>
             </nav>
-
-            <div className="mt-auto">
-              <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-14 rounded-2xl" size="lg">
-                <Link href="/contact" onClick={() => setOpen(false)}>
-                  Solicitar Clase
-                </Link>
-              </Button>
-            </div>
           </div>
         </div>,
         document.body

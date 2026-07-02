@@ -73,6 +73,16 @@ function getDayNameSpanish(date: Date): string {
 export default function ContactPage() {
   const [step, setStep] = useState(1); // 1: Profesor, 2: Fecha y Hora, 3: Confirmación
 
+  const changeStep = (nextStep: number) => {
+    setStep(nextStep);
+    setTimeout(() => {
+      const container = document.getElementById("wizard-container");
+      if (container) {
+        container.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 50);
+  };
+
   // Selections
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [selectedDateStr, setSelectedDateStr] = useState(""); // YYYY-MM-DD
@@ -271,7 +281,7 @@ export default function ContactPage() {
       </section>
 
       {/* Stepper Progress Bar (Light Mode theme) */}
-      <section className="bg-[#F8F7F4] py-8 border-b border-slate-200">
+      <section id="wizard-container" className="bg-[#F8F7F4] py-8 border-b border-slate-200">
         <div className="container px-4 mx-auto max-w-xl">
           <div className="flex items-center justify-center relative">
             {/* Step 1 */}
@@ -333,7 +343,7 @@ export default function ContactPage() {
               <Button
                 onClick={() => {
                   setIsSuccess(false);
-                  setStep(1);
+                  changeStep(1);
                   setSelectedTeacherId("");
                   setSelectedDateStr("");
                   setSelectedSlot(null);
@@ -403,7 +413,7 @@ export default function ContactPage() {
                   {/* Navigation footer */}
                   <div className="flex justify-end pt-6 border-t border-slate-200">
                     <button
-                      onClick={() => setStep(2)}
+                      onClick={() => changeStep(2)}
                       disabled={!selectedTeacherId}
                       className="border-2 border-[#70125F] hover:bg-[#70125F]/5 disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-transparent text-[#70125F] font-bold rounded-2xl px-10 h-14 bg-white transition-all text-xs uppercase tracking-widest cursor-pointer disabled:opacity-50 flex items-center gap-2"
                     >
@@ -466,6 +476,12 @@ export default function ContactPage() {
                               onClick={() => {
                                 setSelectedDateStr(dateStr);
                                 setSelectedSlot(null); // Reset slot
+                                setTimeout(() => {
+                                  const hoursEl = document.getElementById("hours-section");
+                                  if (hoursEl && window.innerWidth < 1024) {
+                                    hoursEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                                  }
+                                }, 100);
                               }}
                               className={`aspect-square rounded-full font-bold transition-all relative flex items-center justify-center ${isSelected
                                   ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/20 scale-105"
@@ -492,7 +508,7 @@ export default function ContactPage() {
                     </div>
 
                     {/* Right: Slot Selection list */}
-                    <div className="lg:col-span-5 bg-white p-6 rounded-[2.5rem] border border-slate-200 min-h-[300px] flex flex-col justify-between space-y-6">
+                    <div id="hours-section" className="lg:col-span-5 bg-white p-6 rounded-[2.5rem] border border-slate-200 min-h-[300px] flex flex-col justify-between space-y-6">
 
                       <div className="space-y-4">
                         <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 text-left">
@@ -579,13 +595,13 @@ export default function ContactPage() {
                       {/* Navigation buttons */}
                       <div className="flex gap-3 pt-4 border-t border-slate-200">
                         <button
-                          onClick={() => setStep(1)}
+                          onClick={() => changeStep(1)}
                           className="flex-1 bg-white hover:bg-slate-100 text-slate-600 font-bold rounded-xl h-12 uppercase text-xs tracking-wider border border-slate-200"
                         >
                           Atrás
                         </button>
                         <button
-                          onClick={() => setStep(3)}
+                          onClick={() => changeStep(3)}
                           disabled={!selectedSlot || !selectedDateStr}
                           className="flex-1 bg-[#70125F] hover:bg-[#590e4b] disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl h-12 uppercase text-xs tracking-wider cursor-pointer"
                         >
@@ -726,7 +742,7 @@ export default function ContactPage() {
                       {/* Buttons */}
                       <div className="flex gap-3 pt-6 border-t border-slate-100">
                         <button
-                          onClick={() => setStep(2)}
+                          onClick={() => changeStep(2)}
                           className="flex-1 bg-white hover:bg-slate-100 text-slate-600 font-bold rounded-xl h-12 uppercase text-xs tracking-wider border border-slate-200"
                         >
                           Atrás

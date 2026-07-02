@@ -23,7 +23,7 @@ export default async function Home() {
   }
 
   // Fallbacks in case DB is empty
-  const heroImage = hp?.heroImage || "/images/piano-hero.png";
+  const heroImage = "/images/background1.jpg";
   const heroTitle1 = hp?.heroTitle1 || "Aprende";
   const heroHighlight = hp?.heroTitleHighlight || "música";
   const heroTitle2 = hp?.heroTitle2 || "con un método claro, cercano y sin frustraciones.";
@@ -62,17 +62,17 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── 1. Hero Section ── */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-end pb-24 md:pb-0 md:items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src={heroImage}
             alt="Piano Background"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover filter grayscale contrast-[1.10]"
           />
           <div className="absolute inset-0 bg-black/60 md:bg-black/55 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
         </div>
 
-        <div className="container relative z-10 px-4 md:px-6 mx-auto text-center md:text-left mt-24">
+        <div className="container relative z-10 px-4 md:px-6 mx-auto text-center md:text-left mt-0 md:mt-24">
           <div className="max-w-4xl space-y-6">
             <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.15] font-sans">
               {heroTitle1} <span className="text-secondary">{heroHighlight}</span><br />
@@ -88,7 +88,7 @@ export default async function Home() {
                 className="h-14 px-10 text-xs font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary/20 bg-primary hover:bg-primary/95 text-white border-none rounded-full transition-transform hover:scale-105"
                 asChild
               >
-                <Link href={cta1Link}>{cta1Text}</Link>
+                <Link href="#plans">{cta1Text}</Link>
               </Button>
             </div>
           </div>
