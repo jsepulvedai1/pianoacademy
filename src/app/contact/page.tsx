@@ -72,7 +72,7 @@ function getDayNameSpanish(date: Date): string {
 }
 
 export default function ContactPage() {
-  const { data: contactData } = useQuery(GET_CONTACT_CONTENT);
+  const { data: contactData } = useQuery<any>(GET_CONTACT_CONTENT);
   const contact = contactData?.contactContent;
 
   const bannerTitle1 = contact?.bannerTitle1 || "Sigamos";

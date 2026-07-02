@@ -23,7 +23,7 @@ export default async function Home() {
   }
 
   // Fallbacks in case DB is empty
-  const heroImage = "/images/background1.jpg";
+  const heroImage = hp?.heroImage || "/images/background1.jpg";
   const heroTitle1 = hp?.heroTitle1 || "Aprende";
   const heroHighlight = hp?.heroTitleHighlight || "música";
   const heroTitle2 = hp?.heroTitle2 || "con un método claro, cercano y sin frustraciones.";
@@ -34,7 +34,7 @@ export default async function Home() {
   const methodTitle = hp?.methodTitle || "Siguiendo el Compás";
   const methodDescription = hp?.methodDescription ||
     "En Academia Détaché creemos que aprender música es un proceso que debe disfrutarse. Por eso, nuestra metodología combina una enseñanza estructurada con un acompañamiento cercano y personalizado, adaptándose al ritmo, los intereses y los objetivos de cada estudiante.\n\nA través de clases didácticas y un aprendizaje progresivo, buscamos desarrollar habilidades musicales sólidas mientras fomentamos la creatividad, la confianza y el gusto por la música.";
-  const methodImage = "/imagesfooter/4.png";
+  const methodImage = hp?.methodImage || "/imagesfooter/4.png";
 
   const testimonials = safeArray(hp?.testimonials).length > 0
     ? safeArray(hp.testimonials)
@@ -50,14 +50,29 @@ export default async function Home() {
   const locationAddressDetail = hp?.locationAddressDetail || "A pasos de Metro La Cisterna";
   const locationMapUrl = hp?.locationMapUrl || "https://maps.google.com";
 
+  // Planes Section editables
+  const planesTitle = hp?.planesTitle || "Nuestros Planes";
+  const planesDescription = hp?.planesDescription || "Haz espacio para la música en tu vida y encuentra el programa perfecto para ti.";
 
+  // Instruments Section editables
+  const instrumentsTitle = hp?.instrumentsTitle || "Aprende con Nosotros";
+  const instrumentsDescription = hp?.instrumentsDescription || "La música comienza con una primera nota. Nosotros te acompañamos en el resto del camino.";
 
-  const galleryImages = [
+  // Gallery Section editables
+  const galleryTitle = hp?.galleryTitle || "LA MÚSICA COMO NUNCA TE LA HABÍAN EXPLICADO";
+  let galleryImages = [
     "/imagesfooter/1.png",
     "/imagesfooter/2.png",
     "/imagesfooter/3.png",
     "/imagesfooter/4.png",
   ];
+  if (hp?.galleryImages) {
+    try {
+      galleryImages = typeof hp.galleryImages === 'string' ? JSON.parse(hp.galleryImages) : hp.galleryImages;
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -157,10 +172,10 @@ export default async function Home() {
         <div className="container px-4 md:px-6 mx-auto relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <h2 className="text-3xl md:text-5xl font-bold font-sans text-slate-900">
-              Nuestros Planes
+              {planesTitle}
             </h2>
             <p className="text-slate-800 text-sm md:text-base font-medium leading-relaxed max-w-xl mx-auto">
-              Haz espacio para la música en tu vida y encuentra el programa perfecto para ti.
+              {planesDescription}
             </p>
           </div>
 
@@ -180,10 +195,10 @@ export default async function Home() {
         <div className="container px-4 md:px-6 mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#8E44AD]">
-              Aprende con Nosotros
+              {instrumentsTitle}
             </h2>
             <p className="text-slate-500 text-sm md:text-base">
-              La música comienza con una primera nota. Nosotros te acompañamos en el resto del camino.
+              {instrumentsDescription}
             </p>
           </div>
 
@@ -194,10 +209,7 @@ export default async function Home() {
       {/* ── 5. Photo Strips and Typographic Section ── */}
       <section className="py-20 md:py-32 bg-amber-50/30 overflow-hidden border-t">
         <div className="container px-4 md:px-6 mx-auto text-center max-w-5xl space-y-16">
-          <h2 className="text-4xl md:text-7xl font-extrabold leading-none tracking-tighter text-primary uppercase max-w-4xl mx-auto">
-            LA <span className="text-[#DFB012]">MÚSICA</span> COMO NUNCA <br className="hidden md:block" />
-            TE LA HABÍAN <span className="text-[#DFB012]">EXPLICADO</span>
-          </h2>
+          <h2 className="text-4xl md:text-7xl font-extrabold leading-none tracking-tighter text-primary uppercase max-w-4xl mx-auto" dangerouslySetInnerHTML={{ __html: galleryTitle }} />
 
           {/* Horizontal Gallery */}
           <div className="flex flex-col md:flex-row gap-6 md:overflow-x-auto pb-6 md:scrollbar-none md:snap-x md:snap-mandatory">

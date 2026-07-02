@@ -28,6 +28,12 @@ export const GET_HOMEPAGE_CONTENT = gql`
       finalCtaTitle
       finalCtaDescription
       finalCtaButtonText
+      planesTitle
+      planesDescription
+      instrumentsTitle
+      instrumentsDescription
+      galleryTitle
+      galleryImages
     }
   }
 `;

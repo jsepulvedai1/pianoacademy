@@ -23,6 +23,7 @@ const GET_ALL_CONTENT = gql`
       testimonials
       locationTitle locationDescription locationAddress locationAddressDetail locationMapUrl
       finalCtaTitle finalCtaDescription finalCtaButtonText
+      planesTitle planesDescription instrumentsTitle instrumentsDescription galleryTitle galleryImages
     }
     aboutContent {
       id heroImage heroTitleHighlight1 heroTitleText1 heroTitleHighlight2
@@ -49,6 +50,9 @@ const UPDATE_HOMEPAGE = gql`
     $testimonials: String $locationTitle: String $locationDescription: String
     $locationAddress: String $locationAddressDetail: String $locationMapUrl: String
     $finalCtaTitle: String $finalCtaDescription: String $finalCtaButtonText: String
+    $planesTitle: String $planesDescription: String
+    $instrumentsTitle: String $instrumentsDescription: String
+    $galleryTitle: String $galleryImages: String
   ) {
     updateHomepageContent(
       heroImage: $heroImage heroTitle1: $heroTitle1 heroTitleHighlight: $heroTitleHighlight
@@ -62,6 +66,9 @@ const UPDATE_HOMEPAGE = gql`
       locationAddressDetail: $locationAddressDetail locationMapUrl: $locationMapUrl
       finalCtaTitle: $finalCtaTitle finalCtaDescription: $finalCtaDescription
       finalCtaButtonText: $finalCtaButtonText
+      planesTitle: $planesTitle planesDescription: $planesDescription
+      instrumentsTitle: $instrumentsTitle instrumentsDescription: $instrumentsDescription
+      galleryTitle: $galleryTitle galleryImages: $galleryImages
     ) { success }
   }
 `;

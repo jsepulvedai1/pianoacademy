@@ -9,7 +9,7 @@ import { useQuery } from "@apollo/client/react/index.js";
 import { GET_ABOUT_CONTENT } from "@/graphql/queries/get-about";
 
 export default function AboutPage() {
-  const { data, loading } = useQuery(GET_ABOUT_CONTENT);
+  const { data, loading } = useQuery<any>(GET_ABOUT_CONTENT);
   const about = data?.aboutContent;
 
   const [activeCard, setActiveCard] = useState<number | null>(null);
