@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@apollo/client/react/index.js";
 import { CREATE_LEAD, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
+import { GET_CONTACT_CONTENT } from "@/graphql/queries/get-contact";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,6 +72,20 @@ function getDayNameSpanish(date: Date): string {
 }
 
 export default function ContactPage() {
+  const { data: contactData } = useQuery(GET_CONTACT_CONTENT);
+  const contact = contactData?.contactContent;
+
+  const bannerTitle1 = contact?.bannerTitle1 || "Sigamos";
+  const bannerTitle2 = contact?.bannerTitle2 || "compartiendo";
+  const bannerTitle3 = contact?.bannerTitle3 || "el lenguaje de";
+  const bannerTitle4 = contact?.bannerTitle4 || "la música";
+
+  const locationTitle = contact?.locationTitle || "Estamos cerca de ti";
+  const locationDescription = contact?.locationDescription || "Nuestra academia se encuentra en una ubicación estratégica y de fácil acceso, para que llegar a tus clases sea cómodo y sencillo.";
+  const locationAddressTitle = contact?.locationAddressTitle || "Dirección Sede";
+  const locationAddress = contact?.locationAddress || "Gran Avenida José Miguel Carrera 8520, Oficina C, La Cisterna.";
+  const locationMapIframeUrl = contact?.locationMapIframeUrl || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3326.2307849187313!2d-70.6622543!3d-33.5217965!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662dae3cbf5df1f%3A0xe54fb7a71fbd4fdf!2sGran%20Av.%20Jos%C3%A9%20Miguel%20Carrera%208520%2C%20La%20Cisterna%2C%20Regi%C3%B3n%20Metropolitana!5e0!3m2!1ses-419!2scl!4v1700000000000!5m2!1ses-419!2scl";
+
   const [step, setStep] = useState(1); // 1: Profesor, 2: Fecha y Hora, 3: Confirmación
 
   const changeStep = (nextStep: number) => {
@@ -773,10 +788,10 @@ export default function ContactPage() {
       <section className="py-16 bg-[#F8F7F4] text-center border-t border-b border-slate-200">
         <div className="container px-4 md:px-6 mx-auto">
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight uppercase font-sans">
-            <span className="text-[#70125F]">Sigamos</span>{" "}
-            <span className="text-[#DFB012]">compartiendo</span> <br />
-            <span className="text-[#70125F]">el lenguaje de</span>{" "}
-            <span className="text-[#DFB012]">la música</span>
+            <span className="text-[#70125F]">{bannerTitle1}</span>{" "}
+            <span className="text-[#DFB012]">{bannerTitle2}</span> <br />
+            <span className="text-[#70125F]">{bannerTitle3}</span>{" "}
+            <span className="text-[#DFB012]">{bannerTitle4}</span>
           </h2>
         </div>
       </section>
@@ -789,18 +804,18 @@ export default function ContactPage() {
             {/* Left Location Info */}
             <div className="space-y-8 text-left">
               <h2 className="text-4xl font-extrabold text-[#70125F] tracking-tight">
-                Estamos cerca de ti
+                {locationTitle}
               </h2>
               <p className="text-slate-500 text-base leading-relaxed max-w-md">
-                Nuestra academia se encuentra en una ubicación estratégica y de fácil acceso, para que llegar a tus clases sea cómodo y sencillo.
+                {locationDescription}
               </p>
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-[#70125F]/5 rounded-xl border border-[#70125F]/10 text-[#70125F]">
                   <MapPin className="h-6 w-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-800">Dirección Sede</h4>
-                  <p className="text-slate-500">Gran Avenida José Miguel Carrera 8520, Oficina C, La Cisterna.</p>
+                  <h4 className="font-bold text-slate-800">{locationAddressTitle}</h4>
+                  <p className="text-slate-500">{locationAddress}</p>
                 </div>
               </div>
             </div>
@@ -808,7 +823,7 @@ export default function ContactPage() {
             {/* Right Interactive Google Map */}
             <div className="h-[360px] md:h-[420px] rounded-[2.5rem] overflow-hidden shadow-md border border-slate-200 relative bg-slate-50">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3326.2307849187313!2d-70.6622543!3d-33.5217965!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662dae3cbf5df1f%3A0xe54fb7a71fbd4fdf!2sGran%20Av.%20Jos%C3%A9%20Miguel%20Carrera%208520%2C%20La%20Cisterna%2C%20Regi%C3%B3n%20Metropolitana!5e0!3m2!1ses-419!2scl!4v1700000000000!5m2!1ses-419!2scl"
+                src={locationMapIframeUrl}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

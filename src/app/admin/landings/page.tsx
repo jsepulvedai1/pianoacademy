@@ -144,17 +144,17 @@ export default function AdminLandingsPage() {
       </header>
 
       {/* Homepage Hero Card */}
-      <Link href="/admin/landings/homepage">
+      <Link href="/admin/landings/editor">
         <div className="group relative rounded-[2.5rem] overflow-hidden bg-slate-900 text-white p-10 cursor-pointer hover:scale-[1.01] transition-all duration-300 shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent pointer-events-none" />
           <div className="relative z-10 flex items-center justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em]">
-                <Globe className="h-3 w-3" /> Página Principal
+                <Globe className="h-3 w-3" /> Editor Web Unificado
               </div>
-              <h2 className="text-2xl font-bold font-serif">Editar Homepage — detache.cl/</h2>
+              <h2 className="text-2xl font-bold font-serif">Editar Sitio Web — detache.cl/</h2>
               <p className="text-slate-400 text-sm italic">
-                Hero, características, metodología, testimonios, ubicación y CTA final.
+                Inicio, Nosotros, Contacto (Textos, imágenes, testimonios, dirección y mapa).
               </p>
             </div>
             <div className="flex items-center gap-2 bg-primary/20 group-hover:bg-primary px-6 py-3 rounded-2xl transition-colors font-bold text-sm">
