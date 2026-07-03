@@ -9,6 +9,7 @@ interface Instrument {
   icon: React.ReactNode;
   image: string;
   watermark: React.ReactNode;
+  iconName?: string;
 }
 
 const INSTRUMENTS: Instrument[] = [
