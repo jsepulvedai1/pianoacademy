@@ -260,33 +260,6 @@ export default function HomepageEditorPage() {
         </div>
       </SectionCard>
 
-      {/* ── TESTIMONIALS ── */}
-      <SectionCard title="Testimonios de Alumnos" icon={<Quote className="h-3 w-3" />}>
-        <div className="space-y-3">
-          {testimonials.map((t, i) => (
-            <div key={i} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-slate-50/80 rounded-2xl border border-slate-100">
-              <div className="md:col-span-3">
-                <Field label={`Testimonio ${i + 1} — Cita`}>
-                  <input className={inputCls} value={t.quote} onChange={e => { const n = [...testimonials]; n[i] = { ...n[i], quote: e.target.value }; setTestimonials(n); }} />
-                </Field>
-              </div>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <Field label="Autor">
-                    <input className={inputCls} value={t.author} onChange={e => { const n = [...testimonials]; n[i] = { ...n[i], author: e.target.value }; setTestimonials(n); }} />
-                  </Field>
-                </div>
-                <button onClick={() => setTestimonials(p => p.filter((_, idx) => idx !== i))} className="h-12 w-10 mb-0.5 flex items-center justify-center rounded-xl text-slate-300 hover:text-rose-400 hover:bg-rose-50 transition-colors shrink-0">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-          <Button onClick={() => setTestimonials(p => [...p, { quote: "", author: "" }])} variant="outline" size="sm" className="rounded-xl h-8 px-3 text-[10px] font-bold uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5">
-            <Plus className="h-3 w-3 mr-1" /> Añadir Testimonio
-          </Button>
-        </div>
-      </SectionCard>
 
       {/* ── LOCATION ── */}
       <SectionCard title="Sección Ubicación" icon={<MapPin className="h-3 w-3" />}>

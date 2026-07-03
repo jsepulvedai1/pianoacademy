@@ -14,6 +14,7 @@ export default function AboutPage() {
   const about = data?.aboutContent;
 
   const [activeCard, setActiveCard] = useState<number | null>(null);
+  const [activeTeamCard, setActiveTeamCard] = useState<number | null>(null);
 
   // Fallbacks
   const heroImage = about?.heroImage || "/imagesfooter/4.png";
@@ -43,22 +44,72 @@ export default function AboutPage() {
       console.error(e);
     }
   }
-
   const teamTitle = about?.teamTitle || "Nuestro Equipo";
-  const teamDescription = about?.teamDescription || "Detrás de cada clase hay personas que disfrutan enseñar y compartir su pasión por la música.";
-
-  let teamImages = [
-    "/nosotros/1.png",
-    "/nosotros/2.png",
-    "/nosotros/3.png"
+  const teamDescription = about?.teamDescription ||
+    "Conoce a quienes hacen posible que la música se sienta, se entienda y se disfrute todos los días.";
+  
+  const defaultTeam = [
+    {
+      image: "/imagesfooter/1.png",
+      name: "Dyana Bailey",
+      role: "Intérprete en Canto Popular y Vocal Coach con más de 10 años de experiencia en música y educación. En Academia Detaché está a cargo de la Gestión Académica, acompañando a estudiantes, familias y docentes para asegurar una experiencia formativa cercana, organizada y de calidad."
+    },
+    {
+      image: "/imagesfooter/2.png",
+      name: "Nombre Profesor",
+      role: "Intérprete y docente con amplia experiencia en la enseñanza musical..."
+    },
+    {
+      image: "/imagesfooter/3.png",
+      name: "Nombre Profesor",
+      role: "Especialista en su instrumento, dedicado a fomentar el aprendizaje..."
+    }
   ];
+
+  let teamImagesParsed: any[] = [];
   if (about?.teamImages) {
     try {
-      teamImages = typeof about.teamImages === 'string' ? JSON.parse(about.teamImages) : about.teamImages;
+      const parsed = typeof about.teamImages === "string" ? JSON.parse(about.teamImages) : about.teamImages;
+      if (Array.isArray(parsed)) {
+        teamImagesParsed = parsed.map((item: any) => {
+          if (typeof item === "string") {
+            return { image: item, name: "Nombre Profesor", role: "Descripción del profesor..." };
+          }
+          return {
+            image: item?.image || "",
+            name: item?.name || "Nombre Profesor",
+            role: item?.role || "Descripción del profesor..."
+          };
+        });
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Error parsing team images:", e);
     }
   }
+
+  const teamList = teamImagesParsed.length > 0 ? teamImagesParsed : defaultTeam;
+
+  const [teamStartIndex, setTeamStartIndex] = useState(0);
+
+  const handleNextTeam = () => {
+    if (teamList.length > 3) {
+      setTeamStartIndex((prev) => (prev + 1) % teamList.length);
+    }
+  };
+
+  const getVisibleTeamMembers = () => {
+    if (teamList.length <= 3) {
+      return teamList.map((item, idx) => ({ ...item, originalIndex: idx }));
+    }
+    const members = [];
+    for (let i = 0; i < 3; i++) {
+      const idx = (teamStartIndex + i) % teamList.length;
+      members.push({ ...teamList[idx], originalIndex: idx });
+    }
+    return members;
+  };
+
+  const visibleTeamMembers = getVisibleTeamMembers();
 
   const finalTitle1 = about?.finalTitle1 || "Conoce una";
   const finalTitle2 = about?.finalTitle2 || "nueva forma";
@@ -297,19 +348,65 @@ export default function AboutPage() {
             </svg>
 
             {/* Next Arrow Button */}
-            <button className="absolute -right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#DFB012] hover:bg-[#c99e10] text-slate-900 transition-all flex items-center justify-center shadow-md z-20 cursor-pointer">
-              <ChevronRight className="h-6 w-6 stroke-[3px]" />
-            </button>
+            {teamList.length > 3 && (
+              <button 
+                onClick={handleNextTeam}
+                className="hidden md:flex absolute -right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#DFB012] hover:bg-[#c99e10] text-slate-900 transition-all items-center justify-center shadow-md z-20 cursor-pointer"
+              >
+                <ChevronRight className="h-6 w-6 stroke-[3px]" />
+              </button>
+            )}
 
-            {/* Teachers Images Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full">
-              {teamImages.map((imgSrc, idx) => (
-                <div key={idx} className="aspect-[3/4] w-full rounded-[2.5rem] overflow-hidden shadow-lg border border-slate-100 relative group">
+            {/* Desktop View: Grid showing exactly 3 visible carousel items */}
+            <div className="hidden md:grid grid-cols-3 gap-6 w-full max-w-5xl mx-auto">
+              {visibleTeamMembers.map((member, idx) => (
+                <div 
+                  key={idx} 
+                  className="aspect-[3/4] w-full rounded-[2.5rem] overflow-hidden shadow-lg border border-slate-100 relative group cursor-pointer"
+                  onClick={() => setActiveTeamCard(activeTeamCard === member.originalIndex ? null : member.originalIndex)}
+                >
                   <img
-                    src={getImageUrl(imgSrc)}
-                    alt={`Miembro Equipo ${idx + 1}`}
+                    src={getImageUrl(member.image)}
+                    alt={member.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
+                  
+                  {/* Hover Overlay */}
+                  <div className={`absolute inset-0 bg-[#70125F]/90 p-6 flex flex-col justify-end text-left transition-all duration-300 ${activeTeamCard === member.originalIndex ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    <h3 className="text-white font-extrabold text-2xl leading-tight mb-3">
+                      {member.name.split(' ').map((n: string, i: number) => <span key={i} className="block">{n}</span>)}
+                    </h3>
+                    <p className="text-white/90 text-xs font-medium leading-relaxed line-clamp-6 font-sans">
+                      {member.role}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile View: Vertical stack of all items */}
+            <div className="grid md:hidden grid-cols-1 gap-8 w-full max-w-sm mx-auto px-4">
+              {teamList.map((member, idx) => (
+                <div 
+                  key={idx} 
+                  className="aspect-[3/4] w-full rounded-[2.5rem] overflow-hidden shadow-lg border border-slate-100 relative"
+                  onClick={() => setActiveTeamCard(activeTeamCard === idx ? null : idx)}
+                >
+                  <img
+                    src={getImageUrl(member.image)}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Hover/Active Overlay */}
+                  <div className={`absolute inset-0 bg-[#70125F]/90 p-6 flex flex-col justify-end text-left transition-all duration-300 ${activeTeamCard === idx ? 'opacity-100' : 'opacity-0'}`}>
+                    <h3 className="text-white font-extrabold text-2xl leading-tight mb-3">
+                      {member.name.split(' ').map((n: string, i: number) => <span key={i} className="block">{n}</span>)}
+                    </h3>
+                    <p className="text-white/90 text-xs font-medium leading-relaxed line-clamp-6 font-sans">
+                      {member.role}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

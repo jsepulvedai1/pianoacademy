@@ -56,7 +56,23 @@ export default async function Home() {
 
   // Instruments Section editables
   const instrumentsTitle = hp?.instrumentsTitle || "Aprende con Nosotros";
-  const instrumentsDescription = hp?.instrumentsDescription || "La música comienza con una primera nota. Nosotros te acompañamos en el resto del camino.";
+  
+  let instrumentsDescriptionText = "La música comienza con una primera nota. Nosotros te acompañamos en el resto del camino.";
+  let instrumentsList: any[] = [];
+  
+  if (hp?.instrumentsDescription) {
+    try {
+      const parsed = JSON.parse(hp.instrumentsDescription);
+      if (parsed && typeof parsed === 'object') {
+        instrumentsDescriptionText = parsed.description || "";
+        instrumentsList = parsed.items || [];
+      } else {
+        instrumentsDescriptionText = hp.instrumentsDescription;
+      }
+    } catch(e) {
+      instrumentsDescriptionText = hp.instrumentsDescription;
+    }
+  }
 
   // Gallery Section editables
   const galleryTitle = hp?.galleryTitle || "LA MÚSICA COMO NUNCA TE LA HABÍAN EXPLICADO";
@@ -197,12 +213,12 @@ export default async function Home() {
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#8E44AD]">
               {instrumentsTitle}
             </h2>
-            <p className="text-slate-500 text-sm md:text-base">
-              {instrumentsDescription}
+            <p className="text-slate-500 text-sm md:text-base font-sans">
+              {instrumentsDescriptionText}
             </p>
           </div>
 
-          <InstrumentsCarousel />
+          <InstrumentsCarousel items={instrumentsList} />
         </div>
       </section>
 

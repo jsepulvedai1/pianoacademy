@@ -14,6 +14,38 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/utils";
 
+const AVAILABLE_ICONS = [
+  "Amplificador.svg",
+  "Armonica.svg",
+  "Audifonos.svg",
+  "Baquetas.svg",
+  "Batería.svg",
+  "Carpeta Nota Musical.svg",
+  "Clave de Fa.svg",
+  "Corchea.svg",
+  "Guitarra.svg",
+  "Llave de Sol.svg",
+  "Megafono.svg",
+  "Microfono.svg",
+  "Ondas Sonoras.svg",
+  "Pandero.svg",
+  "Parlante.svg",
+  "Pedestal.svg",
+  "Piano.svg",
+  "Saxofón.svg",
+  "Semicorchea.svg",
+  "Sintetizador.svg",
+  "Tambor.svg",
+  "Teclas.svg",
+  "Toca Discos.svg",
+  "Triangulo.svg",
+  "Trompeta.svg",
+  "Uñeta.svg",
+  "Vinilo.svg",
+  "Violin.svg",
+  "Volumen.svg"
+];
+
 // Queries
 const GET_ALL_CONTENT = gql`
   query GetAllWebContent {
@@ -150,6 +182,7 @@ export default function UnifiedWebEditor() {
   const [hp_finalCta, setHp_finalCta] = useState<any>({});
   const [hp_planes, setHp_planes] = useState<any>({});
   const [hp_instruments, setHp_instruments] = useState<any>({});
+  const [hp_instrumentsList, setHp_instrumentsList] = useState<any[]>([]);
   const [hp_gallery, setHp_gallery] = useState<any>({});
   const [hp_galleryImages, setHp_galleryImages] = useState<string[]>([]);
 
@@ -159,7 +192,7 @@ export default function UnifiedWebEditor() {
   const [about_moving, setAbout_moving] = useState<any>({});
   const [about_movingCards, setAbout_movingCards] = useState<MovingCard[]>([]);
   const [about_team, setAbout_team] = useState<any>({});
-  const [about_teamImages, setAbout_teamImages] = useState<string[]>([]);
+  const [about_teamImages, setAbout_teamImages] = useState<any[]>([]);
   const [about_final, setAbout_final] = useState<any>({});
 
   // --- Contacto States ---
@@ -187,7 +220,39 @@ export default function UnifiedWebEditor() {
       setHp_location({ title: hp.locationTitle, description: hp.locationDescription, address: hp.locationAddress, addressDetail: hp.locationAddressDetail, mapUrl: hp.locationMapUrl });
       setHp_finalCta({ title: hp.finalCtaTitle, description: hp.finalCtaDescription, buttonText: hp.finalCtaButtonText });
       setHp_planes({ title: hp.planesTitle, description: hp.planesDescription });
-      setHp_instruments({ title: hp.instrumentsTitle, description: hp.instrumentsDescription });
+      let instDescText = hp.instrumentsDescription || "";
+      let instList: any[] = [];
+      if (hp.instrumentsDescription) {
+        try {
+          const parsed = JSON.parse(hp.instrumentsDescription);
+          if (parsed && typeof parsed === 'object') {
+            instDescText = parsed.description || "";
+            instList = parsed.items || [];
+          } else {
+            instDescText = hp.instrumentsDescription;
+          }
+        } catch(e) {
+          instDescText = hp.instrumentsDescription;
+        }
+      }
+      setHp_instruments({ title: hp.instrumentsTitle, description: instDescText });
+      
+      const normalizedInstList = instList.map((item: any) => {
+        if (typeof item === 'string') {
+          return { name: "Instrumento", description: "Descripción...", image: item, iconName: "Piano.svg" };
+        }
+        return {
+          name: item?.name || "Instrumento",
+          description: item?.description || "Descripción...",
+          image: item?.image || "",
+          iconName: item?.iconName || "Piano.svg"
+        };
+      });
+      setHp_instrumentsList(normalizedInstList.length > 0 ? normalizedInstList : [
+        { name: "Piano", description: "Descubre la magia del piano desde tu primera lección. Desarrolla independencia de manos, lectura fluida y una técnica sólida con repertorio adaptado a tus gustos.", image: "/images/piano-kids.png", iconName: "Piano.svg" },
+        { name: "Guitarra", description: "Explora uno de los instrumentos más versátiles y aprende a acompañar tus canciones favoritas mientras desarrollas ritmo, técnica y expresión musical.", image: "/images/piano-adults.png", iconName: "Guitarra.svg" },
+        { name: "Canto", description: "Libera el potencial de tu voz con técnicas profesionales de respiración, afinación y expresión escénica. Canta con confianza y sin tensiones.", image: "/images/canto.png", iconName: "Microfono.svg" }
+      ]);
       setHp_gallery({ title: hp.galleryTitle });
       setHp_galleryImages(parseJSON(hp.galleryImages));
     }
@@ -200,7 +265,18 @@ export default function UnifiedWebEditor() {
       setAbout_moving({ title: about.movingTitle, description: about.movingDescription });
       setAbout_movingCards(parseJSON(about.movingCards));
       setAbout_team({ title: about.teamTitle, description: about.teamDescription });
-      setAbout_teamImages(parseJSON(about.teamImages));
+      const parsedTeam = parseJSON(about.teamImages);
+      const normalizedTeam = Array.isArray(parsedTeam) ? parsedTeam.map((item: any) => {
+        if (typeof item === 'string') {
+          return { image: item, name: "Nombre Profesor", role: "Descripción de su rol y experiencia..." };
+        }
+        return {
+          image: item?.image || "",
+          name: item?.name || "Nombre Profesor",
+          role: item?.role || "Descripción de su rol y experiencia..."
+        };
+      }) : [];
+      setAbout_teamImages(normalizedTeam);
       setAbout_final({ title1: about.finalTitle1, title2: about.finalTitle2, title3: about.finalTitle3, image: about.finalImage });
     }
 
@@ -232,7 +308,11 @@ export default function UnifiedWebEditor() {
             locationTitle: hp_location.title, locationDescription: hp_location.description, locationAddress: hp_location.address, locationAddressDetail: hp_location.addressDetail, locationMapUrl: hp_location.mapUrl,
             finalCtaTitle: hp_finalCta.title, finalCtaDescription: hp_finalCta.description, finalCtaButtonText: hp_finalCta.buttonText,
             planesTitle: hp_planes.title, planesDescription: hp_planes.description,
-            instrumentsTitle: hp_instruments.title, instrumentsDescription: hp_instruments.description,
+            instrumentsTitle: hp_instruments.title,
+            instrumentsDescription: JSON.stringify({
+              description: hp_instruments.description,
+              items: hp_instrumentsList
+            }),
             galleryTitle: hp_gallery.title, galleryImages: JSON.stringify(hp_galleryImages),
           }
         });
@@ -296,7 +376,7 @@ export default function UnifiedWebEditor() {
 
   return (
     <div className="p-8 lg:p-12 space-y-8 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
+
       {/* Header */}
       <header className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-6">
         <div className="space-y-1">
@@ -335,11 +415,10 @@ export default function UnifiedWebEditor() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                isActive 
-                  ? "bg-white text-[#70125F] shadow-sm font-extrabold" 
+              className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                  ? "bg-white text-[#70125F] shadow-sm font-extrabold"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
             >
               <Icon className={`h-4 w-4 ${isActive ? 'text-[#70125F]' : ''}`} />
               {tab.label}
@@ -350,11 +429,11 @@ export default function UnifiedWebEditor() {
 
       {/* Dynamic Content Editor Tabs */}
       <div className="space-y-8 animate-in fade-in duration-500">
-        
+
         {/* --- INICIO TAB --- */}
         {activeTab === "inicio" && (
           <div className="space-y-8">
-            
+
             {/* HERO SECTION */}
             <SectionCard title="Hero (Cabecera Principal)" icon={<Type className="h-4 w-4" />}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -480,13 +559,131 @@ export default function UnifiedWebEditor() {
 
             {/* INSTRUMENTOS SECTION */}
             <SectionCard title="Sección de Instrumentos (Aprende con Nosotros)" icon={<BookOpen className="h-4 w-4" />}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
                 <Field label="Título de la Sección">
                   <input type="text" value={hp_instruments.title || ""} onChange={(e) => setHp_instruments({ ...hp_instruments, title: e.target.value })} className={inputCls} />
                 </Field>
                 <Field label="Descripción de la Sección">
                   <input type="text" value={hp_instruments.description || ""} onChange={(e) => setHp_instruments({ ...hp_instruments, description: e.target.value })} className={inputCls} />
                 </Field>
+              </div>
+
+              <div className="space-y-4 border-t border-slate-100 pt-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Lista de Instrumentos (Mínimo 3 sugerido para carrusel):</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {hp_instrumentsList.map((member, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4 relative flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden border bg-white">
+                          <img src={getImageUrl(member.image)} alt={member.name || `Instrumento ${idx}`} className="w-full h-full object-cover" />
+                        </div>
+                        
+                        <Field label="Nombre Instrumento">
+                          <input
+                            type="text"
+                            value={member.name || ""}
+                            onChange={(e) => {
+                              const updated = [...hp_instrumentsList];
+                              updated[idx] = { ...updated[idx], name: e.target.value };
+                              setHp_instrumentsList(updated);
+                            }}
+                            placeholder="Piano, Guitarra, Canto..."
+                            className={`${inputCls} text-xs h-9`}
+                          />
+                        </Field>
+
+                        <Field label="Icono">
+                          <select
+                            value={member.iconName || "Piano.svg"}
+                            onChange={(e) => {
+                              const updated = [...hp_instrumentsList];
+                              updated[idx] = { ...updated[idx], iconName: e.target.value };
+                              setHp_instrumentsList(updated);
+                            }}
+                            className={`${inputCls} text-xs h-9 bg-white`}
+                          >
+                            {AVAILABLE_ICONS.map((icon) => (
+                              <option key={icon} value={icon}>
+                                {icon.replace('.svg', '')}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+
+                        <Field label="Descripción (Al pasar cursor)">
+                          <textarea
+                            value={member.description || ""}
+                            onChange={(e) => {
+                              const updated = [...hp_instrumentsList];
+                              updated[idx] = { ...updated[idx], description: e.target.value };
+                              setHp_instrumentsList(updated);
+                            }}
+                            placeholder="Descubre la magia..."
+                            rows={3}
+                            className={`${inputCls} text-xs p-2 resize-none`}
+                          />
+                        </Field>
+                      </div>
+
+                      <div className="flex gap-2 pt-2 border-t">
+                        <input
+                          type="text"
+                          value={member.image || ""}
+                          onChange={(e) => {
+                            const updated = [...hp_instrumentsList];
+                            updated[idx] = { ...updated[idx], image: e.target.value };
+                            setHp_instrumentsList(updated);
+                          }}
+                          placeholder="/images/piano.png"
+                          className={`${inputCls} text-[10px] h-9 flex-1`}
+                        />
+                        <label className="flex items-center justify-center p-2 bg-white border rounded-xl cursor-pointer hover:bg-slate-50">
+                          <Upload className="h-3 w-3 text-slate-500" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleImageUpload(e.target.files[0], (url) => {
+                                  const updated = [...hp_instrumentsList];
+                                  updated[idx] = { ...updated[idx], image: url };
+                                  setHp_instrumentsList(updated);
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          onClick={() => setHp_instrumentsList(hp_instrumentsList.filter((_, i) => i !== idx))}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-xl"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {hp_instrumentsList.length < 8 && (
+                    <div className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 gap-3 min-h-[220px]">
+                      <label className="flex flex-col items-center gap-2 cursor-pointer text-slate-400 hover:text-[#70125F] transition-colors">
+                        <Plus className="h-8 w-8 stroke-[1.5]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Añadir Instrumento</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              handleImageUpload(e.target.files[0], (url) => {
+                                setHp_instrumentsList([...hp_instrumentsList, { image: url, name: "Nuevo Instrumento", description: "Descripción del instrumento...", iconName: "Piano.svg" }]);
+                              });
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
             </SectionCard>
 
@@ -565,58 +762,7 @@ export default function UnifiedWebEditor() {
               </div>
             </SectionCard>
 
-            {/* TESTIMONIALS SECTION */}
-            <SectionCard title="Testimonios de Alumnos" icon={<Quote className="h-4 w-4" />}>
-              <div className="space-y-4">
-                {hp_testimonials.map((t, idx) => (
-                  <div key={idx} className="flex gap-4 items-start p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2">
-                        <Field label="Cita/Quote">
-                          <input
-                            type="text"
-                            value={t.quote}
-                            onChange={(e) => {
-                              const updated = [...hp_testimonials];
-                              updated[idx].quote = e.target.value;
-                              setHp_testimonials(updated);
-                            }}
-                            className={inputCls}
-                          />
-                        </Field>
-                      </div>
-                      <div>
-                        <Field label="Autor">
-                          <input
-                            type="text"
-                            value={t.author}
-                            onChange={(e) => {
-                              const updated = [...hp_testimonials];
-                              updated[idx].author = e.target.value;
-                              setHp_testimonials(updated);
-                            }}
-                            className={inputCls}
-                          />
-                        </Field>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setHp_testimonials(hp_testimonials.filter((_, i) => i !== idx))}
-                      className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors mt-6"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                <Button
-                  onClick={() => setHp_testimonials([...hp_testimonials, { quote: "Excelente academia...", author: "Nuevo Alumno" }])}
-                  variant="outline"
-                  className="rounded-xl border-dashed w-full py-6 text-xs uppercase font-bold tracking-wider"
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Agregar Testimonio
-                </Button>
-              </div>
-            </SectionCard>
+
 
             {/* LOCATION SECTION */}
             <SectionCard title="Ubicación y Sede" icon={<MapPin className="h-4 w-4" />}>
@@ -664,7 +810,7 @@ export default function UnifiedWebEditor() {
         {/* --- NOSOTROS TAB --- */}
         {activeTab === "nosotros" && (
           <div className="space-y-8">
-            
+
             {/* HERO SECTION */}
             <SectionCard title="Hero (Nosotros)" icon={<Type className="h-4 w-4" />}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -821,21 +967,53 @@ export default function UnifiedWebEditor() {
               <div className="space-y-4 border-t border-slate-100 pt-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Fotos de Profesores / Miembros:</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {about_teamImages.map((imgUrl, idx) => (
-                    <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 relative">
-                      <div className="aspect-[3/4] rounded-xl overflow-hidden border">
-                        <img src={getImageUrl(imgUrl)} alt={`Docente ${idx}`} className="w-full h-full object-cover" />
+                  {about_teamImages.map((member, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4 relative flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div className="aspect-[3/4] rounded-xl overflow-hidden border bg-white">
+                          <img src={getImageUrl(member.image)} alt={member.name || `Docente ${idx}`} className="w-full h-full object-cover" />
+                        </div>
+                        
+                        <Field label="Nombre">
+                          <input
+                            type="text"
+                            value={member.name || ""}
+                            onChange={(e) => {
+                              const updated = [...about_teamImages];
+                              updated[idx] = { ...updated[idx], name: e.target.value };
+                              setAbout_teamImages(updated);
+                            }}
+                            placeholder="Nombre del Profesor"
+                            className={`${inputCls} text-xs h-9`}
+                          />
+                        </Field>
+
+                        <Field label="Descripción (Al pasar cursor)">
+                          <textarea
+                            value={member.role || ""}
+                            onChange={(e) => {
+                              const updated = [...about_teamImages];
+                              updated[idx] = { ...updated[idx], role: e.target.value };
+                              setAbout_teamImages(updated);
+                            }}
+                            placeholder="Intérprete en Canto Popular..."
+                            rows={3}
+                            className={`${inputCls} text-xs p-2 resize-none`}
+                          />
+                        </Field>
                       </div>
-                      <div className="flex gap-2">
+
+                      <div className="flex gap-2 pt-2 border-t">
                         <input
                           type="text"
-                          value={imgUrl}
+                          value={member.image || ""}
                           onChange={(e) => {
                             const updated = [...about_teamImages];
-                            updated[idx] = e.target.value;
+                            updated[idx] = { ...updated[idx], image: e.target.value };
                             setAbout_teamImages(updated);
                           }}
-                          className={`${inputCls} text-xs h-9`}
+                          placeholder="/images/photo.png"
+                          className={`${inputCls} text-[10px] h-9 flex-1`}
                         />
                         <label className="flex items-center justify-center p-2 bg-white border rounded-xl cursor-pointer hover:bg-slate-50">
                           <Upload className="h-3 w-3 text-slate-500" />
@@ -847,7 +1025,7 @@ export default function UnifiedWebEditor() {
                               if (e.target.files?.[0]) {
                                 handleImageUpload(e.target.files[0], (url) => {
                                   const updated = [...about_teamImages];
-                                  updated[idx] = url;
+                                  updated[idx] = { ...updated[idx], image: url };
                                   setAbout_teamImages(updated);
                                 });
                               }
@@ -867,7 +1045,7 @@ export default function UnifiedWebEditor() {
                     <div className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 gap-3 min-h-[220px]">
                       <label className="flex flex-col items-center gap-2 cursor-pointer text-slate-400 hover:text-[#70125F] transition-colors">
                         <Plus className="h-8 w-8 stroke-[1.5]" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Añadir Foto</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Añadir Profesor</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -875,7 +1053,7 @@ export default function UnifiedWebEditor() {
                           onChange={(e) => {
                             if (e.target.files?.[0]) {
                               handleImageUpload(e.target.files[0], (url) => {
-                                setAbout_teamImages([...about_teamImages, url]);
+                                setAbout_teamImages([...about_teamImages, { image: url, name: "Nombre Profesor", role: "Descripción de su rol y experiencia..." }]);
                               });
                             }
                           }}
@@ -942,7 +1120,7 @@ export default function UnifiedWebEditor() {
         {/* --- CONTACTO TAB --- */}
         {activeTab === "contacto" && (
           <div className="space-y-8">
-            
+
             {/* MID BANNER SECTION */}
             <SectionCard title="Banner Intermedio" icon={<Type className="h-4 w-4" />}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

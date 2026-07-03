@@ -91,21 +91,34 @@ const INSTRUMENTS: Instrument[] = [
   },
 ];
 
-export function InstrumentsCarousel() {
+export function InstrumentsCarousel({ items }: { items?: any[] }) {
   const [activeIndex, setActiveIndex] = useState(1); // Default active is Guitarra
 
+  const list = items && items.length > 0 ? items.map((item: any) => {
+    const nameLower = (item.name || "").toLowerCase();
+    const defaultIns = INSTRUMENTS.find(i => i.name.toLowerCase() === nameLower) || INSTRUMENTS[0];
+    return {
+      name: item.name || "Instrumento",
+      description: item.description || "Descripción...",
+      image: item.image || "/images/piano-kids.png",
+      iconName: item.iconName || "",
+      icon: defaultIns.icon,
+      watermark: defaultIns.watermark
+    };
+  }) : INSTRUMENTS;
+
   const handlePrev = () => {
-    setActiveIndex((prev) => (prev - 1 + INSTRUMENTS.length) % INSTRUMENTS.length);
+    setActiveIndex((prev) => (prev - 1 + list.length) % list.length);
   };
 
   const handleNext = () => {
-    setActiveIndex((prev) => (prev + 1) % INSTRUMENTS.length);
+    setActiveIndex((prev) => (prev + 1) % list.length);
   };
 
   const getVisibleIndices = () => {
-    const left = (activeIndex - 1 + INSTRUMENTS.length) % INSTRUMENTS.length;
+    const left = (activeIndex - 1 + list.length) % list.length;
     const center = activeIndex;
-    const right = (activeIndex + 1) % INSTRUMENTS.length;
+    const right = (activeIndex + 1) % list.length;
     return [left, center, right];
   };
 
@@ -131,7 +144,7 @@ export function InstrumentsCarousel() {
           {/* Cards Row */}
           <div className="flex items-center justify-center gap-16 overflow-visible pt-24 pb-10 w-full">
             {visibleIndices.map((index, pos) => {
-              const ins = INSTRUMENTS[index];
+              const ins = list[index];
               const isMiddle = pos === 1;
 
               return (
@@ -150,12 +163,24 @@ export function InstrumentsCarousel() {
 
                   {/* Watermark for hover state */}
                   <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    {ins.watermark}
+                    {ins.iconName ? (
+                      <img 
+                        src={`/svg/${ins.iconName}`} 
+                        alt="" 
+                        className="absolute right-2 bottom-2 w-36 h-36 opacity-5 pointer-events-none object-contain invert brightness-0"
+                      />
+                    ) : ins.watermark}
                   </div>
 
                   {/* White Circle Cutout with Icon */}
                   <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-white rounded-full flex items-center justify-center z-20 transition-all duration-500 group-hover:opacity-0 group-hover:scale-75 group-hover:pointer-events-none">
-                    {ins.icon}
+                    {ins.iconName ? (
+                      <img 
+                        src={`/svg/${ins.iconName}`} 
+                        alt={ins.name} 
+                        className="h-20 w-20 object-contain text-slate-900"
+                      />
+                    ) : ins.icon}
                   </div>
 
                   {/* Base State Title */}
@@ -171,7 +196,7 @@ export function InstrumentsCarousel() {
                       <h3 className="text-4xl font-extrabold tracking-tight">
                         {ins.name}
                       </h3>
-                      <p className="text-sm text-white/90 leading-relaxed font-medium pt-1">
+                      <p className="text-sm text-white/90 leading-relaxed font-medium pt-1 font-sans">
                         {ins.description}
                       </p>
                     </div>
@@ -203,7 +228,7 @@ export function InstrumentsCarousel() {
 
         {/* Pagination Dots */}
         <div className="flex gap-2.5 mt-6">
-          {INSTRUMENTS.map((_, i) => (
+          {list.map((_, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
@@ -216,7 +241,7 @@ export function InstrumentsCarousel() {
 
       {/* Mobile View (Vertical Stacking of all Instruments) */}
       <div className="flex md:hidden flex-col items-center gap-28 w-full px-4 pt-20 pb-8">
-        {INSTRUMENTS.map((ins) => (
+        {list.map((ins) => (
           <div
             key={ins.name}
             className="relative flex flex-col justify-between rounded-[2.5rem] w-full max-w-[280px] h-[360px] bg-[#DFB012] text-slate-900 p-8 shadow-lg transition-all duration-500 cursor-pointer hover:bg-primary hover:text-white border border-amber-500/20 group"
@@ -232,12 +257,24 @@ export function InstrumentsCarousel() {
 
             {/* Watermark for hover state */}
             <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-              {ins.watermark}
+              {ins.iconName ? (
+                <img 
+                  src={`/svg/${ins.iconName}`} 
+                  alt="" 
+                  className="absolute right-2 bottom-2 w-36 h-36 opacity-5 pointer-events-none object-contain invert brightness-0"
+                />
+              ) : ins.watermark}
             </div>
 
             {/* White Circle Cutout with Icon */}
             <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-44 h-44 bg-white rounded-full flex items-center justify-center z-20 transition-all duration-500 group-hover:opacity-0 group-hover:scale-75 group-hover:pointer-events-none">
-              {ins.icon}
+              {ins.iconName ? (
+                <img 
+                  src={`/svg/${ins.iconName}`} 
+                  alt={ins.name} 
+                  className="h-20 w-20 object-contain text-slate-900"
+                />
+              ) : ins.icon}
             </div>
 
             {/* Base State Title */}
