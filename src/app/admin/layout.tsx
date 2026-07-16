@@ -1,12 +1,30 @@
 "use client";
 
-import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck, Globe, Shield } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [userRole, setUserRole] = useState("");
+  const [allowedSections, setAllowedSections] = useState<string[]>([]);
+
+  useEffect(() => {
+    const roleMatch = document.cookie.match(/detache_user_role=([^;]+)/);
+    if (roleMatch) {
+      setUserRole(roleMatch[1]);
+    }
+    const sectionsMatch = document.cookie.match(/detache_allowed_sections=([^;]+)/);
+    if (sectionsMatch) {
+      try {
+        setAllowedSections(JSON.parse(decodeURIComponent(sectionsMatch[1])));
+      } catch (e) {
+        setAllowedSections([]);
+      }
+    }
+  }, []);
 
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,6 +43,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/catalog", label: "Catálogo Web", icon: BookOpen },
   ];
 
+  const visibleNavItems = navItems.filter((item) => {
+    if (userRole === "ADMIN") return true;
+    if (item.href === "/admin/dashboard") return true;
+    
+    // Extract section key, e.g. "/admin/students" -> "students"
+    const sectionKey = item.href.replace("/admin/", "");
+    return allowedSections.includes(sectionKey);
+  });
 
   const secondaryItems: any[] = [];
 
@@ -41,8 +67,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
-          {navItems.map((item) => {
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link 
@@ -70,10 +96,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="pt-8 pb-4">
             <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Sistema</p>
           </div>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all">
-            <Settings className="h-5 w-5" />
-            Configuración
-          </button>
+          
+          {userRole === "ADMIN" && (
+            <Link 
+              href="/admin/users" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                pathname === "/admin/users" 
+                  ? 'bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/5' 
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              <Shield className="h-5 w-5" />
+              Seguridad
+            </Link>
+          )}
+
+          {(userRole === "ADMIN" || allowedSections.includes("settings")) && (
+            <Link 
+              href="/admin/settings" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                pathname === "/admin/settings" 
+                  ? 'bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/5' 
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              <Settings className="h-5 w-5" />
+              Configuración
+            </Link>
+          )}
         </nav>
 
         <div className="p-4 border-t border-slate-100">

@@ -5,7 +5,7 @@ import {
   GraduationCap, Search, Plus, Calendar, User, Music,
   ChevronRight, Activity, Phone, Mail, MapPin, X, CreditCard,
   History, TrendingUp, BookOpen, AlertCircle, Shield, DollarSign,
-  CheckCircle2, Clock
+  CheckCircle2, Clock, Edit3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_LESSONS } from "@/graphql/queries/get-lessons";
 import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
-import { CREATE_STUDENT } from "@/graphql/mutations/student-mutations";
+import { CREATE_STUDENT, UPDATE_STUDENT } from "@/graphql/mutations/student-mutations";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -29,9 +29,11 @@ export default function AdminStudentsPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'GENERAL' | 'ACADEMICO' | 'PAGOS' | 'ASISTENCIA'>('GENERAL');
   const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [isEditingStudent, setIsEditingStudent] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     rut: '',
     birthDate: '',
     guardianName: '',
@@ -41,10 +43,36 @@ export default function AdminStudentsPage() {
     primaryInstrumentId: ''
   });
 
+  const [editFormData, setEditFormData] = useState({
+    id: "",
+    name: "",
+    email: "",
+    rut: "",
+    birthDate: "",
+    guardianName: "",
+    guardianPhone: "",
+    status: "ACTIVE",
+    phoneNumber: "",
+    level: "BEGINNER",
+    primaryInstrumentId: ""
+  });
+
   // ── GraphQL Hooks ───────────────────────────────────────────
   const { data, loading, refetch } = useQuery<any>(GET_STUDENTS_LIST);
   const { data: lessonsData } = useQuery<any>(GET_LESSONS);
   const { data: instrumentsData } = useQuery<any>(GET_INSTRUMENTS);
+  
+  const [updateStudent, { loading: isUpdating }] = useMutation(UPDATE_STUDENT, {
+    onCompleted: (res: any) => {
+      refetch();
+      if (res.updateStudent?.student) {
+        setSelectedStudent(res.updateStudent.student);
+      }
+      setIsEditingStudent(false);
+      toast.success("Ficha de estudiante actualizada exitosamente ✅");
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
   
   const [createStudent, { loading: isCreating }] = useMutation(CREATE_STUDENT, {
     onCompleted: () => {
@@ -52,6 +80,7 @@ export default function AdminStudentsPage() {
       setIsAddingStudent(false);
       setFormData({
         name: '',
+        email: '',
         rut: '',
         birthDate: '',
         guardianName: '',
@@ -97,6 +126,42 @@ export default function AdminStudentsPage() {
     });
   };
 
+  const handleStartEdit = () => {
+    setEditFormData({
+      id: selectedStudent?.id || "",
+      name: selectedStudent?.name || "",
+      email: selectedStudent?.email || "",
+      rut: selectedStudent?.rut || "",
+      birthDate: selectedStudent?.birthDate || "",
+      guardianName: selectedStudent?.guardianName || "",
+      guardianPhone: selectedStudent?.guardianPhone || "",
+      status: selectedStudent?.status || "ACTIVE",
+      phoneNumber: selectedStudent?.phoneNumber || "",
+      level: selectedStudent?.level || "BEGINNER",
+      primaryInstrumentId: selectedStudent?.primaryInstrument?.id || ""
+    });
+    setIsEditingStudent(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editFormData.name) return;
+    updateStudent({
+      variables: {
+        id: parseInt(editFormData.id),
+        name: editFormData.name,
+        email: editFormData.email || null,
+        rut: editFormData.rut || null,
+        birthDate: editFormData.birthDate || null,
+        guardianName: editFormData.guardianName || null,
+        guardianPhone: editFormData.guardianPhone || null,
+        status: editFormData.status,
+        phoneNumber: editFormData.phoneNumber || null,
+        level: editFormData.level,
+        primaryInstrumentId: editFormData.primaryInstrumentId ? parseInt(editFormData.primaryInstrumentId) : null
+      }
+    });
+  };
+
   const formatCLP = (n: number) => `$${n.toLocaleString('es-CL')}`;
 
   return (
@@ -128,10 +193,15 @@ export default function AdminStudentsPage() {
               </div>
               
               <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2 space-y-2">
-                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nombre Completo *</label>
-                   <input type="text" placeholder="Ej: Juan Pérez" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
-                </div>
+                 <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nombre Completo *</label>
+                    <input type="text" placeholder="Ej: Juan Pérez" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                 </div>
+
+                 <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Correo Electrónico</label>
+                    <input type="email" placeholder="estudiante@correo.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                 </div>
                 
                 <div className="space-y-2">
                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">RUT</label>
@@ -247,14 +317,21 @@ export default function AdminStudentsPage() {
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
            <div className="w-full max-w-2xl bg-white h-full overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-right-10 duration-500">
               <header className="bg-slate-900 text-white p-10 relative">
-                 <button onClick={() => setIsDetailOpen(false)} className="absolute top-8 right-8 p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6" /></button>
+                 <div className="absolute top-8 right-8 flex items-center gap-2">
+                    {!isEditingStudent && (
+                       <button onClick={handleStartEdit} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5 text-white">
+                          <Edit3 className="h-3.5 w-3.5 text-primary" /> Editar Ficha
+                       </button>
+                    )}
+                    <button onClick={() => { setIsDetailOpen(false); setIsEditingStudent(false); }} className="p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6 text-slate-400" /></button>
+                 </div>
                  <div className="flex items-center gap-6">
                     <div className="h-20 w-20 bg-white/5 rounded-[2rem] flex items-center justify-center border border-white/10 shadow-2xl">
                       <User className="h-10 w-10 text-primary" />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-bold font-serif">{selectedStudent.name}</h2>
-                      <p className="text-slate-400 text-xs mt-1 font-mono">{selectedStudent.rut || 'RUT no registrado'} · Iniciado {selectedStudent.startDate}</p>
+                      <h2 className="text-3xl font-bold font-serif">{selectedStudent?.name}</h2>
+                      <p className="text-slate-400 text-xs mt-1 font-mono">{selectedStudent?.rut || 'RUT no registrado'} · Iniciado {selectedStudent?.startDate}</p>
                     </div>
                  </div>
                  <div className="flex gap-8 mt-12 border-b border-white/5">
@@ -268,16 +345,133 @@ export default function AdminStudentsPage() {
               </header>
 
               <div className="flex-1 overflow-y-auto p-10 space-y-10 bg-slate-50/30">
-                 {activeTab === 'GENERAL' && (
+                 {isEditingStudent ? (
+                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-6 text-left animate-in fade-in duration-300">
+                       <h3 className="text-lg font-bold text-slate-800 border-b pb-3 flex items-center gap-2">
+                          <Edit3 className="h-5 w-5 text-primary" /> Editar Perfil Estudiante
+                       </h3>
+                       
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Nombre Completo</label>
+                             <input 
+                                type="text"
+                                value={editFormData.name}
+                                onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                             />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">RUT</label>
+                             <input 
+                                type="text"
+                                value={editFormData.rut}
+                                onChange={(e) => setEditFormData({...editFormData, rut: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                             />
+                          </div>
+                       </div>
+
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Correo Electrónico</label>
+                          <input 
+                             type="email"
+                             value={editFormData.email}
+                             onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                             className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                          />
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Fecha de Nacimiento</label>
+                             <input 
+                                type="date"
+                                value={editFormData.birthDate}
+                                onChange={(e) => setEditFormData({...editFormData, birthDate: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                             />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Teléfono Celular</label>
+                             <input 
+                                type="text"
+                                value={editFormData.phoneNumber}
+                                onChange={(e) => setEditFormData({...editFormData, phoneNumber: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                             />
+                          </div>
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Nombre Apoderado</label>
+                             <input 
+                                type="text"
+                                value={editFormData.guardianName}
+                                onChange={(e) => setEditFormData({...editFormData, guardianName: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                             />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Teléfono Apoderado</label>
+                             <input 
+                                type="text"
+                                value={editFormData.guardianPhone}
+                                onChange={(e) => setEditFormData({...editFormData, guardianPhone: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                             />
+                          </div>
+                       </div>
+
+                       <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Nivel</label>
+                             <select 
+                                value={editFormData.level}
+                                onChange={(e) => setEditFormData({...editFormData, level: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                             >
+                                <option value="BEGINNER">Principiante</option>
+                                <option value="INTERMEDIATE">Intermedio</option>
+                                <option value="ADVANCED">Avanzado</option>
+                             </select>
+                          </div>
+                          <div className="space-y-2 col-span-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Instrumento Principal</label>
+                             <select 
+                                value={editFormData.primaryInstrumentId}
+                                onChange={(e) => setEditFormData({...editFormData, primaryInstrumentId: e.target.value})}
+                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                             >
+                                <option value="">Sin definir</option>
+                                {instruments.map((ins: any) => (
+                                   <option key={ins.id} value={ins.id}>{ins.name}</option>
+                                ))}
+                             </select>
+                          </div>
+                       </div>
+
+                       <div className="flex gap-4 pt-6 border-t border-slate-100">
+                          <Button variant="outline" className="flex-1 h-11 rounded-xl text-xs font-bold uppercase tracking-wider" onClick={() => setIsEditingStudent(false)}>Cancelar</Button>
+                          <Button disabled={isUpdating || !editFormData.name} className="flex-1 h-11 bg-[#70125F] hover:bg-[#590e4b] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-[#70125F]/20 cursor-pointer" onClick={handleUpdate}>
+                             {isUpdating ? "Guardando..." : "Guardar Cambios"}
+                          </Button>
+                       </div>
+                    </div>
+                 ) : (
+                    <>
+                       {activeTab === 'GENERAL' && (
                     <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2">
                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-6">
                           <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Información Personal</p>
                           <div className="space-y-4">
                              {[
-                               { label: 'RUT', val: selectedStudent.rut, icon: CreditCard },
-                               { label: 'Fecha Nacimiento', val: selectedStudent.birthDate, icon: Calendar },
-                               { label: 'Instrumento', val: selectedStudent.primaryInstrument?.name, icon: Music },
-                               { label: 'Nivel', val: selectedStudent.level, icon: Activity },
+                               { label: 'Correo', val: selectedStudent?.email, icon: Mail },
+                               { label: 'RUT', val: selectedStudent?.rut, icon: CreditCard },
+                               { label: 'Fecha Nacimiento', val: selectedStudent?.birthDate, icon: Calendar },
+                               { label: 'Instrumento', val: selectedStudent?.primaryInstrument?.name, icon: Music },
+                               { label: 'Nivel', val: selectedStudent?.level, icon: Activity },
                              ].map(item => (
                                <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50">
                                  <div className="flex items-center gap-2 text-slate-400">
@@ -294,9 +488,9 @@ export default function AdminStudentsPage() {
                           <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Contacto y Apoderado</p>
                           <div className="space-y-4">
                              {[
-                               { label: 'Teléfono', val: selectedStudent.phoneNumber, icon: Phone },
-                               { label: 'Apoderado', val: selectedStudent.guardianName, icon: User },
-                               { label: 'Teléfono Apoderado', val: selectedStudent.guardianPhone, icon: Phone },
+                               { label: 'Teléfono', val: selectedStudent?.phoneNumber, icon: Phone },
+                               { label: 'Apoderado', val: selectedStudent?.guardianName, icon: User },
+                               { label: 'Teléfono Apoderado', val: selectedStudent?.guardianPhone, icon: Phone },
                              ].map(item => (
                                <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50">
                                  <div className="flex items-center gap-2 text-slate-400">
@@ -382,9 +576,11 @@ export default function AdminStudentsPage() {
                            <p className="text-xs italic">Sin historial de asistencia aún.</p>
                          </div>
                        )}
-                    </div>
+                     </div>
+                  )}
+                  </>
                  )}
-              </div>
+               </div>
            </div>
         </div>
       )}

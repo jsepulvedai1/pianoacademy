@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Users,
   Search,
@@ -46,9 +46,11 @@ import {
   type LeadSource
 } from "@/lib/mock-data";
 import { apiClient } from "@/lib/api-client";
-import { useQuery, useMutation, useSubscription } from "@apollo/client/react/index.js";
+import { useQuery, useMutation, useSubscription, useLazyQuery } from "@apollo/client/react/index.js";
 import { GET_LEADS } from "@/graphql/queries/get-leads";
+import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
 import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
+import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
 import { normalizePhoneNumber } from "@/lib/utils";
 
@@ -77,18 +79,6 @@ const SOURCE_ICONS: Record<LeadSource, React.ElementType> = {
   GOOGLE: Globe,
   OTRO: Tag
 };
-
-// ─── EVOLUTION API ───────────────────────────────────────────
-async function sendWhatsAppMessage(phone: string, message: string): Promise<boolean> {
-  try {
-    const { instanceName } = EVOLUTION_API_CONFIG;
-    const res = await apiClient.evolution(`/message/sendText/${instanceName}`, 'POST', { number: phone, text: message });
-    return !!res.key; // Evolution returns a key on success
-  } catch (err) {
-    console.error('Evolution API error:', err);
-    return false;
-  }
-}
 
 // ─── COMPONENT ──────────────────────────────────────────────
 export default function AdminLeadsPage() {
@@ -162,34 +152,64 @@ export default function AdminLeadsPage() {
     }
   });
 
+  const [loadChat, { data: chatQueryData, error: chatQueryError }] = useLazyQuery<any>(GET_CHAT_MESSAGES, {
+    fetchPolicy: "network-only"
+  });
+
+  useEffect(() => {
+    if (chatQueryData?.chatMessages) {
+      const mapped = chatQueryData.chatMessages.map((msg: any) => ({
+        key: {
+          fromMe: msg.sender === 'ACADEMY',
+          id: msg.id
+        },
+        messageTimestamp: Math.floor(new Date(msg.timestamp).getTime() / 1000),
+        message: {
+          conversation: msg.messageText
+        }
+      }));
+      setChatMessages(mapped);
+      setIsLoadingChat(false);
+    }
+  }, [chatQueryData]);
+
+  useEffect(() => {
+    if (chatQueryError) {
+      console.error("Error loading chat messages via GraphQL:", chatQueryError);
+      setIsLoadingChat(false);
+    }
+  }, [chatQueryError]);
+
+  const [sendWA] = useMutation(SEND_WHATSAPP_MUTATION);
+
+  const sendWhatsAppMessage = async (phone: string, message: string): Promise<boolean> => {
+    try {
+      const res = await sendWA({
+        variables: {
+          phoneNumber: phone,
+          message: message
+        }
+      });
+      if ((res.data as any)?.sendWhatsapp?.success) {
+        // Refresh chat history instantly after sending a message
+        loadChat({ variables: { phone } });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error sending WA via mutation:", err);
+      return false;
+    }
+  };
+
   const leads = data?.allLeads || [];
 
   // ─── CHAT FETCHING ─────────────────────────────────────────
   const fetchChatHistory = async (phone: string) => {
     setIsLoadingChat(true);
-    try {
-      const { instanceName } = EVOLUTION_API_CONFIG;
-      const data = await apiClient.evolution(`/chat/findMessages/${instanceName}`, 'POST', {
-        where: {
-          key: {
-            remoteJid: `${phone}@s.whatsapp.net`
-          }
-        },
-        limit: 30
-      });
-      console.log('Evolution API findMessages response:', data);
-      const messages = Array.isArray(data) 
-        ? data 
-        : (data.messages?.records || data.records || []);
-      const sorted = messages.sort((a: any, b: any) => 
-        (a.messageTimestamp || 0) - (b.messageTimestamp || 0)
-      );
-      setChatMessages(sorted);
-    } catch (err) {
-      console.error('Error fetching chat:', err);
-    } finally {
-      setIsLoadingChat(false);
-    }
+    loadChat({
+      variables: { phone }
+    });
   };
 
   const filtered = useMemo(() => {

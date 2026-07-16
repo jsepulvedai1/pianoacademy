@@ -35,7 +35,7 @@ export function Header() {
             src="/icons/logo.svg" 
             alt="Détaché Academia" 
             className={cn(
-              "h-16 md:h-20 w-auto transition-all",
+              "h-20 md:h-26 w-auto transition-all",
               isPublicLanding && "brightness-0 invert"
             )} 
           />

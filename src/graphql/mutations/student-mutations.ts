@@ -3,6 +3,7 @@ import { gql } from "@apollo/client";
 export const CREATE_STUDENT = gql`
   mutation CreateStudent(
     $name: String!, 
+    $email: String,
     $rut: String, 
     $birthDate: Date, 
     $guardianName: String, 
@@ -13,6 +14,7 @@ export const CREATE_STUDENT = gql`
   ) {
     createStudent(
       name: $name, 
+      email: $email,
       rut: $rut, 
       birthDate: $birthDate, 
       guardianName: $guardianName, 
@@ -24,6 +26,7 @@ export const CREATE_STUDENT = gql`
       student {
         id
         name
+        email
         status
         phoneNumber
       }
@@ -46,6 +49,167 @@ export const REGISTER_PAYMENT = gql`
         totalClasses
         remainingClasses
       }
+    }
+  }
+`;
+
+export const UPDATE_STUDENT = gql`
+  mutation UpdateStudent(
+    $id: Int!,
+    $name: String,
+    $email: String,
+    $rut: String,
+    $birthDate: Date,
+    $guardianName: String,
+    $guardianPhone: String,
+    $status: String,
+    $phoneNumber: String,
+    $level: String,
+    $primaryInstrumentId: Int
+  ) {
+    updateStudent(
+      id: $id,
+      name: $name,
+      email: $email,
+      rut: $rut,
+      birthDate: $birthDate,
+      guardianName: $guardianName,
+      guardianPhone: $guardianPhone,
+      status: $status,
+      phoneNumber: $phoneNumber,
+      level: $level,
+      primaryInstrumentId: $primaryInstrumentId
+    ) {
+      student {
+        id
+        name
+        email
+        rut
+        birthDate
+        guardianName
+        guardianPhone
+        status
+        phoneNumber
+        level
+        primaryInstrument {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const CREATE_PAYMENT_PREFERENCE = gql`
+  mutation CreatePaymentPreference(
+    $planId: Int!,
+    $name: String!,
+    $email: String!,
+    $phone: String!,
+    $backUrl: String!
+  ) {
+    createPaymentPreference(
+      planId: $planId,
+      name: $name,
+      email: $email,
+      phone: $phone,
+      backUrl: $backUrl
+    ) {
+      success
+      preferenceId
+      initPoint
+    }
+  }
+`;
+
+export const LOGIN_USER = gql`
+  mutation LoginUser($username: String!, $password: String!) {
+    loginUser(username: $username, password: $password) {
+      success
+      token
+      error
+      user {
+        id
+        username
+        profile {
+          role
+          allowedSections
+        }
+      }
+    }
+  }
+`;
+
+export const CREATE_ADMIN_ACCOUNT = gql`
+  mutation CreateAdminAccount(
+    $username: String!,
+    $password: String!,
+    $email: String,
+    $role: String!,
+    $allowedSections: [String]!
+  ) {
+    createAdminAccount(
+      username: $username,
+      password: $password,
+      email: $email,
+      role: $role,
+      allowedSections: $allowedSections
+    ) {
+      success
+      error
+      user {
+        id
+        username
+        profile {
+          role
+          allowedSections
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_ADMIN_ACCOUNT = gql`
+  mutation UpdateAdminAccount(
+    $id: Int!,
+    $password: String,
+    $role: String,
+    $allowedSections: [String]
+  ) {
+    updateAdminAccount(
+      id: $id,
+      password: $password,
+      role: $role,
+      allowedSections: $allowedSections
+    ) {
+      success
+      error
+      user {
+        id
+        username
+        profile {
+          role
+          allowedSections
+        }
+      }
+    }
+  }
+`;
+
+export const DELETE_ADMIN_ACCOUNT = gql`
+  mutation DeleteAdminAccount($id: Int!) {
+    deleteAdminAccount(id: $id) {
+      success
+      error
+    }
+  }
+`;
+
+export const SEND_WHATSAPP_MUTATION = gql`
+  mutation SendWhatsApp($phoneNumber: String!, $message: String!) {
+    sendWhatsapp(phoneNumber: $phoneNumber, message: $message) {
+      success
+      response
     }
   }
 `;

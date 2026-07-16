@@ -7,7 +7,7 @@ import {
   ChevronRight, CheckCircle2, XCircle, GraduationCap,
   Activity, Mail, Phone, MapPin, CalendarDays, Award,
   FileText, X, Loader2, Filter, Download, Edit2, TrendingUp,
-  History, CalendarCheck, Trash2
+  History, CalendarCheck, Trash2, CreditCard
 } from "lucide-react";
 import { format, parseISO, isAfter, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -100,6 +100,9 @@ export default function AdminTeachersPage() {
     description: "",
     status: "ACTIVE",
     phoneNumber: "",
+    rut: "",
+    address: "",
+    email: "",
     specialtyIds: [] as number[]
   });
 
@@ -177,11 +180,14 @@ export default function AdminTeachersPage() {
         description: teacher.description || "",
         status: teacher.status,
         phoneNumber: teacher.phoneNumber || "",
+        rut: teacher.rut || "",
+        address: teacher.address || "",
+        email: teacher.email || "",
         specialtyIds: teacher.specialties?.map((s: any) => parseInt(s.id)) || []
       });
     } else {
       setEditingTeacher(null);
-      setFormData({ name: "", description: "", status: "ACTIVE", phoneNumber: "", specialtyIds: [] });
+      setFormData({ name: "", description: "", status: "ACTIVE", phoneNumber: "", rut: "", address: "", email: "", specialtyIds: [] });
     }
     setIsModalOpen(true);
   };
@@ -249,8 +255,18 @@ export default function AdminTeachersPage() {
                  </div>
 
                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">RUT</label>
+                    <input type="text" value={formData.rut} onChange={(e) => setFormData({...formData, rut: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="12.345.678-9" />
+                 </div>
+
+                 <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Teléfono</label>
                     <input type="text" value={formData.phoneNumber} onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="+56 9..." />
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Correo Electrónico</label>
+                    <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="correo@ejemplo.com" />
                  </div>
 
                  <div className="space-y-2">
@@ -259,6 +275,11 @@ export default function AdminTeachersPage() {
                        <option value="ACTIVE">Activo</option>
                        <option value="INACTIVE">Inactivo</option>
                     </select>
+                 </div>
+
+                 <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dirección</label>
+                    <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="Calle Ejemplo 123, Comuna" />
                  </div>
 
                  <div className="col-span-2 space-y-3">
@@ -426,6 +447,25 @@ export default function AdminTeachersPage() {
                     <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
                        <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">Biografía</p>
                        <p className="text-slate-600 italic text-sm leading-relaxed">{selectedTeacher.description || "Docente activo de la academia con compromiso en la formación musical."}</p>
+                    </div>
+                    <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">Información de Contacto y Administrativa</p>
+                       <div className="space-y-3">
+                          {[
+                            { label: 'RUT', val: selectedTeacher.rut, icon: CreditCard },
+                            { label: 'Teléfono', val: selectedTeacher.phoneNumber, icon: Phone },
+                            { label: 'Correo', val: selectedTeacher.email, icon: Mail },
+                            { label: 'Dirección', val: selectedTeacher.address, icon: MapPin },
+                          ].map(item => (
+                            <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50 text-left">
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <item.icon className="h-3.5 w-3.5 shrink-0" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+                              </div>
+                              <span className="font-bold text-slate-700 text-sm">{item.val || '---'}</span>
+                            </div>
+                          ))}
+                       </div>
                     </div>
                  </div>
               )}

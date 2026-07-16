@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music, Lock, User, ArrowRight } from "lucide-react";
+import { useMutation } from "@apollo/client/react/index.js";
+import { LOGIN_USER } from "@/graphql/mutations/student-mutations";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -16,20 +19,39 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  const [loginMutation, { loading: isMutationLoading }] = useMutation(LOGIN_USER, {
+    onCompleted: (res: any) => {
+      const data = res.loginUser;
+      if (data?.success && data?.token) {
+        const role = data.user?.profile?.role || "STAFF";
+        const allowedSections = data.user?.profile?.allowedSections || [];
+        const maxAge = 86400; // 1 day expiration
+        
+        document.cookie = `detache_session=${data.token}; path=/; max-age=${maxAge}; SameSite=Strict`;
+        document.cookie = `detache_user_role=${role}; path=/; max-age=${maxAge}; SameSite=Strict`;
+        document.cookie = `detache_allowed_sections=${JSON.stringify(allowedSections)}; path=/; max-age=${maxAge}; SameSite=Strict`;
+        document.cookie = `detache_username=${data.user.username}; path=/; max-age=${maxAge}; SameSite=Strict`;
+        
+        toast.success(`¡Bienvenido de vuelta, ${data.user.username}! 👋`);
+        router.push("/admin/dashboard");
+      } else {
+        setError(data?.error || "Credenciales incorrectas.");
+        setIsLoading(false);
+      }
+    },
+    onError: (err: any) => {
+      setError(err.message || "Error al conectar con el servidor.");
+      setIsLoading(false);
+    }
+  });
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-
-    // Simulated auth check for testing
-    setTimeout(() => {
-      if (username === "admin" && password === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        setError("Credenciales incorrectas. Intenta con admin/admin.");
-        setIsLoading(false);
-      }
-    }, 800);
+    loginMutation({
+      variables: { username, password }
+    });
   };
 
   return (
@@ -95,9 +117,9 @@ export default function LoginPage() {
             <Button 
               type="submit" 
               className="w-full h-14 text-base font-bold uppercase tracking-wider shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 transition-all group" 
-              disabled={isLoading}
+              disabled={isLoading || isMutationLoading}
             >
-              {isLoading ? (
+              {isLoading || isMutationLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Verificando...

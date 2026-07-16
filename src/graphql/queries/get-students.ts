@@ -5,6 +5,7 @@ export const GET_STUDENTS_LIST = gql`
     allStudents {
       id
       name
+      email
       photo
       phoneNumber
       rut

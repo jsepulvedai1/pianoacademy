@@ -13,6 +13,9 @@ export const GET_TEACHERS = gql`
       description
       photo
       phoneNumber
+      rut
+      address
+      email
       specialties {
         id
         name

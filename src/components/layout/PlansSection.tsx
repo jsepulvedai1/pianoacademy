@@ -133,7 +133,7 @@ export function PlansSection() {
               variant="outline"
               className="self-start h-10 px-5 font-bold uppercase tracking-wider text-[10px] rounded-full border-[#E25CBB] text-[#E25CBB] hover:bg-[#E25CBB] hover:text-white transition-all shadow-sm flex items-center gap-2"
             >
-              <Link href={`/contact?service=${plan.name.toUpperCase().replace(/ /g, "_")}`}>
+              <Link href={`/checkout?plan=${plan.id}`}>
                 Empezar Hoy
                 <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8" cy="8" r="7" />

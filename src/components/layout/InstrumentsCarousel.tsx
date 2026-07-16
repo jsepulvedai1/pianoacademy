@@ -202,14 +202,6 @@ export function InstrumentsCarousel({ items }: { items?: any[] }) {
                       </p>
                     </div>
 
-                    {/* Saber más action */}
-                    <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#DFB012] mt-auto group/btn cursor-pointer">
-                      Saber más
-                      <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                        <polyline points="12 5 19 12 12 19" />
-                      </svg>
-                    </div>
                   </div>
                 </div>
               );
@@ -296,14 +288,6 @@ export function InstrumentsCarousel({ items }: { items?: any[] }) {
                 </p>
               </div>
 
-              {/* Saber más action */}
-              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#DFB012] mt-auto group/btn cursor-pointer">
-                Saber más
-                <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </div>
             </div>
           </div>
         ))}
