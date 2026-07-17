@@ -177,38 +177,50 @@ export default function StudentDashboardPage() {
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-slate-900 text-white overflow-hidden relative group animate-in fade-in slide-in-from-left-4 duration-500">
                <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-colors duration-700 pointer-events-none" />
                <CardContent className="p-10 relative z-10">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
-                      <Calendar className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Tu Siguiente Sesión</p>
-                      <h2 className="text-xl font-bold font-serif text-white">{isToday(parseISO(nextClass.date)) ? "Hoy" : format(parseISO(nextClass.date), "EEEE d 'de' MMMM", { locale: es })}</h2>
-                    </div>
-                  </div>
+                  {nextClass ? (
+                    <>
+                      <div className="flex items-center gap-3 mb-8">
+                        <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                          <Calendar className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Tu Siguiente Sesión</p>
+                          <h2 className="text-xl font-bold font-serif text-white">{isToday(parseISO(nextClass.date)) ? "Hoy" : format(parseISO(nextClass.date), "EEEE d 'de' MMMM", { locale: es })}</h2>
+                        </div>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-8 mb-8">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Clock className="h-3 w-3" /> Horario</p>
-                      <p className="text-lg font-bold">{nextClass.startTime.substring(0, 5)} - {nextClass.endTime.substring(0, 5)}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Music className="h-3 w-3" /> Sala</p>
-                      <p className="text-lg font-bold">{nextClass.room.name}</p>
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Clock className="h-3 w-3" /> Horario</p>
+                          <p className="text-lg font-bold">{nextClass.startTime.substring(0, 5)} - {nextClass.endTime.substring(0, 5)}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Music className="h-3 w-3" /> Sala</p>
+                          <p className="text-lg font-bold">{nextClass.room?.name || "No asignada"}</p>
+                        </div>
+                      </div>
 
-                  <div className="pt-8 border-t border-white/10 flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesor</p>
-                      <p className="font-medium text-slate-200">{nextClass.teacher.name}</p>
+                      <div className="pt-8 border-t border-white/10 flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesor</p>
+                          <p className="font-medium text-slate-200">{nextClass.teacher?.name || "No asignado"}</p>
+                        </div>
+                        <Link href="/portal-alumno/wall">
+                          <Button className="rounded-xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-10 px-6 shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                            Ver Muro <ArrowRight className="h-3 w-3 ml-2" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="p-4 rounded-full bg-white/5 mb-4">
+                        <Calendar className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <p className="text-lg font-serif font-bold text-white mb-1">No hay próximas clases</p>
+                      <p className="text-sm text-slate-400">No tienes sesiones programadas en este momento.</p>
                     </div>
-                    <Link href="/portal-alumno/wall">
-                      <Button className="rounded-xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-10 px-6 shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-                        Ver Muro <ArrowRight className="h-3 w-3 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
+                  )}
                </CardContent>
             </Card>
           ) : (
