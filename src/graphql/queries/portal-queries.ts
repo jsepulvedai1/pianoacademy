@@ -8,7 +8,7 @@ export const MY_STUDENT_PROFILE = gql`
       email
       photo
       status
-      phoneNumber: phone_number
+      phoneNumber
       rut
       birthDate
       level
