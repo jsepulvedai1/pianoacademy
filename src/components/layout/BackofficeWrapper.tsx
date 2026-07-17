@@ -10,14 +10,14 @@ import { Footer } from "@/components/layout/Footer";
  */
 export function HeaderWrapper() {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
-  if (isAdmin) return null;
+  const shouldHide = pathname?.startsWith('/admin') || pathname?.startsWith('/portal-alumno') || pathname?.startsWith('/portal-docente') || pathname === '/login';
+  if (shouldHide) return null;
   return <Header />;
 }
 
 export function FooterWrapper() {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
-  if (isAdmin) return null;
+  const shouldHide = pathname?.startsWith('/admin') || pathname?.startsWith('/portal-alumno') || pathname?.startsWith('/portal-docente') || pathname === '/login';
+  if (shouldHide) return null;
   return <Footer />;
 }
