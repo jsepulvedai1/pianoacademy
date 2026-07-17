@@ -25,15 +25,24 @@ export default function LoginPage() {
       if (data?.success && data?.token) {
         const role = data.user?.profile?.role || "STAFF";
         const allowedSections = data.user?.profile?.allowedSections || [];
+        const portalType = data.portalType || "ADMIN";
         const maxAge = 86400; // 1 day expiration
         
         document.cookie = `detache_session=${data.token}; path=/; max-age=${maxAge}; SameSite=Strict`;
         document.cookie = `detache_user_role=${role}; path=/; max-age=${maxAge}; SameSite=Strict`;
+        document.cookie = `detache_portal_type=${portalType}; path=/; max-age=${maxAge}; SameSite=Strict`;
         document.cookie = `detache_allowed_sections=${JSON.stringify(allowedSections)}; path=/; max-age=${maxAge}; SameSite=Strict`;
         document.cookie = `detache_username=${data.user.username}; path=/; max-age=${maxAge}; SameSite=Strict`;
         
         toast.success(`¡Bienvenido de vuelta, ${data.user.username}! 👋`);
-        router.push("/admin/dashboard");
+        
+        if (portalType === "STUDENT") {
+          router.push("/portal-alumno/dashboard");
+        } else if (portalType === "TEACHER") {
+          router.push("/portal-docente/dashboard");
+        } else {
+          router.push("/admin/dashboard");
+        }
       } else {
         setError(data?.error || "Credenciales incorrectas.");
         setIsLoading(false);
@@ -69,9 +78,9 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-3xl font-bold font-serif tracking-tight">Détaché Manager</CardTitle>
+            <CardTitle className="text-3xl font-bold font-serif tracking-tight">Détaché Portal</CardTitle>
             <CardDescription className="text-base italic">
-              Acceso exclusivo para la administración de la academia.
+              Ingresa tus credenciales para acceder al portal de la academia.
             </CardDescription>
           </div>
         </CardHeader>

@@ -52,3 +52,34 @@ export const GET_CHAT_MESSAGES = gql`
     }
   }
 `;
+
+export const GET_STUDENT_PORTAL_ACCOUNTS = gql`
+  query GetStudentPortalAccounts {
+    allStudents {
+      id
+      name
+      email
+      rut
+      level
+      user {
+        id
+        username
+      }
+    }
+  }
+`;
+
+export const GET_TEACHER_PORTAL_ACCOUNTS = gql`
+  query GetTeacherPortalAccounts {
+    allTeachers {
+      id
+      name
+      email
+      rut
+      user {
+        id
+        username
+      }
+    }
+  }
+`;

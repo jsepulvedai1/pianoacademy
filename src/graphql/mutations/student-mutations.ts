@@ -127,6 +127,7 @@ export const LOGIN_USER = gql`
     loginUser(username: $username, password: $password) {
       success
       token
+      portalType
       error
       user {
         id
@@ -210,6 +211,42 @@ export const SEND_WHATSAPP_MUTATION = gql`
     sendWhatsapp(phoneNumber: $phoneNumber, message: $message) {
       success
       response
+    }
+  }
+`;
+
+export const CREATE_STUDENT_ACCOUNT = gql`
+  mutation CreateStudentAccount($studentId: Int!, $password: String!) {
+    createStudentAccount(studentId: $studentId, password: $password) {
+      success
+      error
+    }
+  }
+`;
+
+export const CREATE_TEACHER_ACCOUNT = gql`
+  mutation CreateTeacherAccount($teacherId: Int!, $password: String!) {
+    createTeacherAccount(teacherId: $teacherId, password: $password) {
+      success
+      error
+    }
+  }
+`;
+
+export const RESET_PORTAL_PASSWORD = gql`
+  mutation ResetPortalPassword($userId: Int!, $newPassword: String!) {
+    resetPortalPassword(userId: $userId, newPassword: $newPassword) {
+      success
+      error
+    }
+  }
+`;
+
+export const CHANGE_MY_PASSWORD = gql`
+  mutation ChangeMyPassword($currentPassword: String!, $newPassword: String!) {
+    changeMyPassword(currentPassword: $currentPassword, newPassword: $newPassword) {
+      success
+      error
     }
   }
 `;

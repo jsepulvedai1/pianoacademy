@@ -1,16 +1,57 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { GraduationCap, Check, ArrowRight, Music, Heart, BookOpen, Loader2, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@apollo/client/react/index.js";
+import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
+import { MY_STUDENT_PROFILE } from "@/graphql/queries/portal-queries";
+import { CREATE_PAYMENT_PREFERENCE } from "@/graphql/mutations/student-mutations";
 import { GetPlansData, Plan } from "@/types/graphql";
+import { toast } from "sonner";
 
 export default function StudentShopPage() {
   const { data, loading, error } = useQuery<GetPlansData>(GET_PLANS);
+  const { data: profileData } = useQuery<any>(MY_STUDENT_PROFILE);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+
+  const [createPreference, { loading: isCreatingPref }] = useMutation(CREATE_PAYMENT_PREFERENCE, {
+    onCompleted: (res: any) => {
+      const result = res.createPaymentPreference;
+      if (result?.success && result?.initPoint) {
+        toast.success("Redirigiendo a Mercado Pago... 💳");
+        window.location.href = result.initPoint;
+      } else {
+        toast.error("No se pudo iniciar el proceso de pago.");
+        setSelectedPlanId(null);
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Error al crear la preferencia de pago.");
+      setSelectedPlanId(null);
+    }
+  });
+
+  const handleSelectPlan = (plan: Plan) => {
+    const student = profileData?.myStudentProfile;
+    if (!student) {
+      toast.error("No se pudo obtener la información de tu perfil de alumno.");
+      return;
+    }
+    
+    setSelectedPlanId(parseInt(plan.id));
+    createPreference({
+      variables: {
+        planId: parseInt(plan.id),
+        name: student.name,
+        email: student.email || "correo@detache.cl",
+        phone: student.phoneNumber || "+56912345678",
+        backUrl: window.location.origin + "/portal-alumno/dashboard"
+      }
+    });
+  };
 
   const formatCLP = (n: number) => `$${Math.round(n).toLocaleString('es-CL')}`;
 
@@ -96,12 +137,23 @@ export default function StudentShopPage() {
                 ))}
               </div>
 
-              <Button className={`w-full rounded-2xl py-6 font-bold uppercase text-[10px] tracking-[0.15em] transition-all ${
-                plan.isFeatured 
-                  ? 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-white shadow-none'
-              }`}>
-                Seleccionar Plan <ArrowRight className="h-3 w-3 ml-2" />
+              <Button 
+                onClick={() => handleSelectPlan(plan)}
+                disabled={isCreatingPref && selectedPlanId === parseInt(plan.id)}
+                className={`w-full rounded-2xl py-6 font-bold uppercase text-[10px] tracking-[0.15em] transition-all ${
+                  plan.isFeatured 
+                    ? 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-none'
+                }`}
+              >
+                {isCreatingPref && selectedPlanId === parseInt(plan.id) ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Procesando...
+                  </span>
+                ) : (
+                  <>Seleccionar Plan <ArrowRight className="h-3 w-3 ml-2" /></>
+                )}
               </Button>
             </CardContent>
           </Card>

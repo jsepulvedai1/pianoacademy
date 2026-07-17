@@ -1,21 +1,51 @@
 "use client";
 
-import { Users, Search, ChevronRight, GraduationCap } from "lucide-react";
+import { Users, Search, ChevronRight, GraduationCap, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@apollo/client/react/index.js";
+import { MY_LESSONS } from "@/graphql/queries/portal-queries";
 
 export default function TeacherStudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: lessonsData, loading } = useQuery<any>(MY_LESSONS);
 
-  // Simulated data
-  const students = [
-    { id: "1", name: "Ana Martínez", age: 14, lastClass: "2024-05-01", pack: "Piano Básico 4 Clases" },
-    { id: "2", name: "Carlos Soto", age: 25, lastClass: "2024-05-02", pack: "Piano Avanzado 12 Clases" },
-    { id: "3", name: "Sofía Vergara", age: 9, lastClass: "2024-05-04", pack: "Iniciación Musical" },
-  ];
+  const lessons = lessonsData?.myLessons || [];
 
-  const filteredStudents = students.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const students = useMemo(() => {
+    const studentMap: Record<string, any> = {};
+    lessons.forEach((l: any) => {
+      const s = l.student;
+      if (!s) return;
+      if (!studentMap[s.id]) {
+        studentMap[s.id] = {
+          id: s.id,
+          name: s.name,
+          level: s.level || "Básico",
+          lastClass: l.date
+        };
+      } else {
+        if (l.date > studentMap[s.id].lastClass) {
+          studentMap[s.id].lastClass = l.date;
+        }
+      }
+    });
+    return Object.values(studentMap);
+  }, [lessons]);
+
+  const filteredStudents = useMemo(() => {
+    return students.filter((s: any) => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [students, searchTerm]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 text-[#70125F] animate-spin" />
+        <p className="text-slate-400 text-xs italic">Cargando lista de alumnos...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto">
@@ -48,14 +78,13 @@ export default function TeacherStudentsPage() {
                <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                      <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Alumno</th>
-                     <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Edad</th>
-                     <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Programa</th>
+                     <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Nivel</th>
                      <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400">Última Clase</th>
                      <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-50">
-                  {filteredStudents.map(student => (
+                  {filteredStudents.map((student: any) => (
                      <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-8 py-6">
                            <div className="flex items-center gap-4">
@@ -65,9 +94,8 @@ export default function TeacherStudentsPage() {
                               <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">{student.name}</span>
                            </div>
                         </td>
-                        <td className="px-8 py-6 font-medium text-slate-500">{student.age} años</td>
                         <td className="px-8 py-6">
-                           <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-400 border-slate-200">{student.pack}</Badge>
+                           <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-400 border-slate-200">{student.level}</Badge>
                         </td>
                         <td className="px-8 py-6 font-mono text-xs text-slate-400">{student.lastClass}</td>
                         <td className="px-8 py-6 text-right">

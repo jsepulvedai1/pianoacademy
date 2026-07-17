@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useQuery } from "@apollo/client/react/index.js";
+import { MY_STUDENT_PROFILE, MY_LESSONS, MY_PACKS } from "@/graphql/queries/portal-queries";
 import { 
   Calendar, 
   Clock, 
@@ -11,7 +13,8 @@ import {
   ArrowRight, 
   ExternalLink,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,24 +37,39 @@ export default function StudentDashboardPage() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [viewMode, setViewMode] = useState<'LIST' | 'CALENDAR'>('LIST');
 
-  // Simulated student data
-  const student = {
-    name: "Ana Martínez",
-    plan: {
-      name: "Piano Básico Mensual",
-      status: "ACTIVE", // ACTIVE, EXPIRING, EXPIRED
-      classesRemaining: 2,
-      totalClasses: 4,
-      expirationDate: "15 de Mayo, 2024",
-      paymentLink: "https://flow.cl/payment/12345"
-    }
-  };
+  // GraphQL hooks
+  const { data: profileData, loading: profileLoading } = useQuery<any>(MY_STUDENT_PROFILE);
+  const { data: packsData, loading: packsLoading } = useQuery<any>(MY_PACKS);
+  const { data: lessonsData, loading: lessonsLoading } = useQuery<any>(MY_LESSONS);
 
-  // Simulated student classes for the week
-  const lessons = [
-    { id: 1, date: format(new Date(), "yyyy-MM-dd"), startTime: "15:00:00", endTime: "16:00:00", teacher: { name: "Profesor Roberto" }, status: "PENDING", room: { name: "Sala 1" } },
-    { id: 2, date: format(addDays(new Date(), 2), "yyyy-MM-dd"), startTime: "11:00:00", endTime: "12:00:00", teacher: { name: "Profesor Roberto" }, status: "PENDING", room: { name: "Sala 2" } },
-  ];
+  const studentProfile = profileData?.myStudentProfile;
+  const packs = packsData?.myPacks || [];
+  const lessons = lessonsData?.myLessons || [];
+
+  const activePack = packs.find((p: any) => p.isActive) || packs[0];
+
+  const student = useMemo(() => {
+    return {
+      name: studentProfile?.name || "Alumno",
+      plan: {
+        name: activePack?.plan?.name || "Sin Plan Activo",
+        status: activePack?.isActive ? (activePack.remainingClasses <= 1 ? "EXPIRING" : "ACTIVE") : "EXPIRED",
+        classesRemaining: activePack?.remainingClasses ?? 0,
+        totalClasses: activePack?.totalClasses ?? 0,
+        expirationDate: activePack?.expirationDate ? format(parseISO(activePack.expirationDate), "d 'de' MMMM, yyyy", { locale: es }) : "Sin expirar",
+        paymentLink: "https://api.detache.cl/payments"
+      }
+    };
+  }, [studentProfile, activePack]);
+
+  if (profileLoading || packsLoading || lessonsLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-slate-400 text-xs italic">Cargando tu resumen académico...</p>
+      </div>
+    );
+  }
 
   const nextWeek = () => setCurrentWeekStart(prev => addWeeks(prev, 1));
   const prevWeek = () => setCurrentWeekStart(prev => subWeeks(prev, 1));
@@ -66,14 +84,14 @@ export default function StudentDashboardPage() {
   const isExpiring = student.plan.classesRemaining <= 1 || student.plan.status === "EXPIRING";
 
   const nextClass = useMemo(() => {
-     return lessons.find(l => parseISO(l.date) >= new Date()) || lessons[0];
+     return lessons.find((l: any) => parseISO(l.date) >= new Date()) || lessons[0];
   }, [lessons]);
 
   const positionedLessons = useMemo(() => {
     const result: any[] = [];
     const lessonsByDay: Record<string, any[]> = {};
 
-    lessons.forEach(lesson => {
+    lessons.forEach((lesson: any) => {
       if (!lessonsByDay[lesson.date]) lessonsByDay[lesson.date] = [];
       lessonsByDay[lesson.date].push({ ...lesson });
     });
@@ -82,7 +100,7 @@ export default function StudentDashboardPage() {
       const dayLessons = lessonsByDay[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
       const columns: any[][] = [];
 
-      dayLessons.forEach(lesson => {
+      dayLessons.forEach((lesson: any) => {
         let placed = false;
         for (let i = 0; i < columns.length; i++) {
           const lastInCol = columns[i][columns[i].length - 1];
@@ -95,8 +113,8 @@ export default function StudentDashboardPage() {
         if (!placed) columns.push([lesson]);
       });
 
-      columns.forEach((col, colIndex) => {
-        col.forEach(lesson => {
+      columns.forEach((col: any[], colIndex: number) => {
+        col.forEach((lesson: any) => {
           lesson.colIndex = colIndex;
           lesson.totalCols = columns.length;
           result.push(lesson);

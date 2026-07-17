@@ -4,15 +4,49 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const session = request.cookies.get("detache_session")?.value;
   const role = request.cookies.get("detache_user_role")?.value;
+  const portalType = request.cookies.get("detache_portal_type")?.value;
   const allowedSectionsStr = request.cookies.get("detache_allowed_sections")?.value;
   
   const { pathname } = request.nextUrl;
+
+  // Protect student portal routes
+  if (pathname.startsWith("/portal-alumno")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (portalType !== "STUDENT") {
+      if (portalType === "TEACHER") {
+        return NextResponse.redirect(new URL("/portal-docente/dashboard", request.url));
+      }
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+  }
+
+  // Protect teacher portal routes
+  if (pathname.startsWith("/portal-docente")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (portalType !== "TEACHER") {
+      if (portalType === "STUDENT") {
+        return NextResponse.redirect(new URL("/portal-alumno/dashboard", request.url));
+      }
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+  }
 
   // Protect admin routes
   if (pathname.startsWith("/admin")) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (portalType === "STUDENT") {
+      return NextResponse.redirect(new URL("/portal-alumno/dashboard", request.url));
+    }
+    if (portalType === "TEACHER") {
+      return NextResponse.redirect(new URL("/portal-docente/dashboard", request.url));
     }
 
     const parts = pathname.split("/").filter(Boolean);
@@ -46,8 +80,13 @@ export function middleware(request: NextRequest) {
   // Redirect to dashboard if logged in when visiting login page
   if (pathname === "/login") {
     if (session) {
-      const dashboardUrl = new URL("/admin/dashboard", request.url);
-      return NextResponse.redirect(dashboardUrl);
+      if (portalType === "STUDENT") {
+        return NextResponse.redirect(new URL("/portal-alumno/dashboard", request.url));
+      } else if (portalType === "TEACHER") {
+        return NextResponse.redirect(new URL("/portal-docente/dashboard", request.url));
+      } else {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      }
     }
   }
 
@@ -56,5 +95,5 @@ export function middleware(request: NextRequest) {
 
 // Route matchers to limit execution scope
 export const config = {
-  matcher: ["/admin/:path*", "/login"],
+  matcher: ["/admin/:path*", "/portal-alumno/:path*", "/portal-docente/:path*", "/login"],
 };

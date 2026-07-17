@@ -14,6 +14,14 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     { href: "/portal-docente/profile", label: "Mi Cuenta", icon: Settings },
   ];
 
+  const handleLogout = () => {
+    document.cookie = "detache_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "detache_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "detache_portal_type=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "detache_allowed_sections=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "detache_username=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50/50">
       {/* Sidebar Navigation */}
@@ -51,7 +59,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-          <Link href="/login" className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/5 transition-all font-medium">
+          <Link href="/login" onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/5 transition-all font-medium">
             <LogOut className="h-5 w-5" />
             Cerrar Sesión
           </Link>

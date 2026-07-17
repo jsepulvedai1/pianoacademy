@@ -1,41 +1,47 @@
 "use client";
 
-import { useState } from "react";
-import { MessageCircle, FileText, Video, Music as MusicIcon, Link as LinkIcon, ExternalLink, CheckCircle2, User, Clock, Check } from "lucide-react";
+import { useState, useMemo } from "react";
+import { MessageCircle, FileText, Video, Music as MusicIcon, Link as LinkIcon, ExternalLink, CheckCircle2, User, Clock, Check, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@apollo/client/react/index.js";
+import { MY_WALL_MESSAGES } from "@/graphql/queries/portal-queries";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 
 export default function StudentWallPage() {
-  // Simulated data: This should match the "public notes" that the teacher creates
-  const [notes, setNotes] = useState([
-    { 
-      id: 1, 
-      text: "¡Excelente clase hoy Ana! Recuerda practicar la escala de Do Mayor con manos juntas.", 
-      author: "Profesor Roberto", 
-      date: "2024-05-04", 
-      attachedMaterial: null,
-      isRead: false
-    },
-    { 
-      id: 2, 
-      text: "Te dejo un video de Youtube que te ayudará con la postura y la relajación de las muñecas.", 
-      author: "Profesor Roberto", 
-      date: "2024-04-28", 
-      attachedMaterial: { title: "Postura correcta al piano", type: "VIDEO", url: "#" },
+  const { data, loading } = useQuery<any>(MY_WALL_MESSAGES, {
+    fetchPolicy: "network-only"
+  });
+
+  const wallMessages = data?.myWallMessages || [];
+
+  const notes = useMemo(() => {
+    return wallMessages.map((msg: any) => ({
+      id: msg.id,
+      text: msg.text,
+      author: msg.author,
+      date: msg.createdAt ? format(parseISO(msg.createdAt), "dd 'de' MMMM, yyyy - HH:mm", { locale: es }) : "Reciente",
+      attachedMaterial: msg.attachedMaterial ? {
+        title: msg.attachedMaterial.title,
+        type: msg.attachedMaterial.type,
+        url: msg.attachedMaterial.url
+      } : null,
       isRead: true
-    },
-    { 
-      id: 3, 
-      text: "Adjunto la partitura que revisaremos la próxima semana. Por favor imprímela.", 
-      author: "Administración", 
-      date: "2024-04-20", 
-      attachedMaterial: { title: "Partitura: River Flows in You", type: "PDF", url: "#" },
-      isRead: true
-    }
-  ]);
+    }));
+  }, [wallMessages]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-slate-400 text-xs italic">Cargando mensajes del muro...</p>
+      </div>
+    );
+  }
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -47,7 +53,6 @@ export default function StudentWallPage() {
   };
 
   const handleMarkAsRead = (id: number) => {
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     toast.success("Mensaje marcado como visto.");
   };
 
@@ -68,7 +73,7 @@ export default function StudentWallPage() {
              <p className="text-slate-400 italic">Aún no tienes mensajes en tu muro.</p>
            </div>
         ) : (
-          notes.map(note => (
+          notes.map((note: any) => (
             <Card key={note.id} className={cn(
               "rounded-[2.5rem] border-none shadow-sm overflow-hidden transition-all duration-500",
               note.isRead ? "bg-white" : "bg-indigo-50/50 ring-1 ring-indigo-100 shadow-md scale-[1.01]"

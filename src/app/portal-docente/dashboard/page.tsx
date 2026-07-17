@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Music,
-  CalendarDays
+  CalendarDays,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,26 +28,49 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@apollo/client/react/index.js";
+import { MY_TEACHER_PROFILE, MY_LESSONS } from "@/graphql/queries/portal-queries";
 
 export default function TeacherDashboardPage() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [viewMode, setViewMode] = useState<'CALENDAR' | 'LIST'>('CALENDAR');
 
-  // Simulated data
-  const stats = {
-    weeklyHours: 12,
-    studentsCount: 15,
-    completedLessons: 8,
-    pendingLessons: 4
-  };
+  const { data: profileData, loading: profileLoading } = useQuery<any>(MY_TEACHER_PROFILE);
+  const { data: lessonsData, loading: lessonsLoading } = useQuery<any>(MY_LESSONS);
 
-  // Simulated lessons for the week
-  const lessons = [
-    { id: 1, date: format(new Date(), "yyyy-MM-dd"), startTime: "15:00:00", endTime: "16:00:00", student: { name: "Ana Martínez" }, status: "PENDING", room: { name: "Sala 1" } },
-    { id: 2, date: format(new Date(), "yyyy-MM-dd"), startTime: "16:00:00", endTime: "17:00:00", student: { name: "Carlos Soto" }, status: "PENDING", room: { name: "Sala 2" } },
-    { id: 3, date: format(addDays(new Date(), -1), "yyyy-MM-dd"), startTime: "10:00:00", endTime: "11:00:00", student: { name: "Sofía Vergara" }, status: "COMPLETED", room: { name: "Sala 1" } },
-    { id: 4, date: format(addDays(new Date(), 1), "yyyy-MM-dd"), startTime: "11:30:00", endTime: "12:30:00", student: { name: "Pedro Páramo" }, status: "PENDING", room: { name: "Sala 3" } },
-  ];
+  const teacherProfile = profileData?.myTeacherProfile;
+  const lessons = lessonsData?.myLessons || [];
+
+  if (profileLoading || lessonsLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 text-[#70125F] animate-spin" />
+        <p className="text-slate-400 text-xs italic">Cargando tu agenda docente...</p>
+      </div>
+    );
+  }
+
+  const stats = useMemo(() => {
+    const totalWeeklyMinutes = lessons.reduce((acc: number, l: any) => {
+      if (!l.startTime || !l.endTime) return acc;
+      const [sh, sm] = l.startTime.split(":");
+      const [eh, em] = l.endTime.split(":");
+      const startMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+      const endMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
+      return acc + (endMin - startMin);
+    }, 0);
+
+    const uniqueStudents = new Set(lessons.map((l: any) => l.student?.id).filter(Boolean));
+    const completed = lessons.filter((l: any) => l.status === "COMPLETED").length;
+    const pending = lessons.filter((l: any) => l.status === "PENDING").length;
+
+    return {
+      weeklyHours: Math.round((totalWeeklyMinutes / 60) * 10) / 10,
+      studentsCount: uniqueStudents.size,
+      completedLessons: completed,
+      pendingLessons: pending
+    };
+  }, [lessons]);
 
   const nextWeek = () => setCurrentWeekStart(prev => addWeeks(prev, 1));
   const prevWeek = () => setCurrentWeekStart(prev => subWeeks(prev, 1));
@@ -58,16 +82,15 @@ export default function TeacherDashboardPage() {
 
   const hours = Array.from({ length: 14 }, (_, i) => i + 8);
 
-  // Filter lessons for "Today" in List view
   const todayLessons = useMemo(() => {
-    return lessons.filter(l => isSameDay(parseISO(l.date), new Date()));
+    return lessons.filter((l: any) => isSameDay(parseISO(l.date), new Date()));
   }, [lessons]);
 
   const positionedLessons = useMemo(() => {
     const result: any[] = [];
     const lessonsByDay: Record<string, any[]> = {};
 
-    lessons.forEach(lesson => {
+    lessons.forEach((lesson: any) => {
       if (!lessonsByDay[lesson.date]) lessonsByDay[lesson.date] = [];
       lessonsByDay[lesson.date].push({ ...lesson });
     });
@@ -76,7 +99,7 @@ export default function TeacherDashboardPage() {
       const dayLessons = lessonsByDay[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
       const columns: any[][] = [];
 
-      dayLessons.forEach(lesson => {
+      dayLessons.forEach((lesson: any) => {
         let placed = false;
         for (let i = 0; i < columns.length; i++) {
           const lastInCol = columns[i][columns[i].length - 1];
@@ -89,8 +112,8 @@ export default function TeacherDashboardPage() {
         if (!placed) columns.push([lesson]);
       });
 
-      columns.forEach((col, colIndex) => {
-        col.forEach(lesson => {
+      columns.forEach((col: any[], colIndex: number) => {
+        col.forEach((lesson: any) => {
           lesson.colIndex = colIndex;
           lesson.totalCols = columns.length;
           result.push(lesson);
@@ -306,18 +329,18 @@ export default function TeacherDashboardPage() {
             ) : (
               <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
                 <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 space-y-4 min-h-[400px]">
-                  {todayLessons.map(lesson => (
+                  {todayLessons.map((lesson: any) => (
                     <div key={lesson.id} className="flex items-center justify-between p-5 rounded-2xl border border-slate-100 hover:border-primary/20 transition-colors bg-slate-50/50">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-xl bg-white shadow-sm border border-slate-100 flex flex-col items-center justify-center text-primary">
                               <span className="text-[10px] font-bold uppercase">{format(parseISO(lesson.date), "EEE", { locale: es })}</span>
                           </div>
                           <div>
-                              <p className="font-bold text-slate-900">{lesson.student.name}</p>
+                              <p className="font-bold text-slate-900">{lesson.student?.name || "Pre-reserva/Lead"}</p>
                               <p className="text-xs font-mono font-bold text-slate-500 mt-0.5">
                                 {lesson.startTime.substring(0, 5)} - {lesson.endTime.substring(0, 5)} 
                                 <span className="text-slate-300 mx-2">•</span> 
-                                {lesson.room.name}
+                                {lesson.room?.name || "Sin Sala"}
                               </p>
                           </div>
                         </div>
