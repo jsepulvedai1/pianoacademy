@@ -19,7 +19,7 @@ import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_LESSONS } from "@/graphql/queries/get-lessons";
 import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
-import { CREATE_TEACHER, UPDATE_TEACHER } from "@/graphql/mutations/create-teacher";
+import { CREATE_TEACHER, UPDATE_TEACHER, DELETE_TEACHER } from "@/graphql/mutations/create-teacher";
 import { CREATE_AVAILABILITY, DELETE_AVAILABILITY } from "@/graphql/mutations/availability-mutations";
 import { toast } from "sonner";
 
@@ -57,6 +57,7 @@ export default function AdminTeachersPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
+  const [teacherToDelete, setTeacherToDelete] = useState<any | null>(null);
 
   // Availability Editor States
   const [isAddingAvail, setIsAddingAvail] = useState(false);
@@ -129,6 +130,24 @@ export default function AdminTeachersPage() {
     },
     onError: (err: any) => toast.error(err.message)
   });
+
+  const [deleteTeacher, { loading: deletingTeacher }] = useMutation(DELETE_TEACHER, {
+    onCompleted: (data: any) => {
+      if (data.deleteTeacher?.success) {
+        toast.success("Profesor eliminado exitosamente ✅");
+        setIsDetailOpen(false);
+        setSelectedTeacherId(null);
+        refetchTeachers();
+      } else {
+        toast.error(data.deleteTeacher?.error || "Error al eliminar el profesor");
+      }
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
+  const handleDeleteTeacher = (teacher: any) => {
+    setTeacherToDelete(teacher);
+  };
 
   const [createAvailability, { loading: creatingAvail }] = useMutation(CREATE_AVAILABILITY, {
     onCompleted: () => {
@@ -313,6 +332,68 @@ export default function AdminTeachersPage() {
         </div>
       )}
 
+      {teacherToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+           <Card className="w-full max-w-lg bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem] p-8 space-y-6">
+              <div className="flex justify-between items-start">
+                 <div className="space-y-1">
+                    <h3 className="text-xl font-bold font-serif text-slate-900">¿Qué deseas hacer con {teacherToDelete.name}?</h3>
+                    <p className="text-xs text-slate-500 italic">Selecciona una opción para gestionar la cuenta.</p>
+                 </div>
+                 <button onClick={() => setTeacherToDelete(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <X className="h-5 w-5 text-slate-400" />
+                 </button>
+              </div>
+
+              <div className="space-y-4">
+                 <div className="p-5 bg-amber-50/80 rounded-2xl border border-amber-200/60 space-y-2">
+                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                       <CheckCircle2 className="h-4 w-4 text-amber-600" /> Opción 1: Desactivar Profesor (Recomendado)
+                    </p>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                       Cambia el estado a <strong>Inactivo</strong>. Ya no podrá recibir nuevas reservas ni aparecer en selectores, pero <strong>conservará su nombre en las clases pasadas y materiales de los alumnos</strong>.
+                    </p>
+                    <Button 
+                       onClick={() => {
+                          updateTeacher({ variables: { id: parseInt(teacherToDelete.id), status: "INACTIVE" } });
+                          setTeacherToDelete(null);
+                          toast.success(`Profesor ${teacherToDelete.name} cambiado a Inactivo ✅`);
+                       }}
+                       className="w-full mt-2 h-10 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md cursor-pointer"
+                    >
+                       Marcar como Inactivo
+                    </Button>
+                 </div>
+
+                 <div className="p-5 bg-rose-50/80 rounded-2xl border border-rose-200/60 space-y-2">
+                    <p className="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                       <Trash2 className="h-4 w-4 text-rose-600" /> Opción 2: Eliminar Definitivamente
+                    </p>
+                    <p className="text-xs text-rose-800 leading-relaxed">
+                       Elimina el perfil del profesor. Sus clases y materiales <strong>se conservarán</strong> en el historial de los alumnos, pero quedarán asociadas como <em>sin profesor asignado</em>.
+                    </p>
+                    <Button 
+                       disabled={deletingTeacher}
+                       onClick={() => {
+                          deleteTeacher({ variables: { id: parseInt(teacherToDelete.id) } });
+                          setTeacherToDelete(null);
+                       }}
+                       className="w-full mt-2 h-10 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md cursor-pointer"
+                    >
+                       {deletingTeacher ? "Eliminando..." : "Eliminar Definitivamente"}
+                    </Button>
+                 </div>
+              </div>
+
+              <div className="pt-2 text-center">
+                 <Button variant="ghost" onClick={() => setTeacherToDelete(null)} className="text-xs font-bold uppercase text-slate-400 hover:text-slate-600">
+                    Cancelar
+                 </Button>
+              </div>
+           </Card>
+        </div>
+      )}
+
       <Card className="border-none shadow-sm overflow-hidden bg-white rounded-3xl">
         <div className="p-8 border-b border-slate-50 flex items-center justify-between">
            <div className="relative w-80 group">
@@ -369,8 +450,11 @@ export default function AdminTeachersPage() {
                       <Badge className={`font-bold uppercase text-[9px] tracking-widest px-3 py-1 border-0 ${cfg.bg} ${cfg.color}`}>{cfg.label}</Badge>
                     </td>
                     <td className="px-8 py-6 text-right">
-                       <button onClick={(e) => { e.stopPropagation(); openModal(teacher); }} className="p-2 hover:bg-slate-100 rounded-xl text-slate-300 hover:text-primary transition-all mr-2">
+                       <button onClick={(e) => { e.stopPropagation(); openModal(teacher); }} className="p-2 hover:bg-slate-100 rounded-xl text-slate-300 hover:text-primary transition-all mr-1" title="Editar Profesor">
                           <Edit2 className="h-4 w-4" />
+                       </button>
+                       <button onClick={(e) => { e.stopPropagation(); handleDeleteTeacher(teacher); }} className="p-2 hover:bg-rose-50 rounded-xl text-slate-300 hover:text-rose-600 transition-all mr-2" title="Eliminar Profesor">
+                          <Trash2 className="h-4 w-4" />
                        </button>
                       <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-300 group-hover:text-primary"><ChevronRight className="h-5 w-5" /></Button>
                     </td>
@@ -384,9 +468,17 @@ export default function AdminTeachersPage() {
 
       {isDetailOpen && selectedTeacher && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-full max-w-2xl bg-white h-full overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-right-10 duration-500">
+          <div className="w-full max-w-3xl lg:max-w-4xl bg-white h-full overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-right-10 duration-500">
             <header className="bg-slate-900 text-white p-10 relative">
-              <button onClick={() => { setIsDetailOpen(false); setSelectedTeacherId(null); }} className="absolute top-8 right-8 p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6" /></button>
+              <div className="absolute top-8 right-8 flex items-center gap-2">
+                 <button onClick={() => openModal(selectedTeacher)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5 text-white">
+                    <Edit2 className="h-3.5 w-3.5 text-primary" /> Editar
+                 </button>
+                 <button onClick={() => handleDeleteTeacher(selectedTeacher)} className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5">
+                    <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                 </button>
+                 <button onClick={() => { setIsDetailOpen(false); setSelectedTeacherId(null); }} className="p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6 text-slate-400" /></button>
+              </div>
               <div className="flex items-center gap-6">
                  <div className="h-20 w-20 rounded-[2rem] bg-white/5 overflow-hidden flex items-center justify-center border border-white/10 relative group/avatar">
                      {selectedTeacher.photo ? (

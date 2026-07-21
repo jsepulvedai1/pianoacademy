@@ -315,7 +315,7 @@ export default function AdminStudentsPage() {
 
       {isDetailOpen && selectedStudent && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="w-full max-w-2xl bg-white h-full overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-right-10 duration-500">
+           <div className="w-full max-w-3xl lg:max-w-4xl bg-white h-full overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-right-10 duration-500">
               <header className="bg-slate-900 text-white p-10 relative">
                  <div className="absolute top-8 right-8 flex items-center gap-2">
                     {!isEditingStudent && (
@@ -462,7 +462,7 @@ export default function AdminStudentsPage() {
                  ) : (
                     <>
                        {activeTab === 'GENERAL' && (
-                    <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2">
                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-6">
                           <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Información Personal</p>
                           <div className="space-y-4">
@@ -473,12 +473,12 @@ export default function AdminStudentsPage() {
                                { label: 'Instrumento', val: selectedStudent?.primaryInstrument?.name, icon: Music },
                                { label: 'Nivel', val: selectedStudent?.level, icon: Activity },
                              ].map(item => (
-                               <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50">
-                                 <div className="flex items-center gap-2 text-slate-400">
-                                   <item.icon className="h-3.5 w-3.5" />
+                               <div key={item.label} className="flex flex-col sm:flex-row sm:items-center justify-between py-2.5 border-b border-slate-50 gap-1 sm:gap-4 min-w-0">
+                                 <div className="flex items-center gap-2 text-slate-400 shrink-0">
+                                   <item.icon className="h-3.5 w-3.5 shrink-0" />
                                    <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
                                  </div>
-                                 <span className="font-bold text-slate-700 text-sm">{item.val || '---'}</span>
+                                 <span className="font-bold text-slate-700 text-sm break-all text-left sm:text-right min-w-0" title={item.val}>{item.val || '---'}</span>
                                </div>
                              ))}
                           </div>
@@ -492,12 +492,12 @@ export default function AdminStudentsPage() {
                                { label: 'Apoderado', val: selectedStudent?.guardianName, icon: User },
                                { label: 'Teléfono Apoderado', val: selectedStudent?.guardianPhone, icon: Phone },
                              ].map(item => (
-                               <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50">
-                                 <div className="flex items-center gap-2 text-slate-400">
-                                   <item.icon className="h-3.5 w-3.5" />
+                               <div key={item.label} className="flex flex-col sm:flex-row sm:items-center justify-between py-2.5 border-b border-slate-50 gap-1 sm:gap-4 min-w-0">
+                                 <div className="flex items-center gap-2 text-slate-400 shrink-0">
+                                   <item.icon className="h-3.5 w-3.5 shrink-0" />
                                    <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
                                  </div>
-                                 <span className="font-bold text-slate-700 text-sm">{item.val || '---'}</span>
+                                 <span className="font-bold text-slate-700 text-sm break-all text-left sm:text-right min-w-0" title={item.val}>{item.val || '---'}</span>
                                </div>
                              ))}
                           </div>
