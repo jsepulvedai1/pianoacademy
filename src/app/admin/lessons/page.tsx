@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, normalizePhoneNumber } from "@/lib/utils";
 import {
   Calendar,
   Search,
@@ -17,7 +17,12 @@ import {
   Plus,
   MoreVertical,
   ChevronLeft,
-  CalendarDays
+  CalendarDays,
+  AlertTriangle,
+  Building,
+  Sparkles,
+  MessageCircle,
+  X
 } from "lucide-react";
 import { 
   format, 
@@ -96,7 +101,7 @@ export default function AdminLessonsPage() {
 
   const [createLesson, { loading: isCreating }] = useMutation(CREATE_LESSON, {
     onCompleted: () => {
-      toast.success("Clase agendada en Django ✅");
+      toast.success("Clase agendada exitosamente ✅");
       setIsNewClassOpen(false);
       refetchLessons();
     },
@@ -151,6 +156,12 @@ export default function AdminLessonsPage() {
       toast.error("Por favor completa todos los campos requeridos");
       return;
     }
+
+    const holidayOnDate = activeHolidaysMap.get(newClassDate);
+    if (holidayOnDate) {
+      toast.error(`No es posible agendar clases en días feriados (${holidayOnDate}) 🇨🇱`);
+      return;
+    }
     
     createLesson({
       variables: {
@@ -176,6 +187,11 @@ export default function AdminLessonsPage() {
 
   const handleGridClick = (day: Date, hour: number) => {
     const formattedDate = format(day, "yyyy-MM-dd");
+    const holidayName = activeHolidaysMap.get(formattedDate);
+    if (holidayName) {
+      toast.error(`No se pueden programar clases en días feriados (${holidayName}) 🇨🇱`);
+      return;
+    }
     const formattedStart = `${hour.toString().padStart(2, '0')}:00`;
     const formattedEnd = `${(hour + 1).toString().padStart(2, '0')}:00`;
     setNewClassDate(formattedDate);
@@ -370,19 +386,37 @@ export default function AdminLessonsPage() {
                       {hour}:00
                     </span>
                   </div>
-                  {weekDays.map((day) => (
-                    <div 
-                      key={`${day}-${hour}`} 
-                      onClick={() => handleGridClick(day, hour)}
-                      className={cn(
-                        "h-20 border-b border-l border-slate-50 relative group transition-colors hover:bg-slate-50/50 cursor-pointer",
-                        isToday(day) && "bg-primary/[0.01]"
-                      )}
-                    >
-                      {/* Grid line indicator on hover */}
-                      <div className="absolute top-0 left-0 w-full h-[1px] bg-primary/0 group-hover:bg-primary/10 transition-colors"></div>
-                    </div>
-                  ))}
+                  {weekDays.map((day) => {
+                    const dayFormatted = format(day, "yyyy-MM-dd");
+                    const holidayName = activeHolidaysMap.get(dayFormatted);
+                    const isHoliday = Boolean(holidayName);
+
+                    return (
+                      <div 
+                        key={`${day}-${hour}`} 
+                        onClick={() => handleGridClick(day, hour)}
+                        title={isHoliday ? `🇨🇱 Feriado: ${holidayName} (No se pueden asignar clases)` : undefined}
+                        className={cn(
+                          "h-20 border-b border-l border-slate-50 relative group transition-colors",
+                          isHoliday 
+                            ? "bg-rose-50/40 border-l-rose-100/60 hover:bg-rose-100/40 cursor-not-allowed" 
+                            : isToday(day) 
+                            ? "bg-primary/[0.02] hover:bg-slate-50/50 cursor-pointer" 
+                            : "hover:bg-slate-50/50 cursor-pointer"
+                        )}
+                      >
+                        {isHoliday && hour === 12 && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 select-none">
+                            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">
+                              🇨🇱 Feriado
+                            </span>
+                          </div>
+                        )}
+                        {/* Grid line indicator on hover */}
+                        <div className="absolute top-0 left-0 w-full h-[1px] bg-primary/0 group-hover:bg-primary/10 transition-colors"></div>
+                      </div>
+                    );
+                  })}
                 </React.Fragment>
               ))}
 
@@ -466,35 +500,251 @@ export default function AdminLessonsPage() {
         </div>
       )}
 
-      {isModalOpen && selectedLesson && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg bg-white border-none shadow-2xl overflow-hidden rounded-3xl">
-            <header className="p-8 bg-slate-900 text-white relative">
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10"><XCircle className="h-6 w-6" /></button>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Detalles de la Sesión</p>
-                <h2 className="text-3xl font-bold font-serif">{selectedLesson.teacher?.name}</h2>
-              </div>
-            </header>
-            <CardContent className="p-8 space-y-8">
-              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado Actual</p>
-                  <p className="text-sm font-medium text-slate-700">{selectedLesson.status}</p>
+      {isModalOpen && selectedLesson && (() => {
+        const studentName = selectedLesson.student?.name || selectedLesson.lead?.nombre || "Sin alumno asignado";
+        const teacherName = selectedLesson.teacher?.name || "Sin profesor asignado";
+        const roomName = selectedLesson.room?.name || "Sin sala asignada";
+        const instrumentName = 
+          selectedLesson.student?.primaryInstrument?.name || 
+          selectedLesson.teacher?.specialties?.[0]?.name || 
+          (selectedLesson.lead?.servicio === 'CLASE_PRUEBA' ? 'Piano (Prueba)' : 'Piano');
+
+        const lessonTypeLabel = 
+          selectedLesson.lessonType === 'GRUPAL' 
+            ? 'Clase Grupal / Ensamble' 
+            : selectedLesson.isPreReservation 
+            ? 'Clase de Prueba (Evaluación)' 
+            : 'Clase Individual (1 a 1)';
+
+        const studentSubtitle = selectedLesson.student 
+          ? (selectedLesson.student.level ? `Nivel ${selectedLesson.student.level}` : 'Alumno Regular')
+          : (selectedLesson.lead ? 'Prospecto en Pre-Reserva' : 'Sin matrícula');
+
+        const teacherSubtitle = selectedLesson.teacher?.specialties?.map((s: any) => s.name).join(', ') || 'Docente Titular';
+
+        const studentPhone = selectedLesson.student?.phoneNumber || selectedLesson.student?.guardianPhone || selectedLesson.lead?.telefono;
+        const teacherPhone = selectedLesson.teacher?.phoneNumber;
+
+        const roomSubtitle = selectedLesson.room?.capacity 
+          ? `Capacidad: ${selectedLesson.room.capacity} alumno(s)` 
+          : 'Sede Presencial La Cisterna';
+
+        const formattedDate = selectedLesson.date ? (() => {
+          try {
+            return format(parseISO(selectedLesson.date), "EEEE d 'de' MMMM, yyyy", { locale: es });
+          } catch {
+            return selectedLesson.date;
+          }
+        })() : '';
+
+        const timeRange = `${selectedLesson.startTime?.substring(0, 5)} - ${selectedLesson.endTime?.substring(0, 5) || '1h'}`;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+            <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem] max-h-[92vh] flex flex-col">
+              
+              {/* Header */}
+              <header className="p-7 bg-[#70125F] text-white relative flex-shrink-0">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+                <div className="space-y-1.5 pr-10">
+                  <div className="flex items-center gap-2 text-white/70 font-bold text-[10px] uppercase tracking-[0.2em]">
+                    <CalendarDays className="h-3.5 w-3.5" /> Detalles de la Sesión Académica
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold font-serif text-white">
+                    {studentName}
+                  </h2>
+                  <p className="text-xs text-white/80 font-medium capitalize flex items-center gap-2">
+                    <span>📅 {formattedDate}</span>
+                    <span>•</span>
+                    <span className="font-mono bg-white/15 px-2 py-0.5 rounded-md text-[11px] font-bold">⏱️ {timeRange}</span>
+                  </p>
                 </div>
-                {getStatusBadge(selectedLesson.status)}
-              </div>
-              <div className="grid grid-cols-2 gap-3 pt-4">
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("COMPLETED")} className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[9px] tracking-widest shadow-lg">Sí Asiste</Button>
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("ABSENT")} variant="outline" className="h-12 rounded-xl text-rose-600 border-rose-100 font-bold uppercase text-[9px] tracking-widest hover:bg-rose-50">No Asiste</Button>
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("EXCUSED")} variant="outline" className="h-12 rounded-xl text-blue-600 border-blue-100 font-bold uppercase text-[9px] tracking-widest hover:bg-blue-50">Avisa Clase</Button>
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("PENDING")} variant="outline" className="h-12 rounded-xl text-slate-500 border-slate-200 font-bold uppercase text-[9px] tracking-widest">Pendiente</Button>
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("CANCELLED")} variant="ghost" className="h-12 rounded-xl text-rose-400 font-bold uppercase text-[9px] tracking-widest col-span-2">Cancelar Clase</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </header>
+
+              {/* Body */}
+              <CardContent className="p-7 space-y-6 overflow-y-auto flex-1">
+                
+                {/* 4 Information Cards (2x2 Grid) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  
+                  {/* 1. Alumno */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[#70125F]/10 text-[#70125F] flex items-center justify-center shrink-0 font-bold font-serif">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Alumno / Estudiante</p>
+                      <p className="text-xs font-bold text-slate-900 truncate mt-0.5" title={studentName}>
+                        {studentName}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                        {studentSubtitle}
+                      </p>
+                      {studentPhone && (
+                        <a
+                          href={`https://wa.me/${normalizePhoneNumber(studentPhone)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold hover:underline mt-1.5 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-100 transition-colors"
+                        >
+                          <MessageCircle className="h-3 w-3" /> WhatsApp Alumno
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. Profesor */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
+                      <GraduationCap className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Profesor / Docente</p>
+                      <p className="text-xs font-bold text-slate-900 truncate mt-0.5" title={teacherName}>
+                        {teacherName}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                        {teacherSubtitle}
+                      </p>
+                      {teacherPhone && (
+                        <a
+                          href={`https://wa.me/${normalizePhoneNumber(teacherPhone)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold hover:underline mt-1.5 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-100 transition-colors"
+                        >
+                          <MessageCircle className="h-3 w-3" /> WhatsApp Docente
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3. Sala */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0 font-bold">
+                      <Building className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sala Asignada</p>
+                      <p className="text-xs font-bold text-slate-900 truncate mt-0.5" title={roomName}>
+                        {roomName}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                        {roomSubtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 4. Tipo de Clase & Instrumento */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center shrink-0 font-bold">
+                      <Music className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Instrumento & Modalidad</p>
+                      <p className="text-xs font-bold text-slate-900 truncate mt-0.5">
+                        🎹 {instrumentName}
+                      </p>
+                      <p className="text-[10px] text-emerald-700 font-bold truncate mt-0.5">
+                        {lessonTypeLabel}
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Current Status Box */}
+                <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado Actual de la Sesión</p>
+                    <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                      {selectedLesson.status === 'COMPLETED' ? 'Asistencia confirmada' :
+                       selectedLesson.status === 'ABSENT' ? 'Inasistencia sin aviso' :
+                       selectedLesson.status === 'EXCUSED' ? 'Avisó inasistencia con anticipación' :
+                       selectedLesson.status === 'CANCELLED' ? 'Sesión cancelada' : 'Pendiente de realización'}
+                    </p>
+                  </div>
+                  {getStatusBadge(selectedLesson.status)}
+                </div>
+
+                {/* Status Action Buttons */}
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Registrar Asistencia / Cambiar Estado
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Button 
+                      disabled={isUpdating} 
+                      onClick={() => handleStatusChange("COMPLETED")} 
+                      className={`h-11 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer transition-all shadow-sm ${
+                        selectedLesson.status === 'COMPLETED'
+                          ? 'bg-emerald-700 text-white ring-2 ring-emerald-500'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1.5" /> Sí Asiste
+                    </Button>
+
+                    <Button 
+                      disabled={isUpdating} 
+                      onClick={() => handleStatusChange("ABSENT")} 
+                      variant="outline" 
+                      className={`h-11 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer transition-all ${
+                        selectedLesson.status === 'ABSENT'
+                          ? 'bg-rose-100 text-rose-700 border-rose-300 ring-2 ring-rose-400'
+                          : 'text-rose-600 border-rose-200 hover:bg-rose-50'
+                      }`}
+                    >
+                      <XCircle className="h-4 w-4 mr-1.5" /> No Asiste
+                    </Button>
+
+                    <Button 
+                      disabled={isUpdating} 
+                      onClick={() => handleStatusChange("EXCUSED")} 
+                      variant="outline" 
+                      className={`h-11 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer transition-all ${
+                        selectedLesson.status === 'EXCUSED'
+                          ? 'bg-blue-100 text-blue-700 border-blue-300 ring-2 ring-blue-400'
+                          : 'text-blue-600 border-blue-200 hover:bg-blue-50'
+                      }`}
+                    >
+                      <Clock className="h-4 w-4 mr-1.5" /> Avisa Clase
+                    </Button>
+
+                    <Button 
+                      disabled={isUpdating} 
+                      onClick={() => handleStatusChange("PENDING")} 
+                      variant="outline" 
+                      className={`h-11 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer transition-all ${
+                        selectedLesson.status === 'PENDING'
+                          ? 'bg-amber-50 text-amber-700 border-amber-300 ring-2 ring-amber-400'
+                          : 'text-slate-600 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Clock className="h-4 w-4 mr-1.5" /> Pendiente
+                    </Button>
+
+                    <Button 
+                      disabled={isUpdating} 
+                      onClick={() => handleStatusChange("CANCELLED")} 
+                      variant="ghost" 
+                      className="h-10 rounded-2xl text-rose-500 hover:bg-rose-50 font-bold uppercase text-[10px] tracking-widest col-span-2 cursor-pointer transition-colors"
+                    >
+                      Cancelar Clase Definitivamente
+                    </Button>
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
 
       {isNewClassOpen && (() => {
         const selectedTeacherObj = currentTeachers.find((t: any) => t.id === newClassTeacher);
@@ -549,6 +799,17 @@ export default function AdminLessonsPage() {
                       onChange={(e) => setNewClassDate(e.target.value)} 
                     />
                   </div>
+
+                  {/* Feriado Alert */}
+                  {activeHolidaysMap.get(newClassDate) && (
+                    <div className="col-span-full p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-800 text-xs animate-in fade-in">
+                      <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
+                      <div>
+                        <p className="font-bold text-rose-950">🚫 Día Feriado Oficial: {activeHolidaysMap.get(newClassDate)}</p>
+                        <p className="text-rose-800/90 text-[11px]">No está permitido agendar clases en días festivos oficiales.</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sala */}
                   <div className="space-y-1.5">
@@ -686,9 +947,9 @@ export default function AdminLessonsPage() {
                     Cancelar
                   </Button>
                   <Button 
-                    disabled={isCreating || !newClassTeacher || !newClassStudent || !newClassDate || !newClassRoom} 
+                    disabled={isCreating || !newClassTeacher || !newClassStudent || !newClassDate || !newClassRoom || Boolean(activeHolidaysMap.get(newClassDate))} 
                     onClick={handleCreateLesson} 
-                    className="flex-1 h-12 rounded-2xl bg-[#70125F] hover:bg-[#590e4b] text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-[#70125F]/20 cursor-pointer"
+                    className="flex-1 h-12 rounded-2xl bg-[#70125F] hover:bg-[#590e4b] text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-[#70125F]/20 cursor-pointer disabled:opacity-40"
                   >
                     {isCreating ? "Agendando..." : "Confirmar Clase"}
                   </Button>

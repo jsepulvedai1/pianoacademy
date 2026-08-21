@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck, Globe, Shield } from "lucide-react";
+import { Music, LayoutDashboard, ClipboardList, Users, Calendar, BookOpen, Settings, LogOut, GraduationCap, Warehouse, TrendingUp, Package, CreditCard, CalendarCheck, Globe, Shield, Library } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,6 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/payments", label: "Pagos", icon: CreditCard },
     { href: "/admin/teachers", label: "Profesores", icon: Users },
     { href: "/admin/students", label: "Estudiantes", icon: GraduationCap },
+    { href: "/admin/materials", label: "Materiales", icon: Library },
     { href: "/admin/rooms", label: "Salas", icon: Warehouse },
     { href: "/admin/lessons", label: "Clases", icon: Calendar },
     { href: "/admin/plans", label: "Programas", icon: BookOpen },

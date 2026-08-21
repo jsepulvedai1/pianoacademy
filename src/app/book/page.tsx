@@ -735,7 +735,7 @@ export default function BookPage() {
                           isSelected
                             ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/30 scale-105"
                             : isHoliday
-                            ? "bg-rose-50/50 text-rose-300 border border-rose-100 cursor-not-allowed"
+                            ? "bg-rose-100 text-rose-700 font-bold border border-rose-300 cursor-not-allowed"
                             : disabled
                             ? "text-slate-300 cursor-not-allowed opacity-40 bg-slate-50/50"
                             : "hover:bg-slate-100 text-slate-800 cursor-pointer"
@@ -743,11 +743,20 @@ export default function BookPage() {
                       >
                         <span>{d.getDate()}</span>
                         {isHoliday && (
-                          <span className="h-1 w-1 rounded-full bg-rose-400 mt-0.5" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-600 mt-0.5" />
                         )}
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Holiday Legend */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-rose-500" />
+                    <span className="font-bold text-rose-700">🇨🇱 Feriados Oficiales (Cerrado)</span>
+                  </div>
+                  <span>Horarios disponibles de Lun a Sáb</span>
                 </div>
               </Card>
 

@@ -55,6 +55,7 @@ import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_ROOMS } from "@/graphql/queries/get-rooms";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
+import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
 import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_NOTE, DELETE_LEAD, CONFIRM_LEAD_RESERVATION_WITH_LESSON } from "@/graphql/mutations/lead-mutations";
 import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
@@ -116,6 +117,15 @@ export default function AdminLeadsPage() {
   const teachers = teachersData?.allTeachers || [];
   const { data: roomsData } = useQuery<any>(GET_ROOMS);
   const rooms = roomsData?.allRooms || [];
+  const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, { fetchPolicy: "network-only" });
+
+  const activeHolidaysMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (holidaysData?.activeHolidays || []).forEach((h: any) => {
+      map.set(h.date, h.name);
+    });
+    return map;
+  }, [holidaysData]);
 
   const [showPaymentLinkMenu, setShowPaymentLinkMenu] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -1184,6 +1194,17 @@ export default function AdminLeadsPage() {
                     />
                   </div>
 
+                  {/* Feriado Alert */}
+                  {activeHolidaysMap.get(confirmLessonForm.date) && (
+                    <div className="col-span-2 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-800 text-xs animate-in fade-in">
+                      <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
+                      <div>
+                        <p className="font-bold text-rose-950">🚫 Día Feriado Oficial: {activeHolidaysMap.get(confirmLessonForm.date)}</p>
+                        <p className="text-rose-800/90 text-[11px]">No está permitido programar clases en días festivos oficiales.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="col-span-2 sm:col-span-1 space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-primary" /> Sala (Opcional)
@@ -1234,7 +1255,7 @@ export default function AdminLeadsPage() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isConfirmingReservation || !confirmLessonForm.teacherId || !confirmLessonForm.date}
+                    disabled={isConfirmingReservation || !confirmLessonForm.teacherId || !confirmLessonForm.date || Boolean(activeHolidaysMap.get(confirmLessonForm.date))}
                     className="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-600/20 disabled:opacity-40 cursor-pointer"
                   >
                     {isConfirmingReservation ? "Confirmando..." : "Confirmar y Agendar Clase 🎹"}

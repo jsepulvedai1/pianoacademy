@@ -32,7 +32,13 @@ export const GET_STUDENT_PORTAL_DATA = gql`
       title
       type
       url
+      scope
+      level
       createdAt
+      teacher {
+        id
+        name
+      }
     }
   }
 `;

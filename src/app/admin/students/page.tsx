@@ -1,21 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { 
   GraduationCap, Search, Plus, Calendar, User, Music,
   ChevronRight, Activity, Phone, Mail, MapPin, X, CreditCard,
   History, TrendingUp, BookOpen, AlertCircle, Shield, DollarSign,
-  CheckCircle2, Clock, Edit3
+  CheckCircle2, Clock, Edit3, MessageSquare, MessageCircle, Send,
+  RefreshCw, Loader2, ExternalLink, Sparkles, CheckCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useQuery, useMutation } from "@apollo/client/react/index.js";
+import { useQuery, useMutation, useLazyQuery } from "@apollo/client/react/index.js";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_LESSONS } from "@/graphql/queries/get-lessons";
 import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
-import { CREATE_STUDENT, UPDATE_STUDENT } from "@/graphql/mutations/student-mutations";
+import { CREATE_STUDENT, UPDATE_STUDENT, SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
+import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
+import { normalizePhoneNumber } from "@/lib/utils";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -28,9 +31,16 @@ export default function AdminStudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'GENERAL' | 'ACADEMICO' | 'PAGOS' | 'ASISTENCIA'>('GENERAL');
+  const [activeTab, setActiveTab] = useState<'GENERAL' | 'ACADEMICO' | 'PAGOS' | 'ASISTENCIA' | 'WHATSAPP'>('GENERAL');
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [isEditingStudent, setIsEditingStudent] = useState(false);
+
+  // ── WhatsApp State ──────────────────────────────────────────
+  const [chatRecipientType, setChatRecipientType] = useState<'STUDENT' | 'GUARDIAN'>('STUDENT');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -103,6 +113,98 @@ export default function AdminStudentsPage() {
     },
     onError: (err: any) => toast.error(err.message)
   });
+
+  // ── Active Chat Phone Calculation ─────────────────────────
+  const activeChatPhone = useMemo(() => {
+    if (!selectedStudent) return "";
+    if (chatRecipientType === 'GUARDIAN') {
+      return selectedStudent.guardianPhone || "";
+    }
+    return selectedStudent.phoneNumber || selectedStudent.guardianPhone || "";
+  }, [selectedStudent, chatRecipientType]);
+
+  const [loadChat, { data: chatQueryData, error: chatQueryError }] = useLazyQuery<any>(GET_CHAT_MESSAGES, {
+    fetchPolicy: 'network-only'
+  });
+
+  const [sendWA, { loading: isSendingMessage }] = useMutation<any>(SEND_WHATSAPP_MUTATION);
+
+  useEffect(() => {
+    if (chatQueryData?.chatMessages) {
+      setChatMessages(chatQueryData.chatMessages);
+      setIsLoadingChat(false);
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [chatQueryData]);
+
+  useEffect(() => {
+    if (chatQueryError) {
+      console.error("Error loading student chat:", chatQueryError);
+      setIsLoadingChat(false);
+    }
+  }, [chatQueryError]);
+
+  const fetchChatHistory = (phone: string) => {
+    if (!phone) return;
+    setIsLoadingChat(true);
+    loadChat({ variables: { phone } });
+  };
+
+  useEffect(() => {
+    if (isDetailOpen && activeTab === 'WHATSAPP' && activeChatPhone) {
+      fetchChatHistory(activeChatPhone);
+      const interval = setInterval(() => {
+        loadChat({ variables: { phone: activeChatPhone } });
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isDetailOpen, activeTab, activeChatPhone]);
+
+  const handleSendMessage = async (customText?: string) => {
+    const textToSend = customText || chatInput;
+    if (!textToSend.trim() || !activeChatPhone) {
+      if (!activeChatPhone) toast.error("El alumno o apoderado no tiene un número telefónico registrado.");
+      return;
+    }
+
+    try {
+      const normalized = normalizePhoneNumber(activeChatPhone);
+      const res = await sendWA({
+        variables: {
+          phoneNumber: normalized,
+          message: textToSend
+        }
+      });
+
+      if (res.data?.sendWhatsapp?.success) {
+        toast.success("Mensaje enviado por WhatsApp ✅");
+        setChatInput("");
+        fetchChatHistory(activeChatPhone);
+      } else {
+        toast.error("Error al enviar mensaje: " + (res.data?.sendWhatsapp?.response || "Error en el servidor"));
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error de comunicación con WhatsApp");
+    }
+  };
+
+  const applyTemplate = (type: 'RECORDATORIO' | 'PAGO' | 'MATERIAL' | 'SALUDO') => {
+    if (!selectedStudent) return;
+    const name = selectedStudent.name?.split(' ')[0] || selectedStudent.name || 'Estudiante';
+    let text = "";
+    if (type === 'RECORDATORIO') {
+      text = `Hola ${name} 🎵, te saludamos de Academia Détaché para recordarte tu próxima clase de música. ¡Te esperamos!`;
+    } else if (type === 'PAGO') {
+      text = `Hola ${name} 💳, te escribimos desde Academia Détaché para coordinar la renovación de tu plan de clases. Si tienes dudas avísanos con gusto.`;
+    } else if (type === 'MATERIAL') {
+      text = `Hola ${name} 🎼, tu profesor te ha compartido nuevo material de estudio en la plataforma de Academia Détaché 📖.`;
+    } else if (type === 'SALUDO') {
+      text = `Hola ${name} 👋, ¿cómo estás? Te escribimos de la administración de Academia Détaché para saber cómo van tus clases.`;
+    }
+    setChatInput(text);
+  };
 
   const students = data?.allStudents || [];
   const allPacks = data?.allStudentPacks || [];
@@ -398,7 +500,32 @@ export default function AdminStudentsPage() {
                      </Badge>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-300 group-hover:text-primary bg-slate-50/0 group-hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Button>
+                    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setIsDetailOpen(true);
+                          setActiveTab('WHATSAPP');
+                        }}
+                        className="h-9 w-9 rounded-xl flex items-center justify-center text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+                        title="Abrir Chat WhatsApp con el Estudiante"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 text-slate-300 group-hover:text-primary bg-slate-50/0 group-hover:bg-slate-100 cursor-pointer"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setIsDetailOpen(true);
+                          setActiveTab('GENERAL');
+                        }}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -413,11 +540,11 @@ export default function AdminStudentsPage() {
               <header className="bg-slate-900 text-white p-10 relative">
                  <div className="absolute top-8 right-8 flex items-center gap-2">
                     {!isEditingStudent && (
-                       <button onClick={handleStartEdit} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5 text-white">
+                       <button onClick={handleStartEdit} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5 text-white cursor-pointer">
                           <Edit3 className="h-3.5 w-3.5 text-primary" /> Editar Ficha
                        </button>
                     )}
-                    <button onClick={() => { setIsDetailOpen(false); setIsEditingStudent(false); }} className="p-3 hover:bg-white/10 rounded-full transition-colors"><X className="h-6 w-6 text-slate-400" /></button>
+                    <button onClick={() => { setIsDetailOpen(false); setIsEditingStudent(false); }} className="p-3 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X className="h-6 w-6 text-slate-400" /></button>
                  </div>
                  <div className="flex items-center gap-6">
                     <div className="h-20 w-20 bg-white/5 rounded-[2rem] flex items-center justify-center border border-white/10 shadow-2xl">
@@ -433,11 +560,27 @@ export default function AdminStudentsPage() {
                       <p className="text-slate-400 text-xs font-mono">{selectedStudent?.rut || 'RUT no registrado'} · Iniciado {selectedStudent?.startDate}</p>
                     </div>
                  </div>
-                 <div className="flex gap-8 mt-12 border-b border-white/5">
-                    {['GENERAL', 'ACADEMICO', 'PAGOS', 'ASISTENCIA'].map((t: any) => (
-                       <button key={t} onClick={() => setActiveTab(t)} className={`pb-4 text-[10px] font-bold uppercase tracking-[0.2em] relative transition-colors ${activeTab === t ? 'text-primary' : 'text-white/40 hover:text-white/60'}`}>
-                          {t}
-                          {activeTab === t && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
+                 <div className="flex gap-8 mt-12 border-b border-white/5 overflow-x-auto">
+                    {[
+                      { key: 'GENERAL', label: 'GENERAL' },
+                      { key: 'ACADEMICO', label: 'ACADÉMICO' },
+                      { key: 'PAGOS', label: 'PAGOS' },
+                      { key: 'ASISTENCIA', label: 'ASISTENCIA' },
+                      { key: 'WHATSAPP', label: '💬 WHATSAPP' }
+                    ].map((tab: any) => (
+                       <button 
+                         key={tab.key} 
+                         onClick={() => setActiveTab(tab.key)} 
+                         className={`pb-4 text-[10px] font-bold uppercase tracking-[0.2em] relative transition-colors whitespace-nowrap cursor-pointer ${
+                           activeTab === tab.key 
+                             ? (tab.key === 'WHATSAPP' ? 'text-emerald-400 font-black' : 'text-primary') 
+                             : 'text-white/40 hover:text-white/60'
+                         }`}
+                       >
+                          {tab.label}
+                          {activeTab === tab.key && (
+                            <div className={`absolute bottom-0 left-0 right-0 h-1 rounded-t-full ${tab.key === 'WHATSAPP' ? 'bg-emerald-400' : 'bg-primary'}`} />
+                          )}
                        </button>
                     ))}
                  </div>

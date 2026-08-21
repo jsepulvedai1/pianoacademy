@@ -74,6 +74,10 @@ export default function AdminTasksPage() {
   const tasks = tasksData?.allAcademyTasks || [];
   const collaborators = accountsData?.allAdminAccounts || [];
   const currentUserId = meData?.me?.id;
+  const isAdmin = Boolean(
+    meData?.me?.isSuperuser || 
+    meData?.me?.profile?.role === 'ADMIN'
+  );
 
   // Mutations
   const [createTask, { loading: creating }] = useMutation(CREATE_ACADEMY_TASK, {
@@ -84,7 +88,7 @@ export default function AdminTasksPage() {
         title: "",
         description: "",
         assignedTo: "RECEPCION",
-        assignedUserId: "",
+        assignedUserId: !isAdmin && currentUserId ? currentUserId : "",
         priority: "RECORDATORIO",
         status: "PENDING",
         dueDate: "",
@@ -123,6 +127,13 @@ export default function AdminTasksPage() {
     }
   }, [activeTask?.id]);
 
+  // Set default assignedUserId for non-admin on open
+  useEffect(() => {
+    if (!isAdmin && currentUserId) {
+      setFormData(prev => ({ ...prev, assignedUserId: currentUserId }));
+    }
+  }, [isAdmin, currentUserId]);
+
   // Date and Weekly calculations
   const currentWeekDays = useMemo(() => {
     const today = new Date();
@@ -142,20 +153,29 @@ export default function AdminTasksPage() {
   // Filtered Tasks list
   const filteredTasks = useMemo(() => {
     return tasks.filter((t: any) => {
-      // 1. Search term check
+      // 1. Role-based visibility check:
+      // Non-admin users can ONLY see tasks that were assigned to them.
+      // Unassigned tasks and tasks assigned to other users are ONLY visible to admin.
+      if (!isAdmin) {
+        if (!currentUserId || !t.assignedUser || String(t.assignedUser.id) !== String(currentUserId)) {
+          return false;
+        }
+      }
+
+      // 2. Search term check
       const matchesSearch = 
         t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
       if (!matchesSearch) return false;
 
-      // 2. Collaborator check
+      // 3. Collaborator check (for Admin)
       if (collaboratorFilter === "ALL") return true;
-      if (collaboratorFilter === "MY_TASKS") return currentUserId && t.assignedUser?.id === currentUserId;
+      if (collaboratorFilter === "MY_TASKS") return currentUserId && String(t.assignedUser?.id) === String(currentUserId);
       if (collaboratorFilter === "UNASSIGNED") return !t.assignedUser;
-      return t.assignedUser?.id === collaboratorFilter;
+      return String(t.assignedUser?.id) === String(collaboratorFilter);
     });
-  }, [tasks, searchTerm, collaboratorFilter, currentUserId]);
+  }, [tasks, searchTerm, collaboratorFilter, currentUserId, isAdmin]);
 
   // Grouped tasks by status
   const pendingTasks = useMemo(() => filteredTasks.filter((t: any) => getTaskStatus(t) === 'PENDING'), [filteredTasks]);
@@ -309,26 +329,33 @@ export default function AdminTasksPage() {
               />
             </div>
 
-            {/* Collaborator Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                <User className="h-3 w-3" /> Responsable:
-              </span>
-              <select 
-                value={collaboratorFilter} 
-                onChange={(e) => setCollaboratorFilter(e.target.value)}
-                className="h-10 bg-slate-50 border-none rounded-xl px-3 text-xs font-bold outline-none cursor-pointer hover:bg-slate-100 transition-colors"
-              >
-                <option value="ALL">Todos los Colaboradores</option>
-                {currentUserId && <option value="MY_TASKS">⭐ Mis Tareas Asignadas</option>}
-                <option value="UNASSIGNED">⚪ Sin Asignar</option>
-                {collaborators.map((user: any) => (
-                  <option key={user.id} value={user.id}>
-                    {getCollaboratorName(user)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Collaborator Filter / Role Indicator */}
+            {!isAdmin ? (
+              <div className="flex items-center gap-2 bg-[#70125F]/10 border border-[#70125F]/20 text-[#70125F] px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs">
+                <UserCheck className="h-4 w-4 shrink-0" />
+                <span>Mis tareas asignadas ({filteredTasks.length})</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                  <User className="h-3 w-3" /> Responsable:
+                </span>
+                <select 
+                  value={collaboratorFilter} 
+                  onChange={(e) => setCollaboratorFilter(e.target.value)}
+                  className="h-10 bg-slate-50 border-none rounded-xl px-3 text-xs font-bold outline-none cursor-pointer hover:bg-slate-100 transition-colors"
+                >
+                  <option value="ALL">Todos los Colaboradores ({(tasks || []).length})</option>
+                  {currentUserId && <option value="MY_TASKS">⭐ Mis Tareas Asignadas</option>}
+                  <option value="UNASSIGNED">⚪ Sin Asignar (Solo Admin)</option>
+                  {collaborators.map((user: any) => (
+                    <option key={user.id} value={user.id}>
+                      {getCollaboratorName(user)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {activeTab === "calendar" && (
@@ -418,16 +445,22 @@ export default function AdminTasksPage() {
                           <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                             <div className="flex items-center gap-1.5 max-w-[140px]" onClick={(e) => e.stopPropagation()}>
                               <User className="h-3 w-3 text-slate-400 shrink-0" />
-                              <select
-                                value={task.assignedUser?.id || ""}
-                                onChange={(e) => handleReassignUser(task.id, e.target.value)}
-                                className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none cursor-pointer truncate hover:text-[#70125F]"
-                              >
-                                <option value="">Sin Asignar</option>
-                                {collaborators.map((u: any) => (
-                                  <option key={u.id} value={u.id}>{u.username}</option>
-                                ))}
-                              </select>
+                              {isAdmin ? (
+                                <select
+                                  value={task.assignedUser?.id || ""}
+                                  onChange={(e) => handleReassignUser(task.id, e.target.value)}
+                                  className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none cursor-pointer truncate hover:text-[#70125F]"
+                                >
+                                  <option value="">Sin Asignar</option>
+                                  {collaborators.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.username}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-[10px] font-bold text-slate-600 truncate">
+                                  {task.assignedUser?.username || "Asignada a ti"}
+                                </span>
+                              )}
                             </div>
 
                             <span className="text-[9px] text-[#70125F] font-bold shrink-0">
@@ -509,16 +542,22 @@ export default function AdminTasksPage() {
                           <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                             <div className="flex items-center gap-1.5 max-w-[140px]" onClick={(e) => e.stopPropagation()}>
                               <User className="h-3 w-3 text-amber-600 shrink-0" />
-                              <select
-                                value={task.assignedUser?.id || ""}
-                                onChange={(e) => handleReassignUser(task.id, e.target.value)}
-                                className="bg-transparent border-none text-[10px] font-bold text-slate-700 outline-none cursor-pointer truncate hover:text-amber-700"
-                              >
-                                <option value="">Sin Asignar</option>
-                                {collaborators.map((u: any) => (
-                                  <option key={u.id} value={u.id}>{u.username}</option>
-                                ))}
-                              </select>
+                              {isAdmin ? (
+                                <select
+                                  value={task.assignedUser?.id || ""}
+                                  onChange={(e) => handleReassignUser(task.id, e.target.value)}
+                                  className="bg-transparent border-none text-[10px] font-bold text-slate-700 outline-none cursor-pointer truncate hover:text-amber-700"
+                                >
+                                  <option value="">Sin Asignar</option>
+                                  {collaborators.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.username}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-[10px] font-bold text-slate-700 truncate">
+                                  {task.assignedUser?.username || "Asignada a ti"}
+                                </span>
+                              )}
                             </div>
 
                             <span className="text-[9px] text-amber-700 font-bold shrink-0">
@@ -820,16 +859,26 @@ export default function AdminTasksPage() {
 
                       <div className="space-y-1">
                         <label className="font-bold uppercase tracking-widest text-[#70125F]">Colaborador Responsable</label>
-                        <select 
-                          value={editingTask.assignedUserId || ""} 
-                          onChange={(e) => setEditingTask({...editingTask, assignedUserId: e.target.value})}
-                          className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 outline-none font-semibold"
-                        >
-                          <option value="">Sin Asignar</option>
-                          {collaborators.map((user: any) => (
-                            <option key={user.id} value={user.id}>{getCollaboratorName(user)}</option>
-                          ))}
-                        </select>
+                        {isAdmin ? (
+                          <select 
+                            value={editingTask.assignedUserId || ""} 
+                            onChange={(e) => setEditingTask({...editingTask, assignedUserId: e.target.value})} 
+                            className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 outline-none font-semibold"
+                          >
+                            <option value="">Sin Asignar</option>
+                            {collaborators.map((user: any) => (
+                              <option key={user.id} value={user.id}>{getCollaboratorName(user)}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            readOnly
+                            disabled
+                            value={meData?.me?.username ? `Asignada a ti (${meData.me.username})` : "Asignada a ti"}
+                            className="w-full h-11 bg-slate-100 text-slate-600 border-none rounded-xl px-3 font-semibold outline-none cursor-not-allowed"
+                          />
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -949,18 +998,24 @@ export default function AdminTasksPage() {
                       {/* Quick Assign Collaborator */}
                       <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-2">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Responsable Asignado</p>
-                        <select
-                          value={activeTask.assignedUser?.id || ""}
-                          onChange={(e) => handleReassignUser(activeTask.id, e.target.value)}
-                          className="w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-100 outline-none cursor-pointer"
-                        >
-                          <option value="" className="bg-slate-900 text-slate-300">⚪ Sin Asignar</option>
-                          {collaborators.map((user: any) => (
-                            <option key={user.id} value={user.id} className="bg-slate-900 text-slate-100">
-                              👤 {getCollaboratorName(user)}
-                            </option>
-                          ))}
-                        </select>
+                        {isAdmin ? (
+                          <select
+                            value={activeTask.assignedUser?.id || ""}
+                            onChange={(e) => handleReassignUser(activeTask.id, e.target.value)}
+                            className="w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-100 outline-none cursor-pointer"
+                          >
+                            <option value="" className="bg-slate-900 text-slate-300">⚪ Sin Asignar</option>
+                            {collaborators.map((user: any) => (
+                              <option key={user.id} value={user.id} className="bg-slate-900 text-slate-100">
+                                👤 {getCollaboratorName(user)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <p className="text-xs font-bold text-slate-200">
+                            👤 {activeTask.assignedUser?.username || "Asignada a ti"}
+                          </p>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1103,16 +1158,26 @@ export default function AdminTasksPage() {
 
               <div className="space-y-1">
                 <label className="font-bold uppercase tracking-widest text-[#70125F]">Colaborador Responsable</label>
-                <select 
-                  value={formData.assignedUserId} 
-                  onChange={(e) => setFormData({...formData, assignedUserId: e.target.value})} 
-                  className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 font-semibold outline-none"
-                >
-                  <option value="">Sin Asignar</option>
-                  {collaborators.map((user: any) => (
-                    <option key={user.id} value={user.id}>{getCollaboratorName(user)}</option>
-                  ))}
-                </select>
+                {isAdmin ? (
+                  <select 
+                    value={formData.assignedUserId} 
+                    onChange={(e) => setFormData({...formData, assignedUserId: e.target.value})} 
+                    className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 font-semibold outline-none"
+                  >
+                    <option value="">Sin Asignar</option>
+                    {collaborators.map((user: any) => (
+                      <option key={user.id} value={user.id}>{getCollaboratorName(user)}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    value={meData?.me?.username ? `Asignada a ti (${meData.me.username})` : "Asignada a ti"}
+                    className="w-full h-11 bg-slate-100 text-slate-600 border-none rounded-xl px-3 font-semibold outline-none cursor-not-allowed"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

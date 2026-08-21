@@ -30,6 +30,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@apollo/client/react/index.js";
 import { MY_TEACHER_PROFILE, MY_LESSONS } from "@/graphql/queries/portal-queries";
+import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
 import AnnouncementsWidget from "@/components/widgets/announcements-widget";
 
 export default function TeacherDashboardPage() {
@@ -38,6 +39,15 @@ export default function TeacherDashboardPage() {
 
   const { data: profileData, loading: profileLoading } = useQuery<any>(MY_TEACHER_PROFILE);
   const { data: lessonsData, loading: lessonsLoading } = useQuery<any>(MY_LESSONS);
+  const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, { fetchPolicy: "network-only" });
+
+  const activeHolidaysMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (holidaysData?.activeHolidays || []).forEach((h: any) => {
+      map.set(h.date, h.name);
+    });
+    return map;
+  }, [holidaysData]);
 
   const teacherProfile = profileData?.myTeacherProfile;
   const lessons = lessonsData?.myLessons || [];
@@ -227,22 +237,37 @@ export default function TeacherDashboardPage() {
                   <div className="min-w-[800px] grid grid-cols-[80px_repeat(7,1fr)] relative">
                     {/* Day Headers */}
                     <div className="h-14 border-b border-slate-100 bg-slate-50/30 sticky top-0 z-20"></div>
-                    {weekDays.map((day) => (
-                      <div key={day.toString()} className={cn(
-                        "h-14 border-b border-l border-slate-100 flex flex-col items-center justify-center sticky top-0 z-20 bg-slate-50/30 backdrop-blur-sm",
-                        isToday(day) && "bg-primary/5 border-l-primary/10"
-                      )}>
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">
-                          {format(day, "eee", { locale: es })}
-                        </span>
-                        <span className={cn(
-                          "text-sm font-bold",
-                          isToday(day) ? "text-primary" : "text-slate-900"
+                    {weekDays.map((day) => {
+                      const dayFormatted = format(day, "yyyy-MM-dd");
+                      const holidayName = activeHolidaysMap.get(dayFormatted);
+                      const isHoliday = Boolean(holidayName);
+
+                      return (
+                        <div key={day.toString()} className={cn(
+                          "h-14 border-b border-l border-slate-100 flex flex-col items-center justify-center sticky top-0 z-20 bg-slate-50/30 backdrop-blur-sm",
+                          isHoliday && "bg-rose-50/90 border-l-rose-200 text-rose-700",
+                          isToday(day) && !isHoliday && "bg-primary/5 border-l-primary/10"
                         )}>
-                          {format(day, "d")}
-                        </span>
-                      </div>
-                    ))}
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase tracking-widest leading-none mb-1",
+                            isHoliday ? "text-rose-600" : "text-slate-400"
+                          )}>
+                            {format(day, "eee", { locale: es })}
+                          </span>
+                          <span className={cn(
+                            "text-sm font-bold",
+                            isHoliday ? "text-rose-700" : isToday(day) ? "text-primary" : "text-slate-900"
+                          )}>
+                            {format(day, "d")}
+                          </span>
+                          {isHoliday && (
+                            <span className="text-[8px] font-bold text-rose-700 truncate max-w-[80px] px-1" title={holidayName}>
+                              🇨🇱 Feriado
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {/* Time Grid */}
                     {hours.map((hour) => (
@@ -252,15 +277,23 @@ export default function TeacherDashboardPage() {
                             {hour}:00
                           </span>
                         </div>
-                        {weekDays.map((day) => (
-                          <div 
-                            key={`${day}-${hour}`} 
-                            className={cn(
-                              "h-20 border-b border-l border-slate-50 relative group transition-colors hover:bg-slate-50/50",
-                              isToday(day) && "bg-primary/[0.01]"
-                            )}
-                          />
-                        ))}
+                        {weekDays.map((day) => {
+                          const dayFormatted = format(day, "yyyy-MM-dd");
+                          const holidayName = activeHolidaysMap.get(dayFormatted);
+                          const isHoliday = Boolean(holidayName);
+
+                          return (
+                            <div 
+                              key={`${day}-${hour}`} 
+                              title={isHoliday ? `🇨🇱 Feriado: ${holidayName}` : undefined}
+                              className={cn(
+                                "h-20 border-b border-l border-slate-50 relative group transition-colors",
+                                isHoliday ? "bg-rose-50/40 border-l-rose-100/60" : "hover:bg-slate-50/50",
+                                isToday(day) && !isHoliday && "bg-primary/[0.01]"
+                              )}
+                            />
+                          );
+                        })}
                       </React.Fragment>
                     ))}
 

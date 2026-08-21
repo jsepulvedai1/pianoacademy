@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
+import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
 import { UPDATE_LESSON_STATUS, CREATE_PRE_RESERVATION } from "@/graphql/mutations/lesson-mutations";
 import { toast } from "sonner";
 import { normalizePhoneNumber } from "@/lib/utils";
@@ -76,7 +77,16 @@ function CountdownBadge({ expiry }: { expiry?: string }) {
 
 export default function AdminReservationsPage() {
   const { data, loading, refetch } = useQuery<any>(GET_RESERVATIONS);
+  const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, { fetchPolicy: "network-only" });
   const [updateStatus] = useMutation(UPDATE_LESSON_STATUS);
+
+  const activeHolidaysMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (holidaysData?.activeHolidays || []).forEach((h: any) => {
+      map.set(h.date, h.name);
+    });
+    return map;
+  }, [holidaysData]);
 
   const reservations: Reservation[] = useMemo(() => {
     if (!data?.allLessons) return [];
@@ -197,6 +207,11 @@ export default function AdminReservationsPage() {
 
   const handleCreateRes = () => {
     if (!newRes.nombre || !newRes.telefono || !newRes.fecha || !newRes.hora) return;
+    const holidayName = activeHolidaysMap.get(newRes.fecha);
+    if (holidayName) {
+      toast.error(`No es posible crear reservas en días feriados (${holidayName}) 🇨🇱`);
+      return;
+    }
     createPreReservation({
       variables: {
         nombre: newRes.nombre,
@@ -464,6 +479,18 @@ export default function AdminReservationsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha *</label>
                   <input type="date" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-orange-400/30" value={newRes.fecha} onChange={e => setNewRes({ ...newRes, fecha: e.target.value })} />
                 </div>
+
+                {/* Feriado Alert */}
+                {activeHolidaysMap.get(newRes.fecha) && (
+                  <div className="col-span-2 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-800 text-xs animate-in fade-in">
+                    <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
+                    <div>
+                      <p className="font-bold text-rose-950">🚫 Día Feriado Oficial: {activeHolidaysMap.get(newRes.fecha)}</p>
+                      <p className="text-rose-800/90 text-[11px]">No está permitido crear pre-reservas en días festivos oficiales.</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Hora *</label>
                   <input type="time" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-orange-400/30" value={newRes.hora} onChange={e => setNewRes({ ...newRes, hora: e.target.value })} />
@@ -500,7 +527,7 @@ export default function AdminReservationsPage() {
 
               <div className="flex gap-4 pt-2">
                 <Button variant="outline" className="flex-1 h-12 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsNewOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreateRes} disabled={!newRes.nombre || !newRes.telefono || !newRes.fecha || !newRes.hora || creatingRes} className="flex-1 h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg disabled:opacity-40">
+                <Button onClick={handleCreateRes} disabled={!newRes.nombre || !newRes.telefono || !newRes.fecha || !newRes.hora || creatingRes || Boolean(activeHolidaysMap.get(newRes.fecha))} className="flex-1 h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg disabled:opacity-40">
                   {creatingRes ? "Creando..." : "Crear Pre-Reserva"}
                 </Button>
               </div>

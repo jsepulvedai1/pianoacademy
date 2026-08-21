@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, use } from "react";
-import { User, Lock, MessageCircle, FileText, Send, Calendar, Clock, GraduationCap, ChevronLeft, Link as LinkIcon, Video, Music as MusicIcon, ExternalLink, X } from "lucide-react";
+import { 
+  User, Lock, MessageCircle, FileText, Send, Calendar, Clock, 
+  GraduationCap, ChevronLeft, Link as LinkIcon, Video, Music as MusicIcon, 
+  ExternalLink, X, UploadCloud, Paperclip, CheckCircle2, Loader2 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,9 +40,56 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
   const [attachTab, setAttachTab] = useState<'EXISTING' | 'NEW'>('EXISTING');
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [newMaterial, setNewMaterial] = useState({ title: "", type: "PDF", url: "" });
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   
   // We'll store the attached material temporarily before publishing
   const [pendingAttachment, setPendingAttachment] = useState<any | null>(null);
+
+  const handleFileUploadInModal = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    try {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      uploadData.append("folder", "materials");
+
+      const endpoint = process.env.NEXT_PUBLIC_DJANGO_API_URL 
+        ? `${process.env.NEXT_PUBLIC_DJANGO_API_URL}/api/media/upload/`
+        : "http://localhost:8000/api/media/upload/";
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        body: uploadData,
+      });
+
+      const data = await res.json();
+      if (data.status === "SUCCESS" && data.url) {
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        let detectedType = "PDF";
+        if (["mp3", "wav", "ogg", "aac", "flac"].includes(fileExt || "")) detectedType = "AUDIO";
+        else if (["mp4", "mov", "avi", "webm", "mkv"].includes(fileExt || "")) detectedType = "VIDEO";
+        else if (["pdf", "doc", "docx", "xls", "xlsx"].includes(fileExt || "")) detectedType = "PDF";
+
+        setNewMaterial(prev => ({
+          ...prev,
+          url: data.url,
+          title: prev.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+          type: detectedType
+        }));
+        setUploadedFileName(file.name);
+        toast.success(`Archivo "${file.name}" subido ✅`);
+      } else {
+        toast.error(data.message || "Error al subir archivo");
+      }
+    } catch (err: any) {
+      toast.error("Error de conexión al subir archivo: " + err.message);
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
 
   const student = data?.studentById;
   const availableMaterials = data?.allMaterials || [];
@@ -74,8 +125,15 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
 
       // If it's a NEW material, create it first
       if (pendingAttachment && pendingAttachment.isNew) {
+        const teacherId = teacherData?.myTeacherProfile?.id ? parseInt(teacherData.myTeacherProfile.id, 10) : null;
         const { data: matData } = await createMaterial({
-          variables: { title: pendingAttachment.title, type: pendingAttachment.type, url: pendingAttachment.url }
+          variables: { 
+            title: pendingAttachment.title, 
+            type: pendingAttachment.type, 
+            url: pendingAttachment.url,
+            scope: "TEACHER",
+            teacherId: teacherId
+          }
         });
         materialId = matData.createMaterial.material.id;
       } else if (pendingAttachment) {
@@ -346,39 +404,74 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
                   <div className="space-y-4">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Selecciona un material</p>
                     <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
-                      {availableMaterials.map((m: any) => (
-                        <div 
-                          key={m.id}
-                          onClick={() => setSelectedMaterialId(m.id)}
-                          className={cn(
-                            "p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3",
-                            selectedMaterialId === m.id ? "bg-indigo-50 border-indigo-200 shadow-sm" : "bg-white border-slate-100 hover:border-indigo-100 hover:bg-slate-50"
-                          )}
-                        >
-                          <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0">
-                            {getTypeIcon(m.type)}
+                      {availableMaterials.map((m: any) => {
+                        const isDetache = m.scope === "DETACHE";
+                        return (
+                          <div 
+                            key={m.id}
+                            onClick={() => setSelectedMaterialId(m.id)}
+                            className={cn(
+                              "p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3",
+                              selectedMaterialId === m.id ? "bg-indigo-50 border-indigo-200 shadow-sm" : "bg-white border-slate-100 hover:border-indigo-100 hover:bg-slate-50"
+                            )}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0">
+                                {getTypeIcon(m.type)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className={cn("text-xs font-bold truncate", selectedMaterialId === m.id ? "text-indigo-900" : "text-slate-700")}>{m.title}</p>
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{m.type}</p>
+                              </div>
+                            </div>
+                            <Badge className={cn(
+                              "text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border-0 shrink-0",
+                              isDetache ? "bg-emerald-50 text-emerald-700" : "bg-indigo-50 text-indigo-700"
+                            )}>
+                              {isDetache ? "🏛️ Détaché" : "🎻 Propio"}
+                            </Badge>
                           </div>
-                          <div>
-                            <p className={cn("text-sm font-bold", selectedMaterialId === m.id ? "text-indigo-900" : "text-slate-700")}>{m.title}</p>
-                            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{m.type}</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {availableMaterials.length === 0 && (
                         <p className="text-sm text-slate-400 italic text-center py-4">Tu biblioteca está vacía.</p>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-5">
+                    {/* Subir Archivo Local al Servidor */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 hover:border-primary/40 transition-colors text-center space-y-2">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <UploadCloud className="h-5 w-5 text-slate-400" />
+                        <p className="text-xs font-bold text-slate-800">Subir Archivo desde tu Dispositivo (PDF, Audio)</p>
+                      </div>
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer shadow-xs transition-all">
+                        {isUploadingFile ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Paperclip className="h-3.5 w-3.5 text-slate-500" />}
+                        <span>{isUploadingFile ? "Subiendo archivo..." : "📁 Seleccionar Archivo PDF o Audio"}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.mp3,.wav,.ogg,.mp4,.png,.jpg,.jpeg"
+                          onChange={handleFileUploadInModal}
+                          disabled={isUploadingFile}
+                          className="hidden"
+                        />
+                      </label>
+                      {uploadedFileName && (
+                        <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 py-1 px-2.5 rounded-lg w-fit mx-auto border border-emerald-200/50">
+                          <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Archivo subido: {uploadedFileName}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="space-y-2">
                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Título</label>
-                       <input type="text" value={newMaterial.title} onChange={e => setNewMaterial({...newMaterial, title: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-medium focus:ring-2 focus:ring-primary/20" placeholder="Ej: Pauta de estudio" />
+                       <input type="text" value={newMaterial.title} onChange={e => setNewMaterial({...newMaterial, title: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-medium focus:ring-2 focus:ring-primary/20 text-xs" placeholder="Ej: Pauta de estudio" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="space-y-2">
                           <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tipo</label>
-                          <select value={newMaterial.type} onChange={e => setNewMaterial({...newMaterial, type: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-bold">
+                          <select value={newMaterial.type} onChange={e => setNewMaterial({...newMaterial, type: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-bold text-xs">
                              <option value="PDF">PDF / Documento</option>
                              <option value="VIDEO">Video YouTube</option>
                              <option value="AUDIO">Audio</option>
@@ -387,7 +480,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Enlace (URL)</label>
-                          <input type="url" value={newMaterial.url} onChange={e => setNewMaterial({...newMaterial, url: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-medium focus:ring-2 focus:ring-primary/20" placeholder="https://..." />
+                          <input type="url" value={newMaterial.url} onChange={e => setNewMaterial({...newMaterial, url: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-medium focus:ring-2 focus:ring-primary/20 text-xs font-mono" placeholder="https://..." />
                        </div>
                     </div>
                   </div>
