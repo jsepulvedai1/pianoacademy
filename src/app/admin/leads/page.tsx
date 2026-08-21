@@ -52,6 +52,7 @@ import { apiClient } from "@/lib/api-client";
 import { useQuery, useMutation, useSubscription, useLazyQuery } from "@apollo/client/react/index.js";
 import { GET_LEADS } from "@/graphql/queries/get-leads";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
+import { GET_GLOBAL_SETTINGS } from "@/graphql/queries/get-global-settings";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_ROOMS } from "@/graphql/queries/get-rooms";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
@@ -113,6 +114,8 @@ export default function AdminLeadsPage() {
   });
   const { data: plansData } = useQuery<any>(GET_PLANS);
   const plans = plansData?.allPlans || [];
+  const { data: globalSettingsData } = useQuery<any>(GET_GLOBAL_SETTINGS);
+  const trialClassPrice = globalSettingsData?.globalSettings?.trialClassPrice ?? 15000;
   const { data: teachersData } = useQuery<any>(GET_TEACHERS);
   const teachers = teachersData?.allTeachers || [];
   const { data: roomsData } = useQuery<any>(GET_ROOMS);
@@ -152,7 +155,10 @@ export default function AdminLeadsPage() {
     const payUrl = `${origin}/checkout?${params.toString()}`;
     const priceFormatted = Number(plan.price).toLocaleString("es-CL");
     
-    const msg = `¡Hola ${firstName}! 🎶 Te comparto el enlace directo y seguro para realizar el pago de tu *${plan.name}* ($${priceFormatted} CLP):\n\n👉 ${payUrl}\n\nAceptamos tarjetas de débito, crédito y transferencia vía Webpay / Mercado Pago. Tus clases quedarán cargadas automáticamente a tu cuenta. ¡Nos vemos en la academia! 🎹✨`;
+    const isTrial = plan.id === 'trial';
+    const msg = isTrial 
+      ? `¡Hola ${firstName}! 🎶 Te comparto el enlace directo y seguro para realizar el pago de tu *Clase Inicial* ($${priceFormatted} CLP):\n\n👉 ${payUrl}\n\nAceptamos tarjetas de débito, crédito y transferencia vía Webpay / Mercado Pago. Tu reserva quedará confirmada de inmediato. ¡Te esperamos en la academia! 🎹✨`
+      : `¡Hola ${firstName}! 🎶 Te comparto el enlace directo y seguro para realizar el pago de tu *${plan.name}* ($${priceFormatted} CLP):\n\n👉 ${payUrl}\n\nAceptamos tarjetas de débito, crédito y transferencia vía Webpay / Mercado Pago. Tus clases quedarán cargadas automáticamente a tu cuenta. ¡Nos vemos en la academia! 🎹✨`;
     
     setCustomMessage(msg);
     setShowPaymentLinkMenu(false);
@@ -1026,12 +1032,29 @@ export default function AdminLeadsPage() {
                                   </button>
                                </div>
 
-                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                                  {/* Clase Inicial Option */}
+                                  <button
+                                     onClick={() => sendPaymentLinkMessage({ id: 'trial', name: 'Clase Inicial', price: trialClassPrice })}
+                                     className="col-span-1 sm:col-span-2 text-left p-3 rounded-2xl border-2 border-[#70125F]/20 bg-[#70125F]/5 hover:bg-[#70125F]/10 hover:border-[#70125F] transition-all flex items-center justify-between group cursor-pointer"
+                                  >
+                                     <div className="flex items-center gap-2.5">
+                                        <div className="h-8 w-8 rounded-xl bg-[#70125F] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                                           🎓
+                                        </div>
+                                        <div>
+                                           <p className="text-xs font-black text-[#70125F] group-hover:text-[#520d46]">Clase Inicial (Prueba / Diagnóstico)</p>
+                                           <p className="text-[10px] text-slate-500">Monto configurado en parámetros globales</p>
+                                        </div>
+                                     </div>
+                                     <p className="text-xs font-black text-[#70125F] font-mono">${Number(trialClassPrice).toLocaleString('es-CL')} CLP</p>
+                                  </button>
+
                                   {plans.map((p: any) => (
                                      <button
                                         key={p.id}
                                         onClick={() => sendPaymentLinkMessage(p)}
-                                        className="text-left p-3 rounded-2xl border border-slate-100 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between"
+                                        className="text-left p-3 rounded-2xl border border-slate-100 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between cursor-pointer"
                                      >
                                         <div>
                                            <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-800 leading-tight">{p.name}</p>

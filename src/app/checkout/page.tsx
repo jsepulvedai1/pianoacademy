@@ -4,11 +4,12 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
+import { GET_GLOBAL_SETTINGS } from "@/graphql/queries/get-global-settings";
 import { CREATE_PAYMENT_PREFERENCE } from "@/graphql/mutations/student-mutations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Music, CreditCard, Lock, CheckCircle2, ChevronLeft, Loader2 } from "lucide-react";
+import { Music, CreditCard, Lock, CheckCircle2, ChevronLeft, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -17,9 +18,23 @@ function CheckoutContent() {
   const router = useRouter();
   const planId = searchParams.get("plan");
 
-  const { data, loading } = useQuery<any>(GET_PLANS);
-  const plans = data?.allPlans || [];
-  const plan = plans.find((p: any) => p.id === planId) || plans[0];
+  const { data: plansData, loading: loadingPlans } = useQuery<any>(GET_PLANS);
+  const { data: settingsData, loading: loadingSettings } = useQuery<any>(GET_GLOBAL_SETTINGS);
+
+  const isTrial = planId === "trial";
+  const trialPrice = settingsData?.globalSettings?.trialClassPrice ?? 15000;
+
+  const plans = plansData?.allPlans || [];
+  const plan = isTrial 
+    ? {
+        id: "trial",
+        name: "Clase Inicial",
+        classesCount: 1,
+        duration: 1,
+        price: trialPrice,
+        isTrial: true
+      }
+    : (plans.find((p: any) => p.id === planId) || plans[0]);
 
   const queryName = searchParams.get("name") || "";
   const queryEmail = searchParams.get("email") || "";
@@ -75,7 +90,8 @@ function CheckoutContent() {
     
     createPreference({
       variables: {
-        planId: parseInt(plan.id),
+        planId: isTrial ? null : parseInt(plan.id),
+        isTrialClass: isTrial,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -84,7 +100,7 @@ function CheckoutContent() {
     });
   };
 
-  if (loading) {
+  if (loadingPlans || loadingSettings) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -99,7 +115,7 @@ function CheckoutContent() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <p className="text-rose-500 font-bold">Plan no encontrado o no disponible.</p>
+          <p className="text-rose-500 font-bold">Plan o servicio no encontrado.</p>
           <Button asChild className="bg-primary text-white"><Link href="/">Volver a Inicio</Link></Button>
         </div>
       </div>
@@ -213,18 +229,20 @@ function CheckoutContent() {
                     </div>
                     <div>
                       <p className="text-sm font-extrabold text-slate-800">{plan.name}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Plan de Clases</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        {isTrial ? "Evaluación y Prueba" : "Plan de Clases"}
+                      </p>
                     </div>
                   </div>
 
                   <div className="bg-slate-50 rounded-2xl p-4 space-y-2 text-xs border border-slate-100">
                     <div className="flex justify-between">
-                      <span className="text-slate-400 font-medium">Clases Incluidas:</span>
-                      <span className="font-bold text-slate-700">{plan.classesCount} clases</span>
+                      <span className="text-slate-400 font-medium">{isTrial ? "Sesión:" : "Clases Incluidas:"}</span>
+                      <span className="font-bold text-slate-700">{isTrial ? "1 Clase Individual" : `${plan.classesCount} clases`}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400 font-medium">Vigencia del Pack:</span>
-                      <span className="font-bold text-slate-700">{plan.duration} {plan.duration === 1 ? "mes" : "meses"}</span>
+                      <span className="text-slate-400 font-medium">{isTrial ? "Sede:" : "Vigencia del Pack:"}</span>
+                      <span className="font-bold text-slate-700">{isTrial ? "Academia Détaché" : `${plan.duration} ${plan.duration === 1 ? "mes" : "meses"}`}</span>
                     </div>
                   </div>
 

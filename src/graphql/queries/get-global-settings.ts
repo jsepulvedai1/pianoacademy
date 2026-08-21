@@ -11,6 +11,7 @@ export const GET_GLOBAL_SETTINGS = gql`
       openingHoursSaturdays
       facebookUrl
       instagramUrl
+      trialClassPrice
       trialClassEmailTemplate
       whatsappNumber
       whatsappAssignedTo

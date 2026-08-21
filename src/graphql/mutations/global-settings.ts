@@ -9,6 +9,7 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
     $openingHoursSaturdays: String
     $facebookUrl: String
     $instagramUrl: String
+    $trialClassPrice: Float
     $trialClassEmailTemplate: String
     $whatsappNumber: String
     $whatsappAssignedTo: String
@@ -26,6 +27,7 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
       openingHoursSaturdays: $openingHoursSaturdays
       facebookUrl: $facebookUrl
       instagramUrl: $instagramUrl
+      trialClassPrice: $trialClassPrice
       trialClassEmailTemplate: $trialClassEmailTemplate
       whatsappNumber: $whatsappNumber
       whatsappAssignedTo: $whatsappAssignedTo
@@ -44,6 +46,7 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
         openingHoursSaturdays
         facebookUrl
         instagramUrl
+        trialClassPrice
         trialClassEmailTemplate
         whatsappNumber
         whatsappAssignedTo

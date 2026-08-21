@@ -114,7 +114,8 @@ export const UPDATE_STUDENT = gql`
 
 export const CREATE_PAYMENT_PREFERENCE = gql`
   mutation CreatePaymentPreference(
-    $planId: Int!,
+    $planId: Int,
+    $isTrialClass: Boolean,
     $name: String!,
     $email: String!,
     $phone: String!,
@@ -122,6 +123,7 @@ export const CREATE_PAYMENT_PREFERENCE = gql`
   ) {
     createPaymentPreference(
       planId: $planId,
+      isTrialClass: $isTrialClass,
       name: $name,
       email: $email,
       phone: $phone,

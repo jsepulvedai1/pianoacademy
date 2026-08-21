@@ -20,7 +20,7 @@ import {
   Settings, Phone, Mail, MapPin, Clock, Instagram, Facebook, 
   ShieldAlert, ShieldCheck, UserCheck, Key, Lock, Loader2, Save,
   MessageSquare, Send, Bot, Sparkles, Smartphone, CheckCircle2,
-  Radio, HelpCircle, QrCode, RefreshCw, AlertCircle
+  Radio, HelpCircle, QrCode, RefreshCw, AlertCircle, CreditCard
 } from "lucide-react";
 import { toast } from "sonner";
 import AnnouncementsTab from "./announcements-tab";
@@ -39,6 +39,7 @@ export default function AdminSettingsPage() {
     openingHoursSaturdays: "",
     facebookUrl: "",
     instagramUrl: "",
+    trialClassPrice: 15000,
     trialClassEmailTemplate: "",
     whatsappNumber: "",
     whatsappAssignedTo: "",
@@ -69,6 +70,7 @@ export default function AdminSettingsPage() {
         openingHoursSaturdays: data.globalSettings.openingHoursSaturdays || "",
         facebookUrl: data.globalSettings.facebookUrl || "",
         instagramUrl: data.globalSettings.instagramUrl || "",
+        trialClassPrice: data.globalSettings.trialClassPrice ?? 15000,
         trialClassEmailTemplate: data.globalSettings.trialClassEmailTemplate || "",
         whatsappNumber: data.globalSettings.whatsappNumber || "+56 9 6427 9239",
         whatsappAssignedTo: data.globalSettings.whatsappAssignedTo || "Recepción / Admisiones",
@@ -103,7 +105,10 @@ export default function AdminSettingsPage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings({
-      variables: formData
+      variables: {
+        ...formData,
+        trialClassPrice: Number(formData.trialClassPrice) || 15000
+      }
     });
   };
 
@@ -292,6 +297,50 @@ export default function AdminSettingsPage() {
                           className="h-11 bg-slate-50 border-none rounded-xl"
                           placeholder="https://facebook.com/nombre"
                         />
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Initial Class Payment Price Card */}
+                  <Card className="border-none shadow-sm bg-white rounded-[2rem] p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-slate-800 text-base">Monto Link de Pago Clase Inicial</h3>
+                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
+                            Pasarela Webpay / Mercado Pago
+                          </Badge>
+                        </div>
+                        <p className="text-slate-400 text-xs italic mt-1">
+                          Valor que se cobrará al generar links de pago para la Clase Inicial desde el CRM y checkout.
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vista previa</span>
+                        <span className="font-mono font-bold text-xl text-[#70125F]">
+                          ${Number(formData.trialClassPrice || 0).toLocaleString("es-CL")} CLP
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F] flex items-center gap-1.5">
+                          <CreditCard className="h-3.5 w-3.5" /> Monto de la Clase Inicial ($ CLP) *
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="500"
+                          required
+                          value={formData.trialClassPrice}
+                          onChange={(e) => setFormData({ ...formData, trialClassPrice: Number(e.target.value) })}
+                          className="h-12 bg-slate-50 border-none rounded-xl font-mono text-base font-bold text-slate-800"
+                          placeholder="15000"
+                        />
+                      </div>
+                      <div className="p-4 bg-[#70125F]/5 rounded-2xl border border-[#70125F]/10 text-xs text-slate-600 leading-relaxed">
+                        💡 Este monto se usará al hacer clic en <strong>"Enviar Link de Pago: Clase Inicial"</strong> en la gestión de prospectos y en el flujo de reservas web.
                       </div>
                     </div>
                   </Card>
