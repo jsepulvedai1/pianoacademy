@@ -382,11 +382,16 @@ export default function AdminStudentsPage() {
                  </div>
                  <div className="flex items-center gap-6">
                     <div className="h-20 w-20 bg-white/5 rounded-[2rem] flex items-center justify-center border border-white/10 shadow-2xl">
-                      <User className="h-10 w-10 text-primary" />
+                      <User className="h-10 w-10 text-[#70125F]" />
                     </div>
-                    <div>
-                      <h2 className="text-3xl font-bold font-serif">{selectedStudent?.name}</h2>
-                      <p className="text-slate-400 text-xs mt-1 font-mono">{selectedStudent?.rut || 'RUT no registrado'} · Iniciado {selectedStudent?.startDate}</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                         <h2 className="text-3xl font-bold font-serif">{selectedStudent?.name}</h2>
+                         <Badge className={`${statusConfig[selectedStudent?.status]?.bg || 'bg-slate-100'} ${statusConfig[selectedStudent?.status]?.color || 'text-slate-500'} border-0 font-bold text-xs uppercase px-3 py-1`}>
+                           {statusConfig[selectedStudent?.status]?.label || selectedStudent?.status}
+                         </Badge>
+                      </div>
+                      <p className="text-slate-400 text-xs font-mono">{selectedStudent?.rut || 'RUT no registrado'} · Iniciado {selectedStudent?.startDate}</p>
                     </div>
                  </div>
                  <div className="flex gap-8 mt-12 border-b border-white/5">
@@ -398,7 +403,6 @@ export default function AdminStudentsPage() {
                     ))}
                  </div>
               </header>
-
               <div className="flex-1 overflow-y-auto p-10 space-y-10 bg-slate-50/30">
                  {isEditingStudent ? (
                     <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-6 text-left animate-in fade-in duration-300">
@@ -406,36 +410,50 @@ export default function AdminStudentsPage() {
                           <Edit3 className="h-5 w-5 text-primary" /> Editar Perfil Estudiante
                        </h3>
                        
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Nombre Completo</label>
-                             <input 
-                                type="text"
-                                value={editFormData.name}
-                                onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
-                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
-                             />
-                          </div>
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">RUT</label>
-                             <input 
-                                type="text"
-                                value={editFormData.rut}
-                                onChange={(e) => setEditFormData({...editFormData, rut: e.target.value})}
-                                className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
-                             />
-                          </div>
-                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                           <div className="sm:col-span-2 space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Nombre Completo</label>
+                              <input 
+                                 type="text"
+                                 value={editFormData.name}
+                                 onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                                 className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                              />
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Estado del Alumno</label>
+                              <select
+                                 value={editFormData.status}
+                                 onChange={(e) => setEditFormData({...editFormData, status: e.target.value})}
+                                 className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                              >
+                                 <option value="ACTIVE">Activo 🟢</option>
+                                 <option value="INACTIVE">Inactivo ⚪</option>
+                                 <option value="ON_HOLD">En Pausa 🟡</option>
+                              </select>
+                           </div>
+                        </div>
 
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Correo Electrónico</label>
-                          <input 
-                             type="email"
-                             value={editFormData.email}
-                             onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
-                             className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
-                          />
-                       </div>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">RUT</label>
+                              <input 
+                                 type="text"
+                                 value={editFormData.rut}
+                                 onChange={(e) => setEditFormData({...editFormData, rut: e.target.value})}
+                                 className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                              />
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Correo Electrónico</label>
+                              <input 
+                                 type="email"
+                                 value={editFormData.email}
+                                 onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                                 className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                              />
+                           </div>
+                        </div>
 
                        <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">

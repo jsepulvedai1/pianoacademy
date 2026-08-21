@@ -205,12 +205,24 @@ export default function AdminLeadsPage() {
   const leads = data?.allLeads || [];
 
   // ─── CHAT FETCHING ─────────────────────────────────────────
-  const fetchChatHistory = async (phone: string) => {
+  const fetchChatHistory = (phone: string) => {
+    if (!phone) return;
     setIsLoadingChat(true);
     loadChat({
       variables: { phone }
     });
   };
+
+  // Auto-fetch and poll chat when chat drawer is open
+  useEffect(() => {
+    if (isDetailOpen && selectedLead?.telefono && activeDrawerTab === 'CHAT') {
+      fetchChatHistory(selectedLead.telefono);
+      const interval = setInterval(() => {
+        loadChat({ variables: { phone: selectedLead.telefono } });
+      }, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [isDetailOpen, selectedLead?.telefono, activeDrawerTab]);
 
   const filtered = useMemo(() => {
     return (leads || []).filter((l: any) => {
@@ -218,7 +230,9 @@ export default function AdminLeadsPage() {
       const matchSearch = (l.nombre || "").toLowerCase().includes(search.toLowerCase()) ||
         (l.telefono || "").includes(search);
       const matchSource = sourceFilter === 'ALL' || l.fuente === sourceFilter;
-      const matchService = serviceFilter === 'ALL' || l.servicio === serviceFilter;
+      const matchService = serviceFilter === 'ALL' || 
+        l.servicio === serviceFilter || 
+        (serviceFilter === 'CLASE_PRUEBA' && (l.servicio === 'CLASE_PRUEBA' || (l.servicio || '').toLowerCase().includes('prueba')));
       return matchSearch && matchSource && matchService;
     });
   }, [leads, search, sourceFilter, serviceFilter]);
@@ -427,7 +441,9 @@ export default function AdminLeadsPage() {
                           <div className="flex items-start justify-between mb-3">
                             <div>
                               <p className="font-bold text-slate-900 text-sm leading-tight">{lead.nombre}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{serviceLabel[lead.servicio as LeadService]}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                {serviceLabel[lead.servicio as LeadService] || lead.servicio?.replace('_', ' ') || 'Clase de Prueba'}
+                              </p>
                             </div>
                             <div className="flex items-center gap-1 text-slate-300">
                               <SrcIcon className="h-3.5 w-3.5" />
@@ -436,7 +452,7 @@ export default function AdminLeadsPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-slate-400">
                               <Phone className="h-3 w-3" />
-                              <span className="text-[11px] font-mono">+{lead.telefono.slice(0, 2)} {lead.telefono.slice(2)}</span>
+                              <span className="text-[11px] font-mono">+{lead.telefono?.slice(0, 2)} {lead.telefono?.slice(2)}</span>
                             </div>
                             {lead.preReservaExpira && lead.estado === 'PRE_RESERVA' && (
                               <Badge className="bg-orange-50 text-orange-700 text-[8px] font-bold uppercase tracking-widest border-0 px-2 py-1 animate-pulse">
@@ -445,9 +461,9 @@ export default function AdminLeadsPage() {
                             )}
                           </div>
 
-                          {lead.notas.length > 0 && (
+                          {lead.notas && lead.notas.length > 0 && (
                             <div className="mt-3 pt-3 border-t border-slate-50">
-                              <p className="text-[10px] text-slate-400 italic line-clamp-2">{lead.notas[lead.notas.length - 1].texto}</p>
+                              <p className="text-[10px] text-slate-400 italic line-clamp-2">{lead.notas[lead.notas.length - 1]?.texto}</p>
                             </div>
                           )}
 

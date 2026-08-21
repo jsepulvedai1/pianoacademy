@@ -37,6 +37,12 @@ export const MY_TEACHER_PROFILE = gql`
         id
         name
       }
+      availabilities {
+        id
+        day
+        startTime
+        endTime
+      }
     }
   }
 `;
