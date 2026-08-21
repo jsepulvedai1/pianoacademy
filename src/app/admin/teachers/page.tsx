@@ -263,36 +263,52 @@ export default function AdminTeachersPage() {
       </header>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
-          <Card className="w-full max-w-2xl bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem] my-8">
-            <div className="p-10 space-y-8">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-2xl font-bold font-serif">{editingTeacher ? 'Editar Profesor' : 'Nuevo Registro'}</h3>
-                  <p className="text-slate-400 text-xs italic">Completa el perfil del docente.</p>
-                </div>
-                <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="h-6 w-6 text-slate-400" /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+          <Card className="w-full max-w-2xl bg-white border-none shadow-2xl rounded-[2.5rem] my-auto max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header Sticky */}
+            <div className="px-8 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0 bg-white">
+              <div>
+                <h3 className="text-2xl font-bold font-serif text-slate-900">{editingTeacher ? 'Editar Profesor' : 'Nuevo Registro'}</h3>
+                <p className="text-slate-400 text-xs italic">Completa el perfil del docente.</p>
               </div>
+              <button 
+                onClick={closeModal} 
+                className="p-2.5 hover:bg-slate-100 rounded-full transition-colors cursor-pointer text-slate-400 hover:text-slate-700"
+                aria-label="Cerrar modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-              <div className="grid grid-cols-2 gap-6">
+            {/* Body Scrollable */}
+            <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="grid grid-cols-2 gap-5">
                  <div className="col-span-2 space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nombre Completo *</label>
-                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="Ej: Roberto instrumentista" />
+                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" placeholder="Ej: Roberto instrumentista" />
                  </div>
 
                  <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">RUT</label>
-                    <input type="text" value={formData.rut} onChange={(e) => setFormData({...formData, rut: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="12.345.678-9" />
+                    <input type="text" value={formData.rut} onChange={(e) => setFormData({...formData, rut: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" placeholder="12.345.678-9" />
                  </div>
 
                  <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Teléfono</label>
-                    <input type="text" value={formData.phoneNumber} onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="+56 9..." />
+                    <input type="text" value={formData.phoneNumber} onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" placeholder="+56 9..." />
                  </div>
 
                  <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Correo Electrónico *</label>
-                    <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="correo@ejemplo.com" />
+                    <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" placeholder="correo@ejemplo.com" />
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Estado</label>
+                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-bold text-sm">
+                       <option value="ACTIVE">Activo</option>
+                       <option value="INACTIVE">Inactivo</option>
+                    </select>
                  </div>
 
                  {!editingTeacher && (
@@ -307,17 +323,9 @@ export default function AdminTeachersPage() {
                    </div>
                  )}
 
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Estado</label>
-                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none font-bold">
-                       <option value="ACTIVE">Activo</option>
-                       <option value="INACTIVE">Inactivo</option>
-                    </select>
-                 </div>
-
                  <div className="col-span-2 space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dirección</label>
-                    <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="Calle Ejemplo 123, Comuna" />
+                    <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" placeholder="Calle Ejemplo 123, Comuna" />
                  </div>
 
                  <div className="col-span-2 space-y-3">
@@ -326,7 +334,7 @@ export default function AdminTeachersPage() {
                        {instruments.map((inst: any) => {
                          const isSelected = formData.specialtyIds.includes(parseInt(inst.id));
                          return (
-                           <button key={inst.id} onClick={() => toggleSpecialty(parseInt(inst.id))} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-primary text-white border-primary shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-primary/40'}`}>
+                           <button key={inst.id} type="button" onClick={() => toggleSpecialty(parseInt(inst.id))} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${isSelected ? 'bg-primary text-white border-primary shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-primary/40'}`}>
                              {inst.name}
                            </button>
                          );
@@ -339,13 +347,14 @@ export default function AdminTeachersPage() {
                     <textarea rows={3} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-50 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" placeholder="Reseña del profesor..." />
                  </div>
               </div>
+            </div>
 
-              <div className="flex gap-4 pt-4">
-                <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold uppercase text-[10px] tracking-widest" onClick={closeModal}>Cancelar</Button>
-                <Button disabled={!formData.name.trim() || creating || updating} className="flex-1 h-12 bg-slate-900 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-slate-900/20" onClick={handleSubmit}>
-                  {creating || updating ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTeacher ? "Guardar Cambios" : "Confirmar Staff")}
-                </Button>
-              </div>
+            {/* Footer Sticky */}
+            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/80 flex gap-4 shrink-0">
+              <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer" onClick={closeModal}>Cancelar</Button>
+              <Button disabled={!formData.name.trim() || creating || updating} className="flex-1 h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-slate-900/20 cursor-pointer" onClick={handleSubmit}>
+                {creating || updating ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTeacher ? "Guardar Cambios" : "Confirmar Staff")}
+              </Button>
             </div>
           </Card>
         </div>

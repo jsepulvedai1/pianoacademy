@@ -172,9 +172,17 @@ export default function AdminLeadsPage() {
     }
   });
 
-  const [updateStatusMutation] = useMutation(UPDATE_LEAD_STATUS, {
-    onCompleted: () => {
-      toast.success("Estado actualizado");
+  const [updateStatusMutation] = useMutation<any>(UPDATE_LEAD_STATUS, {
+    onCompleted: (res) => {
+      toast.success("Estado actualizado ✅");
+      const updatedLead = res?.updateLeadStatus?.lead;
+      if (updatedLead) {
+        setSelectedLead((prev: any) => (prev && String(prev.id) === String(updatedLead.id) ? { ...prev, estado: updatedLead.estado } : prev));
+      }
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Error al actualizar estado");
       refetch();
     }
   });
@@ -313,13 +321,27 @@ export default function AdminLeadsPage() {
     onError: (err: any) => toast.error(err.message || "Error al eliminar el prospecto")
   });
 
-  const [confirmReservationMutation, { loading: isConfirmingReservation }] = useMutation(CONFIRM_LEAD_RESERVATION_WITH_LESSON, {
+  // Keep selectedLead synchronized with incoming leads data
+  useEffect(() => {
+    if (selectedLead?.id && leads.length > 0) {
+      const freshLead = leads.find((l: any) => String(l.id) === String(selectedLead.id));
+      if (freshLead && (freshLead.estado !== selectedLead.estado || freshLead.notas?.length !== selectedLead.notas?.length)) {
+        setSelectedLead((prev: any) => prev ? { ...prev, ...freshLead } : freshLead);
+      }
+    }
+  }, [leads]);
+
+  const [confirmReservationMutation, { loading: isConfirmingReservation }] = useMutation<any>(CONFIRM_LEAD_RESERVATION_WITH_LESSON, {
     refetchQueries: [{ query: GET_LEADS }],
     onCompleted: (res: any) => {
       if (res.confirmLeadReservationWithLesson?.success) {
         toast.success("¡Reserva confirmada y clase agendada con éxito! 🎹");
         setIsConfirmModalOpen(false);
         setTargetLeadForConfirm(null);
+        const updatedLead = res?.confirmLeadReservationWithLesson?.lead;
+        if (updatedLead) {
+          setSelectedLead((prev: any) => (prev && String(prev.id) === String(updatedLead.id) ? { ...prev, estado: updatedLead.estado } : prev));
+        }
         refetch();
       } else {
         toast.error(res.confirmLeadReservationWithLesson?.error || "Error al confirmar la reserva");
@@ -339,7 +361,7 @@ export default function AdminLeadsPage() {
 
   const handleStatusChange = (leadId: string, newStatus: LeadStatus) => {
     if (newStatus === 'RESERVA_CONFIRMADA') {
-      const lead = leads.find((l: any) => l.id === leadId);
+      const lead = leads.find((l: any) => String(l.id) === String(leadId)) || selectedLead;
       setTargetLeadForConfirm(lead);
       const existingLesson = lead?.lessons?.[0];
       setConfirmLessonForm({
@@ -353,6 +375,8 @@ export default function AdminLeadsPage() {
       setIsConfirmModalOpen(true);
       return;
     }
+    // Optimistically update selectedLead in drawer
+    setSelectedLead((prev: any) => (prev && String(prev.id) === String(leadId) ? { ...prev, estado: newStatus } : prev));
     updateStatusMutation({ variables: { leadId, status: newStatus } });
   };
 
