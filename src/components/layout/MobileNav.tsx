@@ -82,6 +82,15 @@ export function MobileNav({ isTransparent = false }: { isTransparent?: boolean }
               >
                 Contáctanos
               </Link>
+              <div className="pt-2">
+                <Button 
+                  asChild
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold uppercase text-xs tracking-widest h-12 rounded-2xl shadow-md"
+                  onClick={() => setOpen(false)}
+                >
+                  <Link href="/book">Clase Inicial</Link>
+                </Button>
+              </div>
             </nav>
           </div>
         </div>,

@@ -70,7 +70,7 @@ export function Header() {
                   : "bg-primary hover:bg-primary/95 text-white border-primary"
               )}
             >
-              <Link href="/contact">Clase Inicial</Link>
+              <Link href="/book">Clase Inicial</Link>
             </Button>
 
             <div className="md:hidden">

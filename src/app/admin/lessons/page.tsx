@@ -78,7 +78,7 @@ export default function AdminLessonsPage() {
   // ── GraphQL Hooks ───────────────────────────────────────────
   const { data: lessonsData, loading: lessonsLoading, refetch: refetchLessons } = useQuery<{ allLessons: any[] }>(GET_LESSONS);
   const { data: teachersData } = useQuery<{ allTeachers: any[] }>(GET_TEACHERS);
-  const { data: studentsData } = useQuery<{ allStudents: any[] }>(GET_STUDENTS_LIST);
+  const { data: studentsData } = useQuery<{ allStudents: any[]; allStudentPacks: any[] }>(GET_STUDENTS_LIST);
   const { data: roomsData } = useQuery<{ allRooms: any[] }>(GET_ROOMS);
   const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, { fetchPolicy: "network-only" });
 
@@ -111,7 +111,21 @@ export default function AdminLessonsPage() {
   const displayLessons = lessonsData?.allLessons || [];
   const currentTeachers = teachersData?.allTeachers || [];
   const currentStudents = studentsData?.allStudents || [];
+  const currentPacks = studentsData?.allStudentPacks || [];
   const currentRooms = roomsData?.allRooms || [];
+
+  // Helper para calcular clases restantes disponibles considerando clases ya agendadas
+  const getStudentAvailableCredits = (studentId: string | number) => {
+    const sid = parseInt(studentId as string);
+    if (!sid) return 0;
+    const remainingPacks = currentPacks
+      .filter((p: any) => p.student?.id == sid && p.isActive)
+      .reduce((sum: number, p: any) => sum + (p.remainingClasses || 0), 0);
+    const pendingLessonsCount = displayLessons
+      .filter((l: any) => l.student?.id == sid && (l.status === 'PENDING' || l.status === 'CONFIRMED'))
+      .length;
+    return Math.max(0, remainingPacks - pendingLessonsCount);
+  };
 
   // New Class State
   const [isNewClassOpen, setIsNewClassOpen] = useState(false);
@@ -160,6 +174,12 @@ export default function AdminLessonsPage() {
     const holidayOnDate = activeHolidaysMap.get(newClassDate);
     if (holidayOnDate) {
       toast.error(`No es posible agendar clases en días feriados (${holidayOnDate}) 🇨🇱`);
+      return;
+    }
+
+    const availableCredits = getStudentAvailableCredits(newClassStudent);
+    if (availableCredits <= 0) {
+      toast.error("El alumno seleccionado no cuenta con clases disponibles (0 créditos restantes). Debe renovar o adquirir un pack.");
       return;
     }
     
@@ -751,6 +771,7 @@ export default function AdminLessonsPage() {
         const selectedDateObj = newClassDate ? parseISO(newClassDate) : null;
         const selectedDayOfWeekEn = selectedDateObj ? DAY_MAP_NUM_TO_EN[selectedDateObj.getDay()] : null;
         const teacherDayAvailabilities = selectedTeacherObj?.availabilities?.filter((a: any) => a.day === selectedDayOfWeekEn) || [];
+        const selectedStudentAvailableCredits = newClassStudent ? getStudentAvailableCredits(newClassStudent) : null;
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
@@ -785,9 +806,41 @@ export default function AdminLessonsPage() {
                       onChange={(e) => setNewClassStudent(e.target.value)}
                     >
                       <option value="">Seleccionar alumno...</option>
-                      {currentStudents.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      {currentStudents.map((s: any) => {
+                        const credits = getStudentAvailableCredits(s.id);
+                        return (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({credits > 0 ? `${credits} clase(s) disp.` : '⚠️ Sin pack / 0 clases'})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
+
+                  {/* Student Credits Banner */}
+                  {newClassStudent && selectedStudentAvailableCredits === 0 && (
+                    <div className="col-span-full p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-800 text-xs animate-in fade-in">
+                      <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-rose-950">🚫 Alumno sin clases disponibles</p>
+                        <p className="text-rose-800/90 text-[11px] mt-0.5 leading-relaxed">
+                          Este estudiante no cuenta con créditos disponibles en sus packs (0 clases restantes). No es posible agendar nuevas sesiones hasta que adquiera o renueve un pack en el sistema.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {newClassStudent && (selectedStudentAvailableCredits ?? 0) > 0 && (
+                    <div className="col-span-full p-3 bg-emerald-50 border border-emerald-200/80 rounded-2xl flex items-center justify-between text-xs animate-in fade-in">
+                      <div className="flex items-center gap-2 text-emerald-800 font-bold">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>Créditos disponibles: {selectedStudentAvailableCredits} clase(s)</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-700 bg-white/80 px-2.5 py-0.5 rounded-lg font-bold border border-emerald-200/60">
+                        Listo para agendar
+                      </span>
+                    </div>
+                  )}
 
                   {/* Fecha */}
                   <div className="space-y-1.5">
@@ -947,7 +1000,15 @@ export default function AdminLessonsPage() {
                     Cancelar
                   </Button>
                   <Button 
-                    disabled={isCreating || !newClassTeacher || !newClassStudent || !newClassDate || !newClassRoom || Boolean(activeHolidaysMap.get(newClassDate))} 
+                    disabled={
+                      isCreating || 
+                      !newClassTeacher || 
+                      !newClassStudent || 
+                      !newClassDate || 
+                      !newClassRoom || 
+                      Boolean(activeHolidaysMap.get(newClassDate)) ||
+                      selectedStudentAvailableCredits === 0
+                    } 
                     onClick={handleCreateLesson} 
                     className="flex-1 h-12 rounded-2xl bg-[#70125F] hover:bg-[#590e4b] text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-[#70125F]/20 cursor-pointer disabled:opacity-40"
                   >

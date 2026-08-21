@@ -90,12 +90,12 @@ function getDayNameSpanish(date: Date): string {
 export default function BookPage() {
   const [step, setStep] = useState(1);
   // Steps:
-  // 1: Especialidad / Instrumento
-  // 2: Profesional Docente
+  // 1: Instrumento / Clase de Prueba
+  // 2: Profesor / Docente
   // 3: Sede / Modalidad
   // 4: Fecha y Bloque Horario
-  // 5: Ficha del Paciente / Alumno
-  // 6: Comprobante de Cita
+  // 5: Ficha del Estudiante
+  // 6: Comprobante de Reserva
 
   // Selections
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("Clase de Prueba");
@@ -104,7 +104,7 @@ export default function BookPage() {
   const [selectedDateStr, setSelectedDateStr] = useState<string>(""); // YYYY-MM-DD
   const [timeOfDayFilter, setTimeOfDayFilter] = useState<"ALL" | "MORNING" | "AFTERNOON" | "EVENING">("ALL");
 
-  // Patient Intake Form
+  // Student Intake Form
   const [patientType, setPatientType] = useState<"ADULT" | "MINOR">("ADULT");
   const [formData, setFormData] = useState({
     nombre: "",
@@ -301,7 +301,7 @@ export default function BookPage() {
   const changeStep = (nextStep: number) => {
     setStep(nextStep);
     setTimeout(() => {
-      const container = document.getElementById("clinical-wizard");
+      const container = document.getElementById("booking-wizard");
       if (container) {
         container.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -351,18 +351,18 @@ export default function BookPage() {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre || !formData.apellido || formData.telefono.length !== 12 || !formData.email) {
-      toast.error("Por favor completa los campos obligatorios del paciente/alumno.");
+      toast.error("Por favor completa los campos obligatorios del estudiante.");
       return;
     }
 
     if (!selectedSlot || !selectedDateStr) {
-      toast.error("Selecciona una fecha y horario para tu cita.");
+      toast.error("Selecciona una fecha y horario para tu clase.");
       return;
     }
 
     const teacherToAssign = effectiveAssignedTeacherName;
     const studentFullName = `${formData.nombre} ${formData.apellido}`.trim();
-    const combinedNotes = `[${selectedModality}] Paciente: ${patientType === "MINOR" ? `Menor (Tutor: ${formData.tutorNombre || "No indicado"})` : "Titular"} | RUT: ${formData.rut || "No indicado"} | Nivel: ${formData.nivel} | Motivo: ${formData.motivo || "Clase de Prueba"}`;
+    const combinedNotes = `[${selectedModality}] Alumno: ${patientType === "MINOR" ? `Menor (Tutor: ${formData.tutorNombre || "No indicado"})` : "Titular"} | RUT: ${formData.rut || "No indicado"} | Nivel: ${formData.nivel} | Motivo: ${formData.motivo || "Clase de Prueba"}`;
 
     createPreReservation({
       variables: {
@@ -392,17 +392,17 @@ export default function BookPage() {
             Reserva tu Clase de Evaluación
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
-            Sistema de cita guiada: selecciona tu instrumento, profesional docente, fecha y horario disponible en tiempo real con confirmación inmediata.
+            Agendamiento en línea: selecciona tu instrumento, profesor, fecha y horario disponible en tiempo real con confirmación inmediata.
           </p>
         </div>
       </header>
 
       {/* ── Stepper Navigation ── */}
-      <div id="clinical-wizard" className="max-w-5xl mx-auto w-full px-4 sm:px-8 pt-8 pb-4">
+      <div id="booking-wizard" className="max-w-5xl mx-auto w-full px-4 sm:px-8 pt-8 pb-4">
         <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-100 flex items-center justify-between overflow-x-auto gap-2">
           {[
             { n: 1, label: "Clase de Prueba" },
-            { n: 2, label: "Profesional" },
+            { n: 2, label: "Profesor" },
             { n: 3, label: "Sede Presencial" },
             { n: 4, label: "Fecha y Hora" },
             { n: 5, label: "Ficha Alumno" },
@@ -450,7 +450,7 @@ export default function BookPage() {
               <span className="text-[10px] font-black uppercase tracking-widest text-[#70125F]">Paso 1 de 5</span>
               <h2 className="text-2xl font-bold font-serif text-slate-900">Servicio de Clase de Prueba</h2>
               <p className="text-slate-500 text-xs italic">
-                Sesión individual de diagnóstico y evaluación inicial con un docente especialista.
+                Sesión individual de evaluación inicial y prueba con un docente especialista.
               </p>
             </div>
 
@@ -469,7 +469,7 @@ export default function BookPage() {
                       <Badge className="bg-emerald-600 text-white text-[9px] uppercase font-bold">Servicio Oficial</Badge>
                     </div>
                     <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
-                      Sesión diagnóstica personalizada de 45 minutos. Evaluación de nivel técnico, musical y postural, resolución de dudas y planificación de objetivos formativos con un profesor de la academia.
+                      Sesión personalizada de 45 minutos. Evaluación de nivel técnico, musical y postural, resolución de dudas y planificación de objetivos formativos con un profesor de la academia.
                     </p>
                     <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-[#70125F] font-semibold">
                       <span>✓ 45 minutos de duración</span>
@@ -846,19 +846,19 @@ export default function BookPage() {
                 onClick={() => changeStep(5)}
                 className="bg-[#70125F] hover:bg-[#8e1779] text-white rounded-2xl h-12 px-8 font-bold uppercase tracking-wider text-xs shadow-lg shadow-[#70125F]/20 cursor-pointer gap-2 disabled:opacity-50"
               >
-                Continuar a Ficha del Alumno <ChevronRight className="h-4 w-4" />
+                Continuar a Ficha del Estudiante <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* PASO 5: FICHA DEL ALUMNO / PACIENTE */}
+        {/* PASO 5: FICHA DEL ESTUDIANTE */}
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#70125F]">Paso 5 de 5</span>
-              <h2 className="text-2xl font-bold font-serif text-slate-900">Ficha del Alumno e Información de Contacto</h2>
-              <p className="text-slate-500 text-xs italic">Ingresa tus datos para registrar la reserva y enviarte el comprobante de cita médica/musical.</p>
+              <h2 className="text-2xl font-bold font-serif text-slate-900">Ficha del Estudiante e Información de Contacto</h2>
+              <p className="text-slate-500 text-xs italic">Ingresa tus datos para formalizar tu reserva y enviarte el comprobante oficial.</p>
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -903,7 +903,7 @@ export default function BookPage() {
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                       placeholder="Ej: Sofia"
-                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs"
+                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs font-bold"
                     />
                   </div>
 
@@ -916,7 +916,7 @@ export default function BookPage() {
                       value={formData.apellido}
                       onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
                       placeholder="Ej: Sepúlveda Morales"
-                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs"
+                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs font-bold"
                     />
                   </div>
 
@@ -944,7 +944,7 @@ export default function BookPage() {
                       value={formData.telefono}
                       onChange={handlePhoneChange}
                       placeholder="+56912345678"
-                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs font-mono"
+                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs font-mono font-bold"
                     />
                     <p className="text-[10px] text-slate-400 italic">Te enviaremos el comprobante y recordatorio por WhatsApp.</p>
                   </div>
@@ -959,7 +959,7 @@ export default function BookPage() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="correo@ejemplo.cl"
-                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs"
+                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs font-bold"
                     />
                   </div>
 
@@ -971,7 +971,7 @@ export default function BookPage() {
                       value={formData.rut}
                       onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
                       placeholder="12.345.678-9"
-                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs"
+                      className="h-12 bg-slate-50 border-none rounded-2xl text-xs font-mono"
                     />
                   </div>
 
@@ -982,7 +982,7 @@ export default function BookPage() {
                     <select
                       value={formData.nivel}
                       onChange={(e) => setFormData({ ...formData, nivel: e.target.value })}
-                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-xs outline-none text-slate-800"
+                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-xs font-bold outline-none text-slate-800"
                     >
                       <option value="Principiante (Desde cero)">Principiante (Desde cero)</option>
                       <option value="Básico (Toco algunas canciones)">Básico (Toco algunas canciones)</option>
@@ -1005,10 +1005,10 @@ export default function BookPage() {
 
                 </div>
 
-                {/* Resumen Clínico Previo */}
+                {/* Resumen de tu Reserva */}
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs">
                   <div className="space-y-0.5">
-                    <p className="font-bold text-slate-900">Resumen de la Cita:</p>
+                    <p className="font-bold text-slate-900">Resumen de la Clase:</p>
                     <p className="text-slate-500">
                       {selectedSpecialty} • {selectedModality === "PRESENCIAL" ? "Presencial La Cisterna" : "Online HD"} • {selectedDateStr} a las {selectedSlot?.start} hrs.
                     </p>
@@ -1024,22 +1024,22 @@ export default function BookPage() {
                   type="button"
                   variant="outline"
                   onClick={() => changeStep(4)}
-                  className="rounded-2xl h-12 px-6 font-bold text-xs uppercase tracking-wider"
+                  className="rounded-2xl h-12 px-6 font-bold text-xs uppercase tracking-wider cursor-pointer"
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" /> Volver
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-12 px-10 font-bold uppercase tracking-wider text-xs shadow-xl shadow-emerald-600/20 cursor-pointer gap-2"
+                  className="bg-[#70125F] hover:bg-[#590e4b] text-white rounded-2xl h-12 px-10 font-bold uppercase tracking-wider text-xs shadow-xl shadow-[#70125F]/20 cursor-pointer gap-2"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Registrando Cita...
+                      <Loader2 className="h-4 w-4 animate-spin" /> Registrando Reserva...
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /> Confirmar Pre-Reserva
+                      <CheckCircle2 className="h-4 w-4" /> Confirmar Reserva de Clase
                     </span>
                   )}
                 </Button>
@@ -1048,7 +1048,7 @@ export default function BookPage() {
           </div>
         )}
 
-        {/* PASO 6: COMPROBANTE Y CONFIRMACIÓN DE CITA */}
+        {/* PASO 6: COMPROBANTE Y CONFIRMACIÓN DE RESERVA */}
         {step === 6 && (
           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 max-w-2xl mx-auto py-8">
             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white overflow-hidden text-center p-8 sm:p-12 space-y-6 relative">
@@ -1061,24 +1061,24 @@ export default function BookPage() {
                   FOLIO: {bookingFolio}
                 </Badge>
                 <h2 className="text-3xl font-extrabold font-serif text-slate-900">
-                  ¡Cita Pre-Reservada con Éxito!
+                  ¡Clase Reservada con Éxito!
                 </h2>
                 <p className="text-slate-500 text-xs sm:text-sm italic">
-                  Hemos registrado tus datos en nuestro sistema. El equipo de recepción coordinará tu confirmación final.
+                  Hemos registrado tus datos en nuestro sistema. El equipo de recepción coordinará los detalles finales.
                 </p>
               </div>
 
               <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 text-left space-y-3 text-xs">
                 <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-400 font-bold uppercase text-[10px]">Alumno / Paciente:</span>
+                  <span className="text-slate-400 font-bold uppercase text-[10px]">Alumno / Estudiante:</span>
                   <span className="font-bold text-slate-900">{formData.nombre} {formData.apellido}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-400 font-bold uppercase text-[10px]">Especialidad:</span>
+                  <span className="text-slate-400 font-bold uppercase text-[10px]">Instrumento / Clase:</span>
                   <span className="font-bold text-[#70125F]">{selectedSpecialty}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                  <span className="text-slate-400 font-bold uppercase text-[10px]">Profesional Docente:</span>
+                  <span className="text-slate-400 font-bold uppercase text-[10px]">Profesor Docente:</span>
                   <span className="font-bold text-slate-900">{effectiveAssignedTeacherName}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200/60 pb-2">
@@ -1100,7 +1100,7 @@ export default function BookPage() {
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <a
                   href={`https://wa.me/${(globalSettings?.whatsappNumber || "+56964279239").replace(/\D/g, "")}?text=${encodeURIComponent(
-                    `Hola Academia Détaché 🎻, acabo de registrar mi cita para ${selectedSpecialty} el ${selectedDateStr} a las ${selectedSlot?.start} hrs (Folio: ${bookingFolio}). Mi nombre es ${formData.nombre} ${formData.apellido}.`
+                    `Hola Academia Détaché 🎻, acabo de registrar mi clase para ${selectedSpecialty} el ${selectedDateStr} a las ${selectedSlot?.start} hrs (Folio: ${bookingFolio}). Mi nombre es ${formData.nombre} ${formData.apellido}.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
