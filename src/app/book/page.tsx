@@ -9,6 +9,7 @@ import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
 import { GET_CONTACT_CONTENT } from "@/graphql/queries/get-contact";
 import { GET_GLOBAL_SETTINGS } from "@/graphql/queries/get-global-settings";
+import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
 import { getImageUrl, normalizePhoneNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,6 +126,9 @@ export default function BookPage() {
   const { data: reservationsData } = useQuery(GET_RESERVATIONS);
   const { data: globalSettingsData } = useQuery<any>(GET_GLOBAL_SETTINGS);
   const { data: contactData } = useQuery<any>(GET_CONTACT_CONTENT);
+  const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, {
+    fetchPolicy: "network-only"
+  });
 
   const contact = contactData?.contactContent;
   const globalSettings = globalSettingsData?.globalSettings;
@@ -137,6 +141,17 @@ export default function BookPage() {
     { id: 5, name: "Batería" }
   ];
   const lessons = (reservationsData as any)?.allLessons || [];
+  const activeHolidays = holidaysData?.activeHolidays || [];
+
+  const activeHolidaysMap = useMemo(() => {
+    const map = new Map<string, string>();
+    activeHolidays.forEach((h: any) => {
+      if (h.isActive) {
+        map.set(h.date, h.name);
+      }
+    });
+    return map;
+  }, [activeHolidays]);
 
   // Teachers available for Clase de Prueba
   const availableTeachers = useMemo(() => {
@@ -150,6 +165,12 @@ export default function BookPage() {
     const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
     const isSunday = date.getDay() === 0;
     if (isPast || isSunday) return false;
+
+    // Check if the date is an active holiday
+    const dateFormatted = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
+    if (activeHolidaysMap.has(dateFormatted)) {
+      return false;
+    }
 
     const dayName = getDayNameSpanish(date);
 
@@ -696,6 +717,8 @@ export default function BookPage() {
                     
                     const dateFormatted = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
                     const isSelected = selectedDateStr === dateFormatted;
+                    const holidayName = activeHolidaysMap.get(dateFormatted);
+                    const isHoliday = Boolean(holidayName);
                     const isAvailable = isDateAvailableForBooking(d);
                     const disabled = !isAvailable;
 
@@ -703,19 +726,25 @@ export default function BookPage() {
                       <button
                         key={dateFormatted}
                         disabled={disabled}
+                        title={isHoliday ? `Feriado: ${holidayName}` : undefined}
                         onClick={() => {
                           setSelectedDateStr(dateFormatted);
                           setSelectedSlot(null);
                         }}
-                        className={`h-11 rounded-2xl flex items-center justify-center text-xs font-bold transition-all ${
+                        className={`h-11 rounded-2xl flex flex-col items-center justify-center text-xs font-bold transition-all relative ${
                           isSelected
                             ? "bg-[#70125F] text-white shadow-md shadow-[#70125F]/30 scale-105"
+                            : isHoliday
+                            ? "bg-rose-50/50 text-rose-300 border border-rose-100 cursor-not-allowed"
                             : disabled
                             ? "text-slate-300 cursor-not-allowed opacity-40 bg-slate-50/50"
                             : "hover:bg-slate-100 text-slate-800 cursor-pointer"
                         }`}
                       >
-                        {d.getDate()}
+                        <span>{d.getDate()}</span>
+                        {isHoliday && (
+                          <span className="h-1 w-1 rounded-full bg-rose-400 mt-0.5" />
+                        )}
                       </button>
                     );
                   })}

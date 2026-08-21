@@ -9,18 +9,23 @@ export const CREATE_TEACHER = gql`
     $rut: String,
     $address: String,
     $email: String,
-    $specialtyIds: [Int]
+    $specialtyIds: [Int],
+    $provisionalPassword: String
   ) {
     createTeacher(
       name: $name, 
       description: $description, 
       status: $status, 
       phoneNumber: $phoneNumber, 
-      rut: $rut,
-      address: $address,
-      email: $email,
-      specialtyIds: $specialtyIds
+      rut: $rut, 
+      address: $address, 
+      email: $email, 
+      specialtyIds: $specialtyIds,
+      provisionalPassword: $provisionalPassword
     ) {
+      provisionalPassword
+      userCreated
+      username
       teacher {
         id
         name

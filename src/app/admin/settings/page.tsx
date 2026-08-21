@@ -24,11 +24,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AnnouncementsTab from "./announcements-tab";
+import HolidaysTab from "./holidays-tab";
 
 export default function AdminSettingsPage() {
   const { data, loading, refetch } = useQuery<any>(GET_GLOBAL_SETTINGS);
   
-  const [activeTab, setActiveTab] = useState<'CONFIG' | 'WHATSAPP' | 'ROLES' | 'AVISOS'>('CONFIG');
+  const [activeTab, setActiveTab] = useState<'CONFIG' | 'WHATSAPP' | 'ROLES' | 'FERIADOS' | 'AVISOS'>('CONFIG');
 
   const [formData, setFormData] = useState({
     phoneNumber: "",
@@ -157,10 +158,17 @@ export default function AdminSettingsPage() {
           {activeTab === 'ROLES' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
         </button>
         <button 
+          onClick={() => setActiveTab('FERIADOS')} 
+          className={`pb-4 text-xs font-bold uppercase tracking-[0.2em] relative transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'FERIADOS' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <span>🇨🇱</span> Feriados y Días Festivos
+          {activeTab === 'FERIADOS' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
+        </button>
+        <button 
           onClick={() => setActiveTab('AVISOS')} 
           className={`pb-4 text-xs font-bold uppercase tracking-[0.2em] relative transition-colors whitespace-nowrap ${activeTab === 'AVISOS' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          Feriados y Avisos
+          Comunicados y Avisos
           {activeTab === 'AVISOS' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
         </button>
       </div>
@@ -709,6 +717,10 @@ export default function AdminSettingsPage() {
             </div>
 
           </div>
+        )}
+
+        {activeTab === 'FERIADOS' && (
+          <HolidaysTab />
         )}
 
         {activeTab === 'AVISOS' && (

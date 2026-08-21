@@ -7,7 +7,7 @@ import {
   ChevronRight, CheckCircle2, XCircle, GraduationCap,
   Activity, Mail, Phone, MapPin, CalendarDays, Award,
   FileText, X, Loader2, Filter, Download, Edit2, TrendingUp,
-  History, CalendarCheck, Trash2, CreditCard
+  History, CalendarCheck, Trash2, CreditCard, Key
 } from "lucide-react";
 import { format, parseISO, isAfter, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -113,9 +113,16 @@ export default function AdminTeachersPage() {
   const { data: lessonsData } = useQuery<any>(GET_LESSONS);
   const { data: instrumentsData } = useQuery<any>(GET_INSTRUMENTS);
   
-  const [createTeacher, { loading: creating }] = useMutation(CREATE_TEACHER, {
-    onCompleted: () => {
-      toast.success("Profesor registrado exitosamente ✅");
+  const [createTeacher, { loading: creating }] = useMutation<any>(CREATE_TEACHER, {
+    onCompleted: (data: any) => {
+      const res = data?.createTeacher;
+      if (res?.userCreated) {
+        toast.success(`Profesor registrado ✅ Cuenta creada con usuario: ${res.username} y clave: ${res.provisionalPassword}`, {
+          duration: 8000
+        });
+      } else {
+        toast.success("Profesor registrado exitosamente ✅");
+      }
       closeModal();
       refetchTeachers();
     },
@@ -284,9 +291,21 @@ export default function AdminTeachersPage() {
                  </div>
 
                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Correo Electrónico</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Correo Electrónico *</label>
                     <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" placeholder="correo@ejemplo.com" />
                  </div>
+
+                 {!editingTeacher && (
+                   <div className="col-span-2 p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200/60 flex items-start gap-3">
+                     <Key className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                     <div className="space-y-0.5 text-xs text-emerald-950">
+                       <p className="font-bold text-emerald-800">Creación Automática de Cuenta de Acceso</p>
+                       <p className="text-emerald-700/90 text-[11px] leading-relaxed">
+                         Al guardar, se creará inmediatamente la cuenta para el <strong>Portal Docente</strong> usando este correo como usuario y la clave provisoria <strong className="font-mono text-emerald-900 bg-emerald-100 px-1.5 py-0.5 rounded">Detache2026!</strong>.
+                       </p>
+                     </div>
+                   </div>
+                 )}
 
                  <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Estado</label>

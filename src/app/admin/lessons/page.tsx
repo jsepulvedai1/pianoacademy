@@ -39,6 +39,7 @@ import { GET_LESSONS } from "@/graphql/queries/get-lessons";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_ROOMS } from "@/graphql/queries/get-rooms";
+import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
 import { CREATE_LESSON, UPDATE_LESSON_STATUS } from "@/graphql/mutations/lesson-mutations";
 
 const DAY_MAP_NUM_TO_EN: Record<number, string> = {
@@ -74,6 +75,15 @@ export default function AdminLessonsPage() {
   const { data: teachersData } = useQuery<{ allTeachers: any[] }>(GET_TEACHERS);
   const { data: studentsData } = useQuery<{ allStudents: any[] }>(GET_STUDENTS_LIST);
   const { data: roomsData } = useQuery<{ allRooms: any[] }>(GET_ROOMS);
+  const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, { fetchPolicy: "network-only" });
+
+  const activeHolidaysMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (holidaysData?.activeHolidays || []).forEach((h: any) => {
+      if (h.isActive) map.set(h.date, h.name);
+    });
+    return map;
+  }, [holidaysData]);
 
   const [updateStatus, { loading: isUpdating }] = useMutation(UPDATE_LESSON_STATUS, {
     onCompleted: () => {
@@ -320,23 +330,37 @@ export default function AdminLessonsPage() {
             <div className="min-w-[1000px] grid grid-cols-[100px_repeat(7,1fr)]">
               {/* Day Headers */}
               <div className="h-16 border-b border-slate-100 bg-slate-50/30 sticky top-0 z-20"></div>
-              {weekDays.map((day) => (
-                <div key={day.toString()} className={cn(
-                  "h-16 border-b border-l border-slate-100 flex flex-col items-center justify-center sticky top-0 z-20 bg-slate-50/30 backdrop-blur-sm",
-                  isToday(day) && "bg-primary/5 border-l-primary/10"
-                )}>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    {format(day, "eee", { locale: es })}
-                  </span>
-                  <span className={cn(
-                    "text-lg font-bold font-serif",
-                    isToday(day) ? "text-primary" : "text-slate-900"
+              {weekDays.map((day) => {
+                const dayFormatted = format(day, "yyyy-MM-dd");
+                const holidayName = activeHolidaysMap.get(dayFormatted);
+                const isHoliday = Boolean(holidayName);
+
+                return (
+                  <div key={day.toString()} className={cn(
+                    "min-h-16 py-2 border-b border-l border-slate-100 flex flex-col items-center justify-center sticky top-0 z-20 backdrop-blur-sm relative",
+                    isHoliday ? "bg-rose-50/70 border-l-rose-100" : isToday(day) ? "bg-primary/5 border-l-primary/10" : "bg-slate-50/30"
                   )}>
-                    {format(day, "d")}
-                  </span>
-                  {isToday(day) && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary"></div>}
-                </div>
-              ))}
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      {format(day, "eee", { locale: es })}
+                    </span>
+                    <span className={cn(
+                      "text-lg font-bold font-serif leading-none mt-0.5",
+                      isHoliday ? "text-rose-700" : isToday(day) ? "text-primary" : "text-slate-900"
+                    )}>
+                      {format(day, "d")}
+                    </span>
+                    {isHoliday && (
+                      <span 
+                        title={holidayName}
+                        className="text-[8px] font-bold text-rose-700 bg-rose-100/90 px-1.5 py-0.5 rounded-md mt-1 truncate max-w-[90%] text-center"
+                      >
+                        🇨🇱 {holidayName?.replace(/[^\w\sÁÉÍÓÚáéíóúñÑ]/g, '').trim()}
+                      </span>
+                    )}
+                    {isToday(day) && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary"></div>}
+                  </div>
+                );
+              })}
 
               {/* Time Slots */}
               {hours.map((hour) => (
