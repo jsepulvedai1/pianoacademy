@@ -28,18 +28,45 @@ import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const [noteText, setNoteText] = useState("");
-  const { data, loading } = useQuery<any>(GET_DASHBOARD_STATS);
-  const { data: notesData, refetch: refetchNotes } = useQuery<any>(GET_DASHBOARD_NOTES);
+  const { data, loading } = useQuery<any>(GET_DASHBOARD_STATS, {
+    fetchPolicy: 'network-only'
+  });
+  const { data: notesData, refetch: refetchNotes } = useQuery<any>(GET_DASHBOARD_NOTES, {
+    fetchPolicy: 'network-only'
+  });
 
   const [createNote] = useMutation(CREATE_NOTE, {
+    refetchQueries: [{ query: GET_DASHBOARD_NOTES }],
     onCompleted: () => {
       setNoteText("");
       refetchNotes();
+      toast.success("Recordatorio agregado ✅");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Error al crear el recordatorio");
     }
   });
 
-  const [toggleNote] = useMutation(TOGGLE_NOTE, { onCompleted: () => refetchNotes() });
-  const [deleteNote] = useMutation(DELETE_NOTE, { onCompleted: () => refetchNotes() });
+  const [toggleNote] = useMutation(TOGGLE_NOTE, {
+    refetchQueries: [{ query: GET_DASHBOARD_NOTES }],
+    onCompleted: () => {
+      refetchNotes();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Error al actualizar estado");
+    }
+  });
+
+  const [deleteNote] = useMutation(DELETE_NOTE, {
+    refetchQueries: [{ query: GET_DASHBOARD_NOTES }],
+    onCompleted: () => {
+      refetchNotes();
+      toast.success("Recordatorio eliminado");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Error al eliminar recordatorio");
+    }
+  });
 
   // ─── KPI CALCULATIONS ──────────────────────────────────────
   const kpis = useMemo(() => {

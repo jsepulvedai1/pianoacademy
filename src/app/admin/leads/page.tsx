@@ -122,10 +122,16 @@ export default function AdminLeadsPage() {
     if (!selectedLead) return;
     const firstName = (selectedLead.nombre || "Alumno").split(" ")[0];
     const origin = typeof window !== "undefined" ? window.location.origin : "https://academia.detache.cl";
-    const payUrl = `${origin}/checkout?plan=${plan.id}`;
+    const params = new URLSearchParams();
+    params.set("plan", plan.id);
+    if (selectedLead.nombre) params.set("name", selectedLead.nombre);
+    if (selectedLead.telefono) params.set("phone", selectedLead.telefono);
+    if (selectedLead.email) params.set("email", selectedLead.email);
+
+    const payUrl = `${origin}/checkout?${params.toString()}`;
     const priceFormatted = Number(plan.price).toLocaleString("es-CL");
     
-    const msg = `¡Hola ${firstName}! 🎶 Te comparto el enlace directo y seguro para realizar el pago de tu *${plan.name}* ($${priceFormatted} CLP):\n\n👉 ${payUrl}\n\nAceptamos tarjetas de débito, crédito y transferencia vía Webpay / Mercado Pago. Una vez completado, tu cupo y horarios quedan confirmados de inmediato. ¡Nos vemos en la academia! 🎹✨`;
+    const msg = `¡Hola ${firstName}! 🎶 Te comparto el enlace directo y seguro para realizar el pago de tu *${plan.name}* ($${priceFormatted} CLP):\n\n👉 ${payUrl}\n\nAceptamos tarjetas de débito, crédito y transferencia vía Webpay / Mercado Pago. Tus clases quedarán cargadas automáticamente a tu cuenta. ¡Nos vemos en la academia! 🎹✨`;
     
     setCustomMessage(msg);
     setShowPaymentLinkMenu(false);

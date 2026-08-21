@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
@@ -21,11 +21,29 @@ function CheckoutContent() {
   const plans = data?.allPlans || [];
   const plan = plans.find((p: any) => p.id === planId) || plans[0];
 
+  const queryName = searchParams.get("name") || "";
+  const queryEmail = searchParams.get("email") || "";
+  let rawPhone = searchParams.get("phone") || "";
+  if (rawPhone && !rawPhone.startsWith("+")) {
+    rawPhone = "+" + rawPhone;
+  }
+  const initialPhone = rawPhone || "+569";
+
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "+569",
+    name: queryName,
+    email: queryEmail,
+    phone: initialPhone,
   });
+
+  useEffect(() => {
+    if (queryName || queryEmail || rawPhone) {
+      setFormData(prev => ({
+        name: queryName || prev.name,
+        email: queryEmail || prev.email,
+        phone: rawPhone || prev.phone,
+      }));
+    }
+  }, [queryName, queryEmail, rawPhone]);
   
   const [createPreference, { loading: isCreatingPref }] = useMutation(CREATE_PAYMENT_PREFERENCE, {
     onCompleted: (res: any) => {

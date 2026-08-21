@@ -461,7 +461,7 @@ export default function ContactPage() {
                 {[
                   { n: 1, label: "Clase de Prueba" },
                   { n: 2, label: "Profesional" },
-                  { n: 3, label: "Modalidad" },
+                  { n: 3, label: "Sede Presencial" },
                   { n: 4, label: "Fecha y Hora" },
                   { n: 5, label: "Ficha Alumno" },
                   { n: 6, label: "Comprobante" },
@@ -648,7 +648,7 @@ export default function ContactPage() {
                     <Button
                       variant="outline"
                       onClick={() => changeStep(1)}
-                      className="rounded-2xl h-12 px-6 font-bold text-xs uppercase tracking-wider"
+                      className="rounded-2xl h-12 px-6 font-bold text-xs uppercase tracking-wider cursor-pointer"
                     >
                       <ChevronLeft className="mr-1 h-4 w-4" /> Volver
                     </Button>
@@ -656,105 +656,69 @@ export default function ContactPage() {
                       onClick={() => changeStep(3)}
                       className="bg-[#70125F] hover:bg-[#8e1779] text-white rounded-2xl h-12 px-8 font-bold uppercase tracking-wider text-xs shadow-lg shadow-[#70125F]/20 cursor-pointer gap-2"
                     >
-                      Continuar a Modalidad <ChevronRight className="h-4 w-4" />
+                      Continuar a Sede <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* PASO 3: MODALIDAD */}
+              {/* PASO 3: SEDE PRESENCIAL */}
               {step === 3 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
                   <div className="space-y-1">
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#70125F]">Paso 3 de 5</span>
-                    <h2 className="text-2xl font-bold font-serif text-slate-900">Modalidad y Lugar de Atención</h2>
-                    <p className="text-slate-500 text-xs italic">Elige entre asistir a nuestra sede física o tomar la clase de forma remota.</p>
+                    <h2 className="text-2xl font-bold font-serif text-slate-900">Sede Presencial de Atención</h2>
+                    <p className="text-slate-500 text-xs italic">Nuestras clases se imparten 100% de manera presencial en nuestra sede oficial.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* Presencial */}
-                    <Card
-                      onClick={() => setSelectedModality("PRESENCIAL")}
-                      className={`rounded-3xl border-2 transition-all cursor-pointer p-8 flex flex-col justify-between hover:scale-[1.01] ${
-                        selectedModality === "PRESENCIAL"
-                          ? "border-[#70125F] bg-[#70125F]/5 shadow-xl ring-2 ring-[#70125F]/20"
-                          : "border-slate-100 bg-white hover:border-slate-300 shadow-sm"
-                      }`}
-                    >
-                      <div className="space-y-4">
-                        <div className="h-14 w-14 rounded-2xl bg-violet-100 text-[#70125F] flex items-center justify-center font-bold">
-                          <Building className="h-7 w-7" />
+                  <Card
+                    onClick={() => setSelectedModality("PRESENCIAL")}
+                    className="rounded-3xl border-2 border-[#70125F] bg-[#70125F]/5 shadow-xl ring-2 ring-[#70125F]/20 p-8 flex flex-col justify-between cursor-pointer"
+                  >
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between">
+                        <div className="h-16 w-16 rounded-2xl bg-[#70125F] text-white flex items-center justify-center font-bold shadow-md">
+                          <Building className="h-8 w-8" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-xl text-slate-900">Sede Presencial La Cisterna</h3>
-                            <Badge className="bg-[#70125F] text-white text-[9px] uppercase">Más elegida</Badge>
-                          </div>
-                          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                            {globalSettings?.address || "Gran Avenida José Miguel Carrera 8520, Oficina C, La Cisterna." }
-                          </p>
-                        </div>
-                        <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 text-[11px] text-slate-600 space-y-1.5">
-                          <p className="font-bold text-slate-800">✨ Equipamiento Incluido:</p>
-                          <p>• Pianos de cola y acústicos calibrados.</p>
-                          <p>• Salas climatizadas con aislación acústica.</p>
-                          <p>• Sala de espera para apoderados y acompañantes.</p>
-                        </div>
+                        <Badge className="bg-[#70125F] text-white text-[10px] uppercase font-bold px-3 py-1">Sede Oficial • 100% Presencial</Badge>
                       </div>
 
-                      <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#70125F]">
-                        <span>{selectedModality === "PRESENCIAL" ? "● Modalidad Seleccionada" : "Seleccionar Presencial"}</span>
-                        <div className={`h-6 w-6 rounded-full border flex items-center justify-center ${
-                          selectedModality === "PRESENCIAL" ? "bg-[#70125F] text-white border-[#70125F]" : "border-slate-300"
-                        }`}>
-                          {selectedModality === "PRESENCIAL" ? "✓" : ""}
-                        </div>
-                      </div>
-                    </Card>
-
-                    {/* Online */}
-                    <Card
-                      onClick={() => setSelectedModality("ONLINE")}
-                      className={`rounded-3xl border-2 transition-all cursor-pointer p-8 flex flex-col justify-between hover:scale-[1.01] ${
-                        selectedModality === "ONLINE"
-                          ? "border-[#70125F] bg-[#70125F]/5 shadow-xl ring-2 ring-[#70125F]/20"
-                          : "border-slate-100 bg-white hover:border-slate-300 shadow-sm"
-                      }`}
-                    >
-                      <div className="space-y-4">
-                        <div className="h-14 w-14 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                          <Video className="h-7 w-7" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-xl text-slate-900">Aula Virtual Online (HD)</h3>
-                          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                            Conéctate desde tu hogar vía Google Meet / Zoom con audio estéreo optimizado para instrumentos musicales.
-                          </p>
-                        </div>
-                        <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 text-[11px] text-slate-600 space-y-1.5">
-                          <p className="font-bold text-slate-800">💻 Requisitos Mínimos:</p>
-                          <p>• Dispositivo con cámara y micrófono (PC/Tablet/Celular).</p>
-                          <p>• Tu instrumento listo para tocar.</p>
-                          <p>• Conexión a internet estable.</p>
-                        </div>
+                      <div>
+                        <h3 className="font-bold text-2xl text-slate-900">Sede La Cisterna (Santiago)</h3>
+                        <p className="text-sm text-slate-600 mt-2 font-medium">
+                          📍 {globalSettings?.address || "Gran Avenida José Miguel Carrera 8520, Oficina C, La Cisterna."}
+                        </p>
                       </div>
 
-                      <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-700">
-                        <span>{selectedModality === "ONLINE" ? "● Modalidad Seleccionada" : "Seleccionar Online"}</span>
-                        <div className={`h-6 w-6 rounded-full border flex items-center justify-center ${
-                          selectedModality === "ONLINE" ? "bg-indigo-700 text-white border-indigo-700" : "border-slate-300"
-                        }`}>
-                          {selectedModality === "ONLINE" ? "✓" : ""}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-xs text-slate-700 space-y-1">
+                          <p className="font-bold text-slate-900">🎹 Instrumentos de Alta Gama</p>
+                          <p className="text-[11px] text-slate-500">Pianos acústicos y de cola afinados y calibrados periódicamente.</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-xs text-slate-700 space-y-1">
+                          <p className="font-bold text-slate-900">🎧 Salas Climatizadas</p>
+                          <p className="text-[11px] text-slate-500">Acondicionamiento acústico profesional y ambiente óptimo.</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-xs text-slate-700 space-y-1">
+                          <p className="font-bold text-slate-900">☕ Sala de Espera</p>
+                          <p className="text-[11px] text-slate-500">Espacio cómodo para acompañantes, apoderados y alumnos.</p>
                         </div>
                       </div>
-                    </Card>
-                  </div>
+                    </div>
+
+                    <div className="pt-6 mt-6 border-t border-[#70125F]/10 flex items-center justify-between text-xs font-bold text-[#70125F]">
+                      <span className="text-sm">● Sede y Modalidad Presencial Confirmada</span>
+                      <div className="h-7 w-7 rounded-full bg-[#70125F] text-white flex items-center justify-center font-bold text-xs shadow">
+                        ✓
+                      </div>
+                    </div>
+                  </Card>
 
                   <div className="flex items-center justify-between pt-4">
                     <Button
                       variant="outline"
                       onClick={() => changeStep(2)}
-                      className="rounded-2xl h-12 px-6 font-bold text-xs uppercase tracking-wider"
+                      className="rounded-2xl h-12 px-6 font-bold text-xs uppercase tracking-wider cursor-pointer"
                     >
                       <ChevronLeft className="mr-1 h-4 w-4" /> Volver
                     </Button>

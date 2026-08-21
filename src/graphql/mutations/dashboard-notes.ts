@@ -13,7 +13,7 @@ export const GET_DASHBOARD_NOTES = gql`
 
 export const CREATE_NOTE = gql`
   mutation CreateNote($text: String!) {
-    createAcademyTask(title: $text, priority: "RECORDATORIO", assignedTo: "ADMIN") {
+    createAcademyTask(title: $text, priority: "RECORDATORIO", assignedTo: "ADMINISTRACION") {
       task {
         id
         title
