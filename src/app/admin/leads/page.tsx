@@ -27,7 +27,8 @@ import {
   Instagram,
   Globe,
   Tag,
-  GraduationCap
+  GraduationCap,
+  CreditCard
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ import {
 import { apiClient } from "@/lib/api-client";
 import { useQuery, useMutation, useSubscription, useLazyQuery } from "@apollo/client/react/index.js";
 import { GET_LEADS } from "@/graphql/queries/get-leads";
+import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
 import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
 import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
@@ -112,6 +114,22 @@ export default function AdminLeadsPage() {
   const { data, loading, refetch } = useQuery<any>(GET_LEADS, {
     fetchPolicy: 'network-only' // Evita usar caché obsoleto
   });
+  const { data: plansData } = useQuery<any>(GET_PLANS);
+  const plans = plansData?.allPlans || [];
+  const [showPaymentLinkMenu, setShowPaymentLinkMenu] = useState(false);
+
+  const sendPaymentLinkMessage = (plan: any) => {
+    if (!selectedLead) return;
+    const firstName = (selectedLead.nombre || "Alumno").split(" ")[0];
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://academia.detache.cl";
+    const payUrl = `${origin}/checkout?plan=${plan.id}`;
+    const priceFormatted = Number(plan.price).toLocaleString("es-CL");
+    
+    const msg = `¡Hola ${firstName}! 🎶 Te comparto el enlace directo y seguro para realizar el pago de tu *${plan.name}* ($${priceFormatted} CLP):\n\n👉 ${payUrl}\n\nAceptamos tarjetas de débito, crédito y transferencia vía Webpay / Mercado Pago. Una vez completado, tu cupo y horarios quedan confirmados de inmediato. ¡Nos vemos en la academia! 🎹✨`;
+    
+    setCustomMessage(msg);
+    setShowPaymentLinkMenu(false);
+  };
 
   useSubscription<any>(ON_LEAD_UPDATED, {
     onData: ({ data: subData }) => {
@@ -845,7 +863,39 @@ export default function AdminLeadsPage() {
                       )}
 
                       {/* Floating composer if on chat tab */}
-                      <div className="mt-8 bg-white p-4 rounded-3xl border border-slate-200 shadow-xl space-y-3">
+                      <div className="mt-8 bg-white p-4 rounded-3xl border border-slate-200 shadow-xl space-y-3 relative">
+                         
+                         {/* Plan Selector Popup */}
+                         {showPaymentLinkMenu && (
+                            <div className="absolute bottom-full mb-3 left-0 right-0 bg-white rounded-3xl p-4 shadow-2xl border border-slate-200 z-50 animate-in fade-in slide-in-from-bottom-2 space-y-3">
+                               <div className="flex items-center justify-between border-b pb-2">
+                                  <div className="flex items-center gap-2 text-emerald-700">
+                                     <CreditCard className="h-4 w-4" />
+                                     <span className="text-xs font-bold uppercase tracking-wider">Selecciona el Plan a Enviar</span>
+                                  </div>
+                                  <button onClick={() => setShowPaymentLinkMenu(false)} className="text-slate-400 hover:text-slate-600">
+                                     <X className="h-4 w-4" />
+                                  </button>
+                               </div>
+
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                                  {plans.map((p: any) => (
+                                     <button
+                                        key={p.id}
+                                        onClick={() => sendPaymentLinkMessage(p)}
+                                        className="text-left p-3 rounded-2xl border border-slate-100 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between"
+                                     >
+                                        <div>
+                                           <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-800 leading-tight">{p.name}</p>
+                                           <p className="text-[10px] text-slate-400 mt-0.5">{p.classesCount} clases incluidas</p>
+                                        </div>
+                                        <p className="text-xs font-black text-emerald-700 font-mono mt-2">${Number(p.price).toLocaleString('es-CL')} CLP</p>
+                                     </button>
+                                  ))}
+                               </div>
+                            </div>
+                         )}
+
                          <div className="flex gap-2">
                            <input 
                              type="text" 
@@ -859,12 +909,20 @@ export default function AdminLeadsPage() {
                              onClick={handleSendWA} 
                              disabled={!customMessage.trim() || isSendingWA}
                              size="icon" 
-                             className="bg-emerald-600 rounded-xl h-10 w-10 shadow-lg shadow-emerald-500/20"
+                             className="bg-emerald-600 rounded-xl h-10 w-10 shadow-lg shadow-emerald-500/20 cursor-pointer"
                            >
                               {isSendingWA ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                            </Button>
                          </div>
-                         <div className="flex gap-1">
+                         <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <Button
+                               type="button"
+                               size="sm"
+                               onClick={() => setShowPaymentLinkMenu(!showPaymentLinkMenu)}
+                               className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-[10px] font-bold uppercase tracking-wider h-7 gap-1 px-2.5 border border-emerald-200 shadow-none cursor-pointer"
+                            >
+                               <CreditCard className="h-3 w-3 text-emerald-700" /> Link de Pago Plan
+                            </Button>
                             {['INFO_PACKS', 'RECORDATORIO_PAGO'].map(k => (
                               <button key={k} onClick={() => applyTemplate(k)} className="text-[8px] font-bold uppercase tracking-widest text-slate-400 hover:text-emerald-600 px-2 py-1">{k.replace('_', ' ')}</button>
                             ))}
