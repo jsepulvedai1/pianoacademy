@@ -47,3 +47,11 @@ export const CREATE_LEAD_NOTE = gql`
     }
   }
 `;
+
+export const DELETE_LEAD = gql`
+  mutation DeleteLead($id: ID!) {
+    deleteLead(id: $id) {
+      success
+    }
+  }
+`;

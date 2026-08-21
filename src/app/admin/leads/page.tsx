@@ -28,7 +28,8 @@ import {
   Globe,
   Tag,
   GraduationCap,
-  CreditCard
+  CreditCard,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ import { useQuery, useMutation, useSubscription, useLazyQuery } from "@apollo/cl
 import { GET_LEADS } from "@/graphql/queries/get-leads";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
-import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_NOTE } from "@/graphql/mutations/lead-mutations";
+import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_NOTE, DELETE_LEAD } from "@/graphql/mutations/lead-mutations";
 import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
 import { normalizePhoneNumber } from "@/lib/utils";
@@ -294,7 +295,25 @@ export default function AdminLeadsPage() {
     onError: (err: any) => toast.error(err.message || "Error al guardar la nota")
   });
 
+  const [deleteLeadMutation, { loading: isDeletingLead }] = useMutation(DELETE_LEAD, {
+    refetchQueries: [{ query: GET_LEADS }],
+    onCompleted: () => {
+      toast.success("Prospecto eliminado exitosamente 🗑️");
+      setIsDetailOpen(false);
+      setSelectedLead(null);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message || "Error al eliminar el prospecto")
+  });
+
   // ─── HANDLERS ────────────────────────────────────────────
+
+  const handleDeleteLead = (leadId: string, leadName: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a "${leadName}"?`)) {
+      deleteLeadMutation({ variables: { id: leadId } });
+    }
+  };
 
   const handleStatusChange = (leadId: string, newStatus: LeadStatus) => {
     updateStatusMutation({ variables: { leadId, status: newStatus } });
