@@ -1,19 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client/react/index.js";
-import { GET_GLOBAL_SETTINGS } from "@/graphql/queries/get-global-settings";
+import { useQuery, useLazyQuery, useMutation } from "@apollo/client/react/index.js";
+import { GET_GLOBAL_SETTINGS, GET_WHATSAPP_STATUS_AND_QR } from "@/graphql/queries/get-global-settings";
 import { UPDATE_GLOBAL_SETTINGS, SEND_WHATSAPP_TEST } from "@/graphql/mutations/global-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Settings, Phone, Mail, MapPin, Clock, Instagram, Facebook, 
   ShieldAlert, ShieldCheck, UserCheck, Key, Lock, Loader2, Save,
   MessageSquare, Send, Bot, Sparkles, Smartphone, CheckCircle2,
-  Radio, HelpCircle
+  Radio, HelpCircle, QrCode, RefreshCw, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import AnnouncementsTab from "./announcements-tab";
@@ -44,6 +51,12 @@ export default function AdminSettingsPage() {
   // Test WhatsApp State
   const [testPhone, setTestPhone] = useState("+56 9 ");
   const [testMessage, setTestMessage] = useState("🎻 Mensaje de prueba desde el Panel de Administración de Détaché.");
+
+  // QR Modal State
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [loadQrStatus, { data: qrData, loading: loadingQr, refetch: refetchQr }] = useLazyQuery<any>(GET_WHATSAPP_STATUS_AND_QR, {
+    fetchPolicy: "network-only"
+  });
 
   useEffect(() => {
     if (data?.globalSettings) {
@@ -344,10 +357,20 @@ export default function AdminSettingsPage() {
                         <h3 className="font-extrabold text-slate-900 text-lg">Asignación de WhatsApp de la Academia</h3>
                         <p className="text-slate-400 text-xs italic">Define el número que usará Détaché para enviar mensajes y chatear con los clientes.</p>
                       </div>
-                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 w-fit">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Línea Conectada
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setQrModalOpen(true);
+                            loadQrStatus();
+                          }}
+                          className="h-10 px-4 rounded-xl border-emerald-200 text-emerald-800 hover:bg-emerald-50 text-xs font-bold gap-2 cursor-pointer"
+                        >
+                          <QrCode className="h-4 w-4 text-emerald-600" />
+                          Vincular / Escanear QR
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -692,6 +715,86 @@ export default function AdminSettingsPage() {
           <AnnouncementsTab />
         )}
       </div>
+
+      {/* QR Code Scan Dialog */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="rounded-3xl border border-slate-100 p-8 max-w-md bg-white text-center">
+          <DialogHeader className="space-y-1">
+            <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2">
+              <QrCode className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-xl font-bold font-serif text-slate-900">
+              Vincular WhatsApp de la Academia
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 italic">
+              Escanea este código con la aplicación de WhatsApp en tu teléfono celular.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {loadingQr ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3">
+                <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+                <p className="text-xs text-slate-400 italic">Generando código QR desde Evolution API...</p>
+              </div>
+            ) : qrData?.whatsappQrCode ? (
+              <div className="space-y-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 inline-block">
+                  <img
+                    src={qrData.whatsappQrCode.startsWith('data:') ? qrData.whatsappQrCode : `data:image/png;base64,${qrData.whatsappQrCode}`}
+                    alt="WhatsApp QR Code"
+                    className="w-56 h-56 mx-auto rounded-xl shadow-sm"
+                  />
+                </div>
+
+                <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 text-left space-y-2 text-xs text-emerald-950">
+                  <p className="font-bold flex items-center gap-1.5 text-emerald-800">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" /> Instrucciones de Vinculación:
+                  </p>
+                  <ol className="list-decimal pl-4 space-y-1 text-[11px] text-emerald-900/80">
+                    <li>Abre WhatsApp en tu teléfono.</li>
+                    <li>Toca <strong>Menú (⋮)</strong> o <strong>Configuración (⚙️)</strong>.</li>
+                    <li>Selecciona <strong>Dispositivos vinculados</strong>.</li>
+                    <li>Toca <strong>Vincular un dispositivo</strong> y apunta tu cámara a este código.</li>
+                  </ol>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 space-y-3">
+                <AlertCircle className="h-10 w-10 text-amber-500 mx-auto" />
+                <p className="text-xs font-bold text-slate-800">
+                  {qrData?.whatsappConnectionStatus === 'open' 
+                    ? '¡Tu WhatsApp ya está conectado y activo!' 
+                    : 'No se pudo obtener el código QR en este momento.'}
+                </p>
+                <p className="text-[11px] text-slate-400 italic">
+                  Estado actual: <span className="font-mono font-bold text-slate-600">{qrData?.whatsappConnectionStatus || 'Desconectado'}</span>
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setQrModalOpen(false)}
+                className="flex-1 rounded-xl h-10 text-xs font-bold"
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => loadQrStatus()}
+                disabled={loadingQr}
+                className="flex-1 rounded-xl h-10 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 cursor-pointer"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loadingQr ? 'animate-spin' : ''}`} />
+                Actualizar QR
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

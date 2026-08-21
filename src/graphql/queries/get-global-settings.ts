@@ -22,3 +22,10 @@ export const GET_GLOBAL_SETTINGS = gql`
     }
   }
 `;
+
+export const GET_WHATSAPP_STATUS_AND_QR = gql`
+  query GetWhatsAppStatusAndQr {
+    whatsappConnectionStatus
+    whatsappQrCode
+  }
+`;
