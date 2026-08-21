@@ -61,12 +61,16 @@ export default function AdminStudentsPage() {
   });
 
   // ── GraphQL Hooks ───────────────────────────────────────────
-  const { data, loading, refetch } = useQuery<any>(GET_STUDENTS_LIST);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'ON_HOLD'>('ALL');
+  const { data, loading, refetch } = useQuery<any>(GET_STUDENTS_LIST, {
+    fetchPolicy: 'network-only'
+  });
   const { data: lessonsData } = useQuery<any>(GET_LESSONS);
   const { data: instrumentsData } = useQuery<any>(GET_INSTRUMENTS);
   const { data: teachersData } = useQuery<any>(GET_TEACHERS);
   
   const [updateStudent, { loading: isUpdating }] = useMutation(UPDATE_STUDENT, {
+    refetchQueries: [{ query: GET_STUDENTS_LIST }],
     onCompleted: (res: any) => {
       refetch();
       if (res.updateStudent?.student) {
@@ -79,6 +83,7 @@ export default function AdminStudentsPage() {
   });
   
   const [createStudent, { loading: isCreating }] = useMutation(CREATE_STUDENT, {
+    refetchQueries: [{ query: GET_STUDENTS_LIST }],
     onCompleted: () => {
       toast.success("Alumno registrado exitosamente ✅");
       setIsAddingStudent(false);
@@ -106,9 +111,16 @@ export default function AdminStudentsPage() {
   const instruments = instrumentsData?.allInstruments || [];
   const teachers = teachersData?.allTeachers || [];
 
-  const filteredStudents = useMemo(() => 
-    students.filter((s: any) => s.name.toLowerCase().includes(searchTerm.toLowerCase())),
-  [students, searchTerm]);
+  const filteredStudents = useMemo(() => {
+    return students.filter((s: any) => {
+      const matchSearch = (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.rut || '').includes(searchTerm) ||
+        (s.phoneNumber || '').includes(searchTerm);
+      const sStatus = s.status || 'ACTIVE';
+      const matchStatus = statusFilter === 'ALL' || sStatus === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [students, searchTerm, statusFilter]);
 
   const studentPacks = useMemo(() => 
     selectedStudent ? allPacks.filter((p: any) => p.student?.id === selectedStudent.id) : [], 
@@ -303,12 +315,35 @@ export default function AdminStudentsPage() {
       )}
 
       <Card className="border-none shadow-sm overflow-hidden bg-white rounded-3xl">
-        <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-           <div className="relative w-80 group">
+        <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+           <div className="relative w-full sm:w-80 group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-              <input type="text" placeholder="Buscar por nombre..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+              <input type="text" placeholder="Buscar por nombre, RUT o teléfono..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
            </div>
-           <Badge variant="outline" className="border-slate-100 text-slate-400 text-[10px] px-3 py-1 font-bold">{filteredStudents.length} Alumnos</Badge>
+           
+           <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 overflow-x-auto">
+              {[
+                { key: 'ALL', label: 'Todos', count: students.length },
+                { key: 'ACTIVE', label: 'Activos', count: students.filter((s: any) => (s.status || 'ACTIVE') === 'ACTIVE').length },
+                { key: 'INACTIVE', label: 'Inactivos', count: students.filter((s: any) => s.status === 'INACTIVE').length },
+                { key: 'ON_HOLD', label: 'En Pausa', count: students.filter((s: any) => s.status === 'ON_HOLD').length },
+              ].map(tab => (
+                <button
+                   key={tab.key}
+                   onClick={() => setStatusFilter(tab.key as any)}
+                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                     statusFilter === tab.key 
+                       ? 'bg-white text-slate-900 shadow-sm' 
+                       : 'text-slate-400 hover:text-slate-600'
+                   }`}
+                >
+                   <span>{tab.label}</span>
+                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === tab.key ? 'bg-primary/10 text-primary font-black' : 'bg-slate-200/60 text-slate-500'}`}>
+                     {tab.count}
+                   </span>
+                </button>
+              ))}
+           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -318,13 +353,15 @@ export default function AdminStudentsPage() {
                 <th className="px-8 py-5">Instrumento</th>
                 <th className="px-8 py-5">Profesor(es)</th>
                 <th className="px-8 py-5">Nivel</th>
-                <th className="px-8 py-5">Sincronización</th>
+                <th className="px-8 py-5">Estado</th>
                 <th className="px-8 py-5 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr><td colSpan={6} className="py-20 text-center italic text-slate-400">Sincronizando comunidad...</td></tr>
+              ) : filteredStudents.length === 0 ? (
+                <tr><td colSpan={6} className="py-16 text-center italic text-slate-400">No se encontraron estudiantes con este criterio.</td></tr>
               ) : filteredStudents.map((student: any) => (
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => { setSelectedStudent(student); setIsDetailOpen(true); setActiveTab('GENERAL'); }}>
                   <td className="px-8 py-6">
@@ -356,7 +393,9 @@ export default function AdminStudentsPage() {
                     <Badge className="bg-slate-100 text-slate-600 border-0 text-[10px] font-bold">{student.level || 'BEGINNER'}</Badge>
                   </td>
                   <td className="px-8 py-6">
-                     <Badge className="bg-emerald-50 text-emerald-700 text-[8px] border-0 font-black">ACTIVO</Badge>
+                     <Badge className={`${statusConfig[student.status || 'ACTIVE']?.bg || 'bg-emerald-50'} ${statusConfig[student.status || 'ACTIVE']?.color || 'text-emerald-700'} text-[10px] border-0 font-bold px-2.5 py-0.5`}>
+                        {statusConfig[student.status || 'ACTIVE']?.label || 'Activo'}
+                     </Badge>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-300 group-hover:text-primary bg-slate-50/0 group-hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Button>

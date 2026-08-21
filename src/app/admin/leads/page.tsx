@@ -51,7 +51,7 @@ import { useQuery, useMutation, useSubscription, useLazyQuery } from "@apollo/cl
 import { GET_LEADS } from "@/graphql/queries/get-leads";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
-import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
+import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_NOTE } from "@/graphql/mutations/lead-mutations";
 import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
 import { normalizePhoneNumber } from "@/lib/utils";
@@ -277,6 +277,23 @@ export default function AdminLeadsPage() {
     conversion: leads.length > 0 ? Math.round((leads.filter((l: any) => l.estado === 'CONCRETADO').length / leads.length) * 100) : 0
   }), [leads]);
 
+  const [createLeadNoteMutation, { loading: isSavingNote }] = useMutation(CREATE_LEAD_NOTE, {
+    refetchQueries: [{ query: GET_LEADS }],
+    onCompleted: (res: any) => {
+      toast.success("Nota agregada correctamente ✅");
+      setIsAddingNote(false);
+      setNewNote("");
+      refetch();
+      if (res.createLeadNote?.leadNote && selectedLead) {
+        setSelectedLead((prev: any) => ({
+          ...prev,
+          notas: [...(prev.notas || []), res.createLeadNote.leadNote]
+        }));
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Error al guardar la nota")
+  });
+
   // ─── HANDLERS ────────────────────────────────────────────
 
   const handleStatusChange = (leadId: string, newStatus: LeadStatus) => {
@@ -284,7 +301,14 @@ export default function AdminLeadsPage() {
   };
 
   const handleAddNote = () => {
-    toast.info("Función de notas reales próximamente");
+    if (!selectedLead || !newNote.trim()) return;
+    createLeadNoteMutation({
+      variables: {
+        leadId: parseInt(selectedLead.id),
+        texto: newNote.trim(),
+        autor: "Recepción"
+      }
+    });
   };
 
   const handleSendWA = async () => {
@@ -790,7 +814,9 @@ export default function AdminLeadsPage() {
                           />
                           <div className="flex gap-2">
                              <Button variant="ghost" size="sm" className="flex-1 text-[9px] font-bold uppercase" onClick={() => setIsAddingNote(false)}>Cancelar</Button>
-                             <Button size="sm" className="flex-1 bg-slate-900 text-white text-[9px] font-bold uppercase rounded-xl" onClick={handleAddNote}>Guardar</Button>
+                             <Button size="sm" disabled={isSavingNote || !newNote.trim()} className="flex-1 bg-slate-900 text-white text-[9px] font-bold uppercase rounded-xl cursor-pointer" onClick={handleAddNote}>
+                               {isSavingNote ? "Guardando..." : "Guardar"}
+                             </Button>
                           </div>
                         </div>
                       )}

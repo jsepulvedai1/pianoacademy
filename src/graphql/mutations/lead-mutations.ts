@@ -33,3 +33,17 @@ export const UPDATE_LEAD_STATUS = gql`
     }
   }
 `;
+
+export const CREATE_LEAD_NOTE = gql`
+  mutation CreateLeadNote($leadId: Int!, $texto: String!, $autor: String) {
+    createLeadNote(leadId: $leadId, texto: $texto, autor: $autor) {
+      success
+      leadNote {
+        id
+        texto
+        autor
+        fecha
+      }
+    }
+  }
+`;

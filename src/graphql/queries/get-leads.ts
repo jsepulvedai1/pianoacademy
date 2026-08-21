@@ -15,6 +15,7 @@ export const GET_LEADS = gql`
       notas {
         id
         texto
+        autor
         fecha
       }
     }
