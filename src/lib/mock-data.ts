@@ -69,17 +69,11 @@ export const CLASS_TYPES: ClassType[] = [
   { id: "c4", name: "Masterclass de Interpretación", description: "Técnica e interpretación avanzada.", durationMinutes: 90, price: 50000, currency: "CLP", allowedLevels: ["ADVANCED", "MASTER"], allowedModalities: ["IN_PERSON"] }
 ];
 
-// ─── NUEVOS TIPOS ──────────────────────────────────────────
 export type LeadStatus =
   | 'NUEVO'
   | 'CONTACTADO'
-  | 'SEGUIMIENTO'
   | 'PRE_RESERVA'
-  | 'RESERVA_CONFIRMADA'
-  | 'CONCRETADO'
-  | 'NO_CONCRETADO'
-  | 'SIN_RESPUESTA'
-  | 'LISTA_ESPERA';
+  | 'RESERVA_CONFIRMADA';
 
 export type LeadSource = 'WEB' | 'WHATSAPP' | 'INSTAGRAM' | 'REFERIDO' | 'GOOGLE' | 'OTRO';
 export type LeadService = 'PIANO_NINOS' | 'PIANO_ADULTOS' | 'CANTO' | 'CLASE_GRUPAL' | 'CLASE_PRUEBA';
@@ -254,7 +248,7 @@ export const MOCK_LEADS: Lead[] = [
   },
   {
     id: 'L003', nombre: 'Camila Reyes', telefono: '56956781234', email: 'camila.r@gmail.com', edad: 22,
-    servicio: 'CANTO', fuente: 'REFERIDO', estado: 'SEGUIMIENTO',
+    servicio: 'CANTO', fuente: 'REFERIDO', estado: 'CONTACTADO',
     notas: [
       { id: 'N3', texto: 'La refirió la alumna Ana Torres. Muy interesada en canto lírico.', fecha: '2026-04-07T11:00:00', autor: 'Dirección' },
       { id: 'N4', texto: 'Segunda llamada realizada. Quedó en confirmar esta semana.', fecha: '2026-04-09T16:00:00', autor: 'Recepción' }
@@ -262,7 +256,7 @@ export const MOCK_LEADS: Lead[] = [
     historialEstados: [
       { estado: 'NUEVO', fecha: '2026-04-06T10:00:00', por: 'Sistema' },
       { estado: 'CONTACTADO', fecha: '2026-04-07T11:00:00', por: 'Dirección' },
-      { estado: 'SEGUIMIENTO', fecha: '2026-04-09T16:00:00', por: 'Recepción' }
+      { estado: 'CONTACTADO', fecha: '2026-04-09T16:00:00', por: 'Recepción' }
     ],
     fechaIngreso: '2026-04-06T10:00:00', fechaUltimoContacto: '2026-04-09T16:00:00', asignadoA: 'Recepción'
   },
@@ -292,36 +286,35 @@ export const MOCK_LEADS: Lead[] = [
   },
   {
     id: 'L006', nombre: 'Tomás Vargas', telefono: '56945678901', edad: 45,
-    servicio: 'PIANO_ADULTOS', fuente: 'OTRO', estado: 'SIN_RESPUESTA',
-    notas: [{ id: 'N7', texto: 'Intentamos contactar 3 veces sin respuesta.', fecha: '2026-04-09T17:00:00', autor: 'Recepción' }],
+    servicio: 'PIANO_ADULTOS', fuente: 'OTRO', estado: 'CONTACTADO',
+    notas: [{ id: 'N7', texto: 'Primer contacto realizado.', fecha: '2026-04-09T17:00:00', autor: 'Recepción' }],
     historialEstados: [
       { estado: 'NUEVO', fecha: '2026-04-04T10:00:00', por: 'Sistema' },
-      { estado: 'SIN_RESPUESTA', fecha: '2026-04-09T17:00:00', por: 'Recepción' }
+      { estado: 'CONTACTADO', fecha: '2026-04-09T17:00:00', por: 'Recepción' }
     ],
     fechaIngreso: '2026-04-04T10:00:00', asignadoA: 'Recepción'
   },
   {
     id: 'L007', nombre: 'Fernanda Castro', telefono: '56956789012', email: 'fer.castro@hotmail.com', edad: 28,
-    servicio: 'CANTO', fuente: 'INSTAGRAM', estado: 'CONCRETADO',
-    notas: [{ id: 'N8', texto: 'Firmó contrato. Pack 12 clases. Inicio: 15 abril.', fecha: '2026-04-09T11:00:00', autor: 'Dirección' }],
+    servicio: 'CANTO', fuente: 'INSTAGRAM', estado: 'RESERVA_CONFIRMADA',
+    notas: [{ id: 'N8', texto: 'Reserva confirmada.', fecha: '2026-04-09T11:00:00', autor: 'Dirección' }],
     historialEstados: [
       { estado: 'NUEVO', fecha: '2026-04-01T09:00:00', por: 'Sistema' },
       { estado: 'CONTACTADO', fecha: '2026-04-02T10:00:00', por: 'Recepción' },
-      { estado: 'SEGUIMIENTO', fecha: '2026-04-04T12:00:00', por: 'Recepción' },
+      { estado: 'CONTACTADO', fecha: '2026-04-04T12:00:00', por: 'Recepción' },
       { estado: 'PRE_RESERVA', fecha: '2026-04-07T09:00:00', por: 'Recepción' },
-      { estado: 'RESERVA_CONFIRMADA', fecha: '2026-04-08T10:00:00', por: 'Recepción' },
-      { estado: 'CONCRETADO', fecha: '2026-04-09T11:00:00', por: 'Dirección' }
+      { estado: 'RESERVA_CONFIRMADA', fecha: '2026-04-08T10:00:00', por: 'Recepción' }
     ],
     fechaIngreso: '2026-04-01T09:00:00', fechaUltimoContacto: '2026-04-09T11:00:00', asignadoA: 'Dirección'
   },
   {
     id: 'L008', nombre: 'Rodrigo Muñoz', telefono: '56967890123', edad: 10,
-    servicio: 'CLASE_GRUPAL', fuente: 'WEB', estado: 'LISTA_ESPERA',
-    notas: [{ id: 'N9', texto: 'Interesado en clase grupal. Cupo lleno, en lista de espera.', fecha: '2026-04-10T10:00:00', autor: 'Recepción' }],
+    servicio: 'CLASE_GRUPAL', fuente: 'WEB', estado: 'PRE_RESERVA',
+    notas: [{ id: 'N9', texto: 'Interesado en clase grupal.', fecha: '2026-04-10T10:00:00', autor: 'Recepción' }],
     historialEstados: [
       { estado: 'NUEVO', fecha: '2026-04-10T09:30:00', por: 'Sistema' },
       { estado: 'CONTACTADO', fecha: '2026-04-10T10:00:00', por: 'Recepción' },
-      { estado: 'LISTA_ESPERA', fecha: '2026-04-10T10:00:00', por: 'Recepción' }
+      { estado: 'PRE_RESERVA', fecha: '2026-04-10T10:00:00', por: 'Recepción' }
     ],
     fechaIngreso: '2026-04-10T09:30:00', fechaUltimoContacto: '2026-04-10T10:00:00', asignadoA: 'Recepción'
   }
@@ -421,11 +414,6 @@ export const sourceLabel: Record<LeadSource, string> = {
 export const statusLabel: Record<LeadStatus, string> = {
   NUEVO: 'Nuevo Lead',
   CONTACTADO: 'Contactado',
-  SEGUIMIENTO: 'Seguimiento',
   PRE_RESERVA: 'Pre-Reserva',
-  RESERVA_CONFIRMADA: 'Reserva Confirmada',
-  CONCRETADO: 'Concretado',
-  NO_CONCRETADO: 'No Concretado',
-  SIN_RESPUESTA: 'Sin Respuesta',
-  LISTA_ESPERA: 'Lista de Espera'
+  RESERVA_CONFIRMADA: 'Reserva Confirmada'
 };

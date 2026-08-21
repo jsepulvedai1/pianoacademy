@@ -55,3 +55,48 @@ export const DELETE_LEAD = gql`
     }
   }
 `;
+
+export const CONFIRM_LEAD_RESERVATION_WITH_LESSON = gql`
+  mutation ConfirmLeadReservationWithLesson(
+    $leadId: Int!
+    $teacherId: Int!
+    $date: Date!
+    $startTime: Time!
+    $endTime: Time!
+    $roomId: Int
+    $lessonType: String
+  ) {
+    confirmLeadReservationWithLesson(
+      leadId: $leadId
+      teacherId: $teacherId
+      date: $date
+      startTime: $startTime
+      endTime: $endTime
+      roomId: $roomId
+      lessonType: $lessonType
+    ) {
+      success
+      error
+      lead {
+        id
+        nombre
+        estado
+      }
+      lesson {
+        id
+        date
+        startTime
+        endTime
+        status
+        teacher {
+          id
+          name
+        }
+        room {
+          id
+          name
+        }
+      }
+    }
+  }
+`;

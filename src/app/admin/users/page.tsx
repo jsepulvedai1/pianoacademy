@@ -35,14 +35,22 @@ const SECTIONS_CONFIG = [
 ];
 
 export default function UsersAdminPage() {
-  const { data: accountsData, refetch: refetchAccounts } = useQuery<any>(GET_ADMIN_ACCOUNTS);
-  const { data: logsData, refetch: refetchLogs } = useQuery<any>(GET_AUDIT_LOGS);
+  const { data: accountsData, refetch: refetchAccounts } = useQuery<any>(GET_ADMIN_ACCOUNTS, {
+    fetchPolicy: 'network-only'
+  });
+  const { data: logsData, refetch: refetchLogs } = useQuery<any>(GET_AUDIT_LOGS, {
+    fetchPolicy: 'network-only'
+  });
 
   const accounts = accountsData?.allAdminAccounts || [];
   const logs = logsData?.allAuditLogs || [];
 
-  const { data: studentsData, refetch: refetchStudents } = useQuery<any>(GET_STUDENT_PORTAL_ACCOUNTS);
-  const { data: teachersData, refetch: refetchTeachers } = useQuery<any>(GET_TEACHER_PORTAL_ACCOUNTS);
+  const { data: studentsData, refetch: refetchStudents } = useQuery<any>(GET_STUDENT_PORTAL_ACCOUNTS, {
+    fetchPolicy: 'network-only'
+  });
+  const { data: teachersData, refetch: refetchTeachers } = useQuery<any>(GET_TEACHER_PORTAL_ACCOUNTS, {
+    fetchPolicy: 'network-only'
+  });
 
   const studentsList = studentsData?.allStudents || [];
   const teachersList = teachersData?.allTeachers || [];
@@ -55,6 +63,7 @@ export default function UsersAdminPage() {
   const [portalSearch, setPortalSearch] = useState("");
 
   const [createStudentAcc, { loading: isCreatingStudent }] = useMutation(CREATE_STUDENT_ACCOUNT, {
+    refetchQueries: [{ query: GET_STUDENT_PORTAL_ACCOUNTS }, { query: GET_AUDIT_LOGS }],
     onCompleted: (res: any) => {
       if (res.createStudentAccount?.success) {
         toast.success("Cuenta de alumno creada ✅");
@@ -71,6 +80,7 @@ export default function UsersAdminPage() {
   });
 
   const [createTeacherAcc, { loading: isCreatingTeacher }] = useMutation(CREATE_TEACHER_ACCOUNT, {
+    refetchQueries: [{ query: GET_TEACHER_PORTAL_ACCOUNTS }, { query: GET_AUDIT_LOGS }],
     onCompleted: (res: any) => {
       if (res.createTeacherAccount?.success) {
         toast.success("Cuenta de profesor creada ✅");
@@ -87,6 +97,7 @@ export default function UsersAdminPage() {
   });
 
   const [resetPortalPass, { loading: isResettingPortal }] = useMutation(RESET_PORTAL_PASSWORD, {
+    refetchQueries: [{ query: GET_AUDIT_LOGS }],
     onCompleted: (res: any) => {
       if (res.resetPortalPassword?.success) {
         toast.success("Contraseña actualizada exitosamente ✅");
@@ -126,6 +137,7 @@ export default function UsersAdminPage() {
 
   // GraphQL Mutations
   const [createAccount, { loading: isCreating }] = useMutation(CREATE_ADMIN_ACCOUNT, {
+    refetchQueries: [{ query: GET_ADMIN_ACCOUNTS }, { query: GET_AUDIT_LOGS }],
     onCompleted: (res: any) => {
       if (res.createAdminAccount?.success) {
         toast.success("Cuenta administrativa creada ✅");
@@ -141,6 +153,7 @@ export default function UsersAdminPage() {
   });
 
   const [updateAccount, { loading: isUpdating }] = useMutation(UPDATE_ADMIN_ACCOUNT, {
+    refetchQueries: [{ query: GET_ADMIN_ACCOUNTS }, { query: GET_AUDIT_LOGS }],
     onCompleted: (res: any) => {
       if (res.updateAdminAccount?.success) {
         toast.success("Cuenta actualizada exitosamente ✅");
@@ -155,6 +168,7 @@ export default function UsersAdminPage() {
   });
 
   const [deleteAccount, { loading: isDeleting }] = useMutation(DELETE_ADMIN_ACCOUNT, {
+    refetchQueries: [{ query: GET_ADMIN_ACCOUNTS }, { query: GET_AUDIT_LOGS }],
     onCompleted: (res: any) => {
       if (res.deleteAdminAccount?.success) {
         toast.success("Cuenta eliminada ✅");

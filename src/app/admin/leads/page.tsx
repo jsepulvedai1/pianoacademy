@@ -29,7 +29,8 @@ import {
   Tag,
   GraduationCap,
   CreditCard,
-  Trash2
+  Trash2,
+  Calendar
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -51,28 +52,23 @@ import { apiClient } from "@/lib/api-client";
 import { useQuery, useMutation, useSubscription, useLazyQuery } from "@apollo/client/react/index.js";
 import { GET_LEADS } from "@/graphql/queries/get-leads";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
+import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
+import { GET_ROOMS } from "@/graphql/queries/get-rooms";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
-import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_NOTE, DELETE_LEAD } from "@/graphql/mutations/lead-mutations";
+import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_NOTE, DELETE_LEAD, CONFIRM_LEAD_RESERVATION_WITH_LESSON } from "@/graphql/mutations/lead-mutations";
 import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
 import { normalizePhoneNumber } from "@/lib/utils";
 
 
-// ─── CONFIG ─────────────────────────────────────────────────
 const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: React.ElementType; dot: string }[] = [
   { status: 'NUEVO',               color: 'text-sky-700',     bg: 'bg-sky-50',      icon: Star,         dot: 'bg-sky-400'    },
   { status: 'CONTACTADO',          color: 'text-violet-700',  bg: 'bg-violet-50',   icon: Phone,        dot: 'bg-violet-400' },
-  { status: 'SEGUIMIENTO',         color: 'text-amber-700',   bg: 'bg-amber-50',    icon: RefreshCw,    dot: 'bg-amber-400'  },
   { status: 'PRE_RESERVA',         color: 'text-orange-700',  bg: 'bg-orange-50',   icon: Hourglass,    dot: 'bg-orange-400' },
-  { status: 'RESERVA_CONFIRMADA',  color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2, dot: 'bg-emerald-400'},
-  { status: 'CONCRETADO',          color: 'text-green-900',   bg: 'bg-green-100',   icon: TrendingUp,   dot: 'bg-green-500'  },
-  { status: 'SIN_RESPUESTA',       color: 'text-slate-500',   bg: 'bg-slate-50',    icon: AlertCircle,  dot: 'bg-slate-300'  },
-  { status: 'LISTA_ESPERA',        color: 'text-indigo-700',  bg: 'bg-indigo-50',   icon: Clock,        dot: 'bg-indigo-400' },
-  { status: 'NO_CONCRETADO',       color: 'text-rose-700',    bg: 'bg-rose-50',     icon: XCircle,      dot: 'bg-rose-400'   }
+  { status: 'RESERVA_CONFIRMADA',  color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2, dot: 'bg-emerald-400'}
 ];
 
-// Columnas visibles en el kanban principal (las activas)
-const KANBAN_COLUMNS: LeadStatus[] = ['NUEVO', 'CONTACTADO', 'SEGUIMIENTO', 'PRE_RESERVA', 'RESERVA_CONFIRMADA'];
+const KANBAN_COLUMNS: LeadStatus[] = ['NUEVO', 'CONTACTADO', 'PRE_RESERVA', 'RESERVA_CONFIRMADA'];
 
 const SOURCE_ICONS: Record<LeadSource, React.ElementType> = {
   WEB: Globe,
@@ -86,8 +82,7 @@ const SOURCE_ICONS: Record<LeadSource, React.ElementType> = {
 // ─── COMPONENT ──────────────────────────────────────────────
 export default function AdminLeadsPage() {
   const [search, setSearch] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<LeadSource | 'ALL'>('ALL');
-  const [serviceFilter, setServiceFilter] = useState<LeadService | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'ALL'>('ALL');
   const [viewMode, setViewMode] = useState<'KANBAN' | 'LIST'>('KANBAN');
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -117,7 +112,22 @@ export default function AdminLeadsPage() {
   });
   const { data: plansData } = useQuery<any>(GET_PLANS);
   const plans = plansData?.allPlans || [];
+  const { data: teachersData } = useQuery<any>(GET_TEACHERS);
+  const teachers = teachersData?.allTeachers || [];
+  const { data: roomsData } = useQuery<any>(GET_ROOMS);
+  const rooms = roomsData?.allRooms || [];
+
   const [showPaymentLinkMenu, setShowPaymentLinkMenu] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [targetLeadForConfirm, setTargetLeadForConfirm] = useState<any>(null);
+  const [confirmLessonForm, setConfirmLessonForm] = useState({
+    teacherId: "",
+    date: new Date().toISOString().split("T")[0],
+    startTime: "16:00",
+    endTime: "16:45",
+    roomId: "",
+    lessonType: "INDIVIDUAL"
+  });
 
   const sendPaymentLinkMessage = (plan: any) => {
     if (!selectedLead) return;
@@ -254,13 +264,10 @@ export default function AdminLeadsPage() {
       if (!l) return false;
       const matchSearch = (l.nombre || "").toLowerCase().includes(search.toLowerCase()) ||
         (l.telefono || "").includes(search);
-      const matchSource = sourceFilter === 'ALL' || l.fuente === sourceFilter;
-      const matchService = serviceFilter === 'ALL' || 
-        l.servicio === serviceFilter || 
-        (serviceFilter === 'CLASE_PRUEBA' && (l.servicio === 'CLASE_PRUEBA' || (l.servicio || '').toLowerCase().includes('prueba')));
-      return matchSearch && matchSource && matchService;
+      const matchStatus = statusFilter === 'ALL' || l.estado === statusFilter;
+      return matchSearch && matchStatus;
     });
-  }, [leads, search, sourceFilter, serviceFilter]);
+  }, [leads, search, statusFilter]);
 
   const leadsByStatus = useMemo(() => {
     const map: Record<LeadStatus, any[]> = {} as any;
@@ -273,9 +280,9 @@ export default function AdminLeadsPage() {
   const stats = useMemo(() => ({
     total: leads.length,
     nuevos: leads.filter((l: any) => l.estado === 'NUEVO').length,
+    contactados: leads.filter((l: any) => l.estado === 'CONTACTADO').length,
     preReservas: leads.filter((l: any) => l.estado === 'PRE_RESERVA').length,
-    concretados: leads.filter((l: any) => l.estado === 'CONCRETADO').length,
-    conversion: leads.length > 0 ? Math.round((leads.filter((l: any) => l.estado === 'CONCRETADO').length / leads.length) * 100) : 0
+    confirmados: leads.filter((l: any) => l.estado === 'RESERVA_CONFIRMADA').length
   }), [leads]);
 
   const [createLeadNoteMutation, { loading: isSavingNote }] = useMutation(CREATE_LEAD_NOTE, {
@@ -306,6 +313,21 @@ export default function AdminLeadsPage() {
     onError: (err: any) => toast.error(err.message || "Error al eliminar el prospecto")
   });
 
+  const [confirmReservationMutation, { loading: isConfirmingReservation }] = useMutation(CONFIRM_LEAD_RESERVATION_WITH_LESSON, {
+    refetchQueries: [{ query: GET_LEADS }],
+    onCompleted: (res: any) => {
+      if (res.confirmLeadReservationWithLesson?.success) {
+        toast.success("¡Reserva confirmada y clase agendada con éxito! 🎹");
+        setIsConfirmModalOpen(false);
+        setTargetLeadForConfirm(null);
+        refetch();
+      } else {
+        toast.error(res.confirmLeadReservationWithLesson?.error || "Error al confirmar la reserva");
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Error al agendar la clase")
+  });
+
   // ─── HANDLERS ────────────────────────────────────────────
 
   const handleDeleteLead = (leadId: string, leadName: string, e?: React.MouseEvent) => {
@@ -316,7 +338,42 @@ export default function AdminLeadsPage() {
   };
 
   const handleStatusChange = (leadId: string, newStatus: LeadStatus) => {
+    if (newStatus === 'RESERVA_CONFIRMADA') {
+      const lead = leads.find((l: any) => l.id === leadId);
+      setTargetLeadForConfirm(lead);
+      const existingLesson = lead?.lessons?.[0];
+      setConfirmLessonForm({
+        teacherId: existingLesson?.teacher?.id ? String(existingLesson.teacher.id) : (teachers[0] ? String(teachers[0].id) : ""),
+        date: existingLesson?.date || new Date().toISOString().split("T")[0],
+        startTime: existingLesson?.startTime ? String(existingLesson.startTime).slice(0, 5) : "16:00",
+        endTime: existingLesson?.endTime ? String(existingLesson.endTime).slice(0, 5) : "16:45",
+        roomId: existingLesson?.room?.id ? String(existingLesson.room.id) : "",
+        lessonType: "INDIVIDUAL"
+      });
+      setIsConfirmModalOpen(true);
+      return;
+    }
     updateStatusMutation({ variables: { leadId, status: newStatus } });
+  };
+
+  const handleSubmitConfirmReservation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetLeadForConfirm || !confirmLessonForm.teacherId || !confirmLessonForm.date || !confirmLessonForm.startTime || !confirmLessonForm.endTime) {
+      toast.error("Por favor completa los campos requeridos para agendar la clase.");
+      return;
+    }
+
+    confirmReservationMutation({
+      variables: {
+        leadId: parseInt(targetLeadForConfirm.id),
+        teacherId: parseInt(confirmLessonForm.teacherId),
+        date: confirmLessonForm.date,
+        startTime: confirmLessonForm.startTime.length === 5 ? `${confirmLessonForm.startTime}:00` : confirmLessonForm.startTime,
+        endTime: confirmLessonForm.endTime.length === 5 ? `${confirmLessonForm.endTime}:00` : confirmLessonForm.endTime,
+        roomId: confirmLessonForm.roomId ? parseInt(confirmLessonForm.roomId) : null,
+        lessonType: confirmLessonForm.lessonType || "INDIVIDUAL"
+      }
+    });
   };
 
   const handleAddNote = () => {
@@ -427,10 +484,10 @@ export default function AdminLeadsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Leads', value: stats.total, color: 'text-slate-900', bg: 'bg-white' },
-          { label: 'Nuevos Hoy', value: stats.nuevos, color: 'text-sky-700', bg: 'bg-sky-50' },
+          { label: 'Nuevos Leads', value: stats.nuevos, color: 'text-sky-700', bg: 'bg-sky-50' },
+          { label: 'Contactados', value: stats.contactados, color: 'text-violet-700', bg: 'bg-violet-50' },
           { label: 'Pre-Reservas', value: stats.preReservas, color: 'text-orange-700', bg: 'bg-orange-50' },
-          { label: 'Concretados', value: stats.concretados, color: 'text-emerald-700', bg: 'bg-emerald-50' },
-          { label: 'Conversión', value: `${stats.conversion}%`, color: 'text-primary', bg: 'bg-primary/5' }
+          { label: 'Res. Confirmadas', value: stats.confirmados, color: 'text-emerald-700', bg: 'bg-emerald-50' }
         ].map(stat => (
           <div key={stat.label} className={`${stat.bg} border border-slate-100/80 rounded-3xl p-6 shadow-sm`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{stat.label}</p>
@@ -450,25 +507,21 @@ export default function AdminLeadsPage() {
           />
         </div>
         <select
-          className="h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-600 outline-none cursor-pointer"
-          value={sourceFilter} onChange={e => setSourceFilter(e.target.value as any)}
+          className="h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 outline-none cursor-pointer"
+          value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}
         >
-          <option value="ALL">Todas las fuentes</option>
-          {(['WEB', 'WHATSAPP', 'INSTAGRAM', 'REFERIDO', 'GOOGLE', 'OTRO'] as LeadSource[]).map(s => (
-            <option key={s} value={s}>{sourceLabel[s]}</option>
-          ))}
-        </select>
-        <select
-          className="h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-600 outline-none cursor-pointer"
-          value={serviceFilter} onChange={e => setServiceFilter(e.target.value as any)}
-        >
-          <option value="ALL">Todos los servicios</option>
-          {(['PIANO_NINOS', 'PIANO_ADULTOS', 'CANTO', 'CLASE_GRUPAL', 'CLASE_PRUEBA'] as LeadService[]).map(s => (
-            <option key={s} value={s}>{serviceLabel[s]}</option>
-          ))}
+          <option value="ALL">Todos los estados ({(leads || []).length})</option>
+          {PIPELINE_COLUMNS.map(c => {
+            const count = (leads || []).filter((l: any) => l.estado === c.status).length;
+            return (
+              <option key={c.status} value={c.status}>
+                {statusLabel[c.status]} ({count})
+              </option>
+            );
+          })}
         </select>
         <div className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-400">
-          {filtered.length} resultados
+          {filtered.length} {filtered.length === 1 ? 'prospecto' : 'prospectos'}
         </div>
       </div>
 
@@ -476,7 +529,7 @@ export default function AdminLeadsPage() {
       {viewMode === 'KANBAN' && (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
-            {KANBAN_COLUMNS.map(status => {
+            {(statusFilter === 'ALL' ? KANBAN_COLUMNS : [statusFilter]).map(status => {
               const config = getColConfig(status);
               const Icon = config.icon;
               const colLeads = leadsByStatus[status] || [];
@@ -538,17 +591,26 @@ export default function AdminLeadsPage() {
                             <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">
                               {formatDate(lead.fechaIngreso)}
                             </span>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                setSelectedLead(lead);
-                                setIsDetailOpen(true);
-                                applyTemplate('RESPUESTA_INICIAL');
-                              }}
-                              className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-emerald-600 hover:text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 px-2 py-1 rounded-lg"
-                            >
-                              <MessageCircle className="h-3 w-3" /> WA
-                            </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setSelectedLead(lead);
+                                  setIsDetailOpen(true);
+                                  applyTemplate('RESPUESTA_INICIAL');
+                                }}
+                                className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg cursor-pointer"
+                              >
+                                <MessageCircle className="h-3 w-3" /> WA
+                              </button>
+                              <button
+                                onClick={e => handleDeleteLead(lead.id, lead.nombre, e)}
+                                title="Eliminar prospecto"
+                                className="text-slate-300 hover:text-rose-600 p-1 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -557,22 +619,6 @@ export default function AdminLeadsPage() {
                 </div>
               );
             })}
-
-            {/* Columnas colapsadas (Concretado, Sin Respuesta, etc.) */}
-            <div className="w-48 flex-shrink-0 space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300 px-2 mb-4">Otros estados</p>
-              {(['CONCRETADO', 'SIN_RESPUESTA', 'NO_CONCRETADO', 'LISTA_ESPERA'] as LeadStatus[]).map(status => {
-                const config = getColConfig(status);
-                const count = (leadsByStatus[status] || []).length;
-                if (count === 0) return null;
-                return (
-                  <div key={status} className={`flex items-center justify-between px-4 py-3 ${config.bg} rounded-2xl border border-black/5`}>
-                    <span className={`text-[10px] font-bold uppercase tracking-tighter ${config.color}`}>{statusLabel[status]}</span>
-                    <Badge className={`text-[10px] font-bold ${config.color} ${config.bg} border-0`}>{count}</Badge>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         </div>
       )}
@@ -627,9 +673,16 @@ export default function AdminLeadsPage() {
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={e => { e.stopPropagation(); setSelectedLead(lead); setIsDetailOpen(true); applyTemplate('RESPUESTA_INICIAL'); }}
-                            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl transition-colors"
+                            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl transition-colors cursor-pointer"
                           >
                             <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                          </button>
+                          <button
+                            onClick={e => handleDeleteLead(lead.id, lead.nombre, e)}
+                            title="Eliminar prospecto"
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </td>
@@ -649,9 +702,19 @@ export default function AdminLeadsPage() {
 
             {/* Drawer Header */}
             <div className="bg-slate-900 text-white p-8 relative flex-shrink-0">
-              <button onClick={() => setIsDetailOpen(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
+              <div className="absolute top-6 right-6 flex items-center gap-2">
+                <button
+                  onClick={e => handleDeleteLead(selectedLead.id, selectedLead.nombre, e)}
+                  disabled={isDeletingLead}
+                  title="Eliminar prospecto"
+                  className="p-2 rounded-full hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button onClick={() => setIsDetailOpen(false)} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
               <div className="space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Ficha de Prospecto</p>
                 <h2 className="text-2xl font-bold font-serif">{selectedLead.nombre}</h2>
@@ -1034,6 +1097,127 @@ export default function AdminLeadsPage() {
                 </Button>
               </div>
             </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── CONFIRM RESERVATION & SCHEDULE LESSON MODAL ── */}
+      {isConfirmModalOpen && targetLeadForConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+          <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-400 rounded-[2.5rem]">
+            <div className="bg-slate-900 p-8 text-white relative">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-1">
+                <CheckCircle2 className="h-4 w-4" /> Confirmación de Reserva
+              </div>
+              <h3 className="text-2xl font-bold font-serif">Agendar Clase para {targetLeadForConfirm.nombre}</h3>
+              <p className="text-slate-400 italic text-xs mt-1">Para pasar a Reserva Confirmada, asigna el docente y horario de la clase.</p>
+              <button onClick={() => setIsConfirmModalOpen(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitConfirmReservation}>
+              <CardContent className="p-8 space-y-6">
+                <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-2xl flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Servicio Solicitado</span>
+                    <span className="font-bold text-slate-800">{serviceLabel[targetLeadForConfirm.servicio as LeadService] || targetLeadForConfirm.servicio || 'Clase de Prueba'}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Teléfono de Contacto</span>
+                    <span className="font-mono text-slate-700">+{targetLeadForConfirm.telefono}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                      <GraduationCap className="h-3.5 w-3.5 text-primary" /> Profesor / Docente Responsable *
+                    </label>
+                    <select
+                      required
+                      value={confirmLessonForm.teacherId}
+                      onChange={e => setConfirmLessonForm({ ...confirmLessonForm, teacherId: e.target.value })}
+                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                    >
+                      <option value="">Seleccionar profesor...</option>
+                      {teachers.map((t: any) => (
+                        <option key={t.id} value={t.id}>{t.name} ({t.instrument || "Docente"})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-span-2 sm:col-span-1 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-primary" /> Fecha de la Clase *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={confirmLessonForm.date}
+                      onChange={e => setConfirmLessonForm({ ...confirmLessonForm, date: e.target.value })}
+                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="col-span-2 sm:col-span-1 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-primary" /> Sala (Opcional)
+                    </label>
+                    <select
+                      value={confirmLessonForm.roomId}
+                      onChange={e => setConfirmLessonForm({ ...confirmLessonForm, roomId: e.target.value })}
+                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                    >
+                      <option value="">Sin sala asignada</option>
+                      {rooms.map((r: any) => (
+                        <option key={r.id} value={r.id}>{r.name} (Capacidad: {r.capacity})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Hora Inicio *</label>
+                    <input
+                      type="time"
+                      required
+                      value={confirmLessonForm.startTime}
+                      onChange={e => setConfirmLessonForm({ ...confirmLessonForm, startTime: e.target.value })}
+                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Hora Término *</label>
+                    <input
+                      type="time"
+                      required
+                      value={confirmLessonForm.endTime}
+                      onChange={e => setConfirmLessonForm({ ...confirmLessonForm, endTime: e.target.value })}
+                      className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 h-12 rounded-2xl text-slate-600 border-slate-200 font-bold uppercase text-[10px] tracking-widest cursor-pointer"
+                    onClick={() => setIsConfirmModalOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isConfirmingReservation || !confirmLessonForm.teacherId || !confirmLessonForm.date}
+                    className="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-600/20 disabled:opacity-40 cursor-pointer"
+                  >
+                    {isConfirmingReservation ? "Confirmando..." : "Confirmar y Agendar Clase 🎹"}
+                  </Button>
+                </div>
+              </CardContent>
+            </form>
           </Card>
         </div>
       )}

@@ -18,6 +18,22 @@ export const GET_LEADS = gql`
         autor
         fecha
       }
+      lessons {
+        id
+        date
+        startTime
+        endTime
+        status
+        isPreReservation
+        teacher {
+          id
+          name
+        }
+        room {
+          id
+          name
+        }
+      }
     }
   }
 `;
