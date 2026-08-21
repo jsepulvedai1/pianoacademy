@@ -109,36 +109,36 @@ export default function TeacherMaterialsPage() {
   }
 
   return (
-    <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
-            <BookOpen className="h-3 w-3" /> Biblioteca
+            <BookOpen className="h-3.5 w-3.5" /> Biblioteca
           </div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight text-slate-900">Mis Materiales</h1>
-          <p className="text-slate-500 italic">Sube ejercicios y enlaces para compartirlos con tus alumnos.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight text-slate-900">Mis Materiales</h1>
+          <p className="text-xs sm:text-sm text-slate-500 italic">Sube ejercicios y enlaces para compartirlos con tus alumnos.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white shadow-lg h-12 px-8 font-bold uppercase tracking-[0.1em] rounded-2xl cursor-pointer">
-          <Plus className="mr-2 h-5 w-5" /> Subir Material
+        <Button onClick={() => setIsModalOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white shadow-lg h-11 sm:h-12 px-6 sm:px-8 font-bold uppercase tracking-[0.1em] rounded-2xl cursor-pointer w-full sm:w-auto">
+          <Plus className="mr-2 h-4 w-4" /> Subir Material
         </Button>
       </header>
 
-      <div className="flex bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-        <div className="relative w-full max-w-md group">
+      <div className="flex bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-100">
+        <div className="relative w-full group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <input 
             type="text" 
             placeholder="Buscar por título..." 
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm outline-none" 
+            className="w-full pl-11 pr-4 py-2.5 sm:py-3 bg-slate-50 border-none rounded-xl text-sm outline-none" 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredMaterials.map((m: any) => (
-          <Card key={m.id} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow rounded-[2rem] overflow-hidden group">
+          <Card key={m.id} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow rounded-3xl sm:rounded-[2rem] overflow-hidden group">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                  <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">

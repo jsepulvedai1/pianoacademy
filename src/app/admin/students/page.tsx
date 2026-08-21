@@ -14,6 +14,7 @@ import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_LESSONS } from "@/graphql/queries/get-lessons";
 import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
+import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { CREATE_STUDENT, UPDATE_STUDENT } from "@/graphql/mutations/student-mutations";
 import { toast } from "sonner";
 
@@ -40,7 +41,8 @@ export default function AdminStudentsPage() {
     guardianPhone: '',
     phoneNumber: '',
     level: 'BEGINNER',
-    primaryInstrumentId: ''
+    primaryInstrumentId: '',
+    assignedTeacherIds: [] as number[]
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -54,13 +56,15 @@ export default function AdminStudentsPage() {
     status: "ACTIVE",
     phoneNumber: "",
     level: "BEGINNER",
-    primaryInstrumentId: ""
+    primaryInstrumentId: "",
+    assignedTeacherIds: [] as number[]
   });
 
   // ── GraphQL Hooks ───────────────────────────────────────────
   const { data, loading, refetch } = useQuery<any>(GET_STUDENTS_LIST);
   const { data: lessonsData } = useQuery<any>(GET_LESSONS);
   const { data: instrumentsData } = useQuery<any>(GET_INSTRUMENTS);
+  const { data: teachersData } = useQuery<any>(GET_TEACHERS);
   
   const [updateStudent, { loading: isUpdating }] = useMutation(UPDATE_STUDENT, {
     onCompleted: (res: any) => {
@@ -87,7 +91,8 @@ export default function AdminStudentsPage() {
         guardianPhone: '',
         phoneNumber: '',
         level: 'BEGINNER',
-        primaryInstrumentId: ''
+        primaryInstrumentId: '',
+        assignedTeacherIds: []
       });
       refetch();
     },
@@ -99,6 +104,7 @@ export default function AdminStudentsPage() {
   const allPayments = data?.allPayments || [];
   const allLessons = lessonsData?.allLessons || [];
   const instruments = instrumentsData?.allInstruments || [];
+  const teachers = teachersData?.allTeachers || [];
 
   const filteredStudents = useMemo(() => 
     students.filter((s: any) => s.name.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -121,7 +127,8 @@ export default function AdminStudentsPage() {
     createStudent({
       variables: {
         ...formData,
-        primaryInstrumentId: formData.primaryInstrumentId ? parseInt(formData.primaryInstrumentId) : null
+        primaryInstrumentId: formData.primaryInstrumentId ? parseInt(formData.primaryInstrumentId) : null,
+        assignedTeacherIds: formData.assignedTeacherIds
       }
     });
   };
@@ -138,7 +145,8 @@ export default function AdminStudentsPage() {
       status: selectedStudent?.status || "ACTIVE",
       phoneNumber: selectedStudent?.phoneNumber || "",
       level: selectedStudent?.level || "BEGINNER",
-      primaryInstrumentId: selectedStudent?.primaryInstrument?.id || ""
+      primaryInstrumentId: selectedStudent?.primaryInstrument?.id || "",
+      assignedTeacherIds: (selectedStudent?.assignedTeachers || []).map((t: any) => parseInt(t.id))
     });
     setIsEditingStudent(true);
   };
@@ -157,7 +165,8 @@ export default function AdminStudentsPage() {
         status: editFormData.status,
         phoneNumber: editFormData.phoneNumber || null,
         level: editFormData.level,
-        primaryInstrumentId: editFormData.primaryInstrumentId ? parseInt(editFormData.primaryInstrumentId) : null
+        primaryInstrumentId: editFormData.primaryInstrumentId ? parseInt(editFormData.primaryInstrumentId) : null,
+        assignedTeacherIds: editFormData.assignedTeacherIds
       }
     });
   };
@@ -249,6 +258,38 @@ export default function AdminStudentsPage() {
                       {instruments.map((i: any) => <option key={i.id} value={i.id}>{i.name}</option>)}
                    </select>
                 </div>
+
+                <div className="col-span-2 space-y-2">
+                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesores Asignados (Puedes seleccionar varios)</label>
+                   <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[48px] items-center">
+                      {teachers.map((t: any) => {
+                         const tId = parseInt(t.id);
+                         const isSelected = formData.assignedTeacherIds.includes(tId);
+                         return (
+                            <button
+                               key={t.id}
+                               type="button"
+                               onClick={() => {
+                                  if (isSelected) {
+                                     setFormData({...formData, assignedTeacherIds: formData.assignedTeacherIds.filter(id => id !== tId)});
+                                  } else {
+                                     setFormData({...formData, assignedTeacherIds: [...formData.assignedTeacherIds, tId]});
+                                  }
+                               }}
+                               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  isSelected 
+                                  ? 'bg-[#70125F] text-white shadow-md shadow-[#70125F]/20' 
+                                  : 'bg-white text-slate-600 border border-slate-200 hover:border-[#70125F]/40'
+                               }`}
+                            >
+                               <User className="h-3.5 w-3.5" />
+                               {t.name}
+                            </button>
+                         );
+                      })}
+                      {teachers.length === 0 && <span className="text-xs text-slate-400 italic">No hay profesores registrados.</span>}
+                   </div>
+                </div>
               </div>
 
               <div className="flex gap-4 mt-10 pt-6 border-t border-slate-50">
@@ -275,6 +316,7 @@ export default function AdminStudentsPage() {
               <tr className="bg-slate-50/50 border-b border-slate-100 font-bold text-xs uppercase tracking-widest text-slate-400">
                 <th className="px-8 py-5">Estudiante</th>
                 <th className="px-8 py-5">Instrumento</th>
+                <th className="px-8 py-5">Profesor(es)</th>
                 <th className="px-8 py-5">Nivel</th>
                 <th className="px-8 py-5">Sincronización</th>
                 <th className="px-8 py-5 text-right">Acciones</th>
@@ -282,7 +324,7 @@ export default function AdminStudentsPage() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <tr><td colSpan={5} className="py-20 text-center italic text-slate-400">Sincronizando comunidad...</td></tr>
+                <tr><td colSpan={6} className="py-20 text-center italic text-slate-400">Sincronizando comunidad...</td></tr>
               ) : filteredStudents.map((student: any) => (
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => { setSelectedStudent(student); setIsDetailOpen(true); setActiveTab('GENERAL'); }}>
                   <td className="px-8 py-6">
@@ -297,6 +339,19 @@ export default function AdminStudentsPage() {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-sm text-slate-600 font-medium">{student.primaryInstrument?.name || "Sin definir"}</td>
+                  <td className="px-8 py-6 text-sm font-bold">
+                    {student.assignedTeachers && student.assignedTeachers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {student.assignedTeachers.map((t: any) => (
+                          <span key={t.id} className="text-[#70125F] bg-[#70125F]/5 border border-[#70125F]/10 px-2.5 py-0.5 rounded-lg text-xs font-bold whitespace-nowrap">
+                            {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-normal italic text-xs">Sin asignar</span>
+                    )}
+                  </td>
                   <td className="px-8 py-6">
                     <Badge className="bg-slate-100 text-slate-600 border-0 text-[10px] font-bold">{student.level || 'BEGINNER'}</Badge>
                   </td>
@@ -424,7 +479,7 @@ export default function AdminStudentsPage() {
                           </div>
                        </div>
 
-                       <div className="grid grid-cols-3 gap-4">
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                              <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Nivel</label>
                              <select 
@@ -437,7 +492,7 @@ export default function AdminStudentsPage() {
                                 <option value="ADVANCED">Avanzado</option>
                              </select>
                           </div>
-                          <div className="space-y-2 col-span-2">
+                          <div className="space-y-2">
                              <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Instrumento Principal</label>
                              <select 
                                 value={editFormData.primaryInstrumentId}
@@ -449,6 +504,37 @@ export default function AdminStudentsPage() {
                                    <option key={ins.id} value={ins.id}>{ins.name}</option>
                                 ))}
                              </select>
+                          </div>
+                          <div className="col-span-2 space-y-2">
+                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Profesores Asignados (Selecciona uno o más)</label>
+                             <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[48px] items-center">
+                                {teachers.map((t: any) => {
+                                   const tId = parseInt(t.id);
+                                   const isSelected = editFormData.assignedTeacherIds.includes(tId);
+                                   return (
+                                      <button
+                                         key={t.id}
+                                         type="button"
+                                         onClick={() => {
+                                            if (isSelected) {
+                                               setEditFormData({...editFormData, assignedTeacherIds: editFormData.assignedTeacherIds.filter(id => id !== tId)});
+                                            } else {
+                                               setEditFormData({...editFormData, assignedTeacherIds: [...editFormData.assignedTeacherIds, tId]});
+                                            }
+                                         }}
+                                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                            isSelected 
+                                            ? 'bg-[#70125F] text-white shadow-md shadow-[#70125F]/20' 
+                                            : 'bg-white text-slate-600 border border-slate-200 hover:border-[#70125F]/40'
+                                         }`}
+                                      >
+                                         <User className="h-3.5 w-3.5" />
+                                         {t.name}
+                                      </button>
+                                   );
+                                })}
+                                {teachers.length === 0 && <span className="text-xs text-slate-400 italic">No hay profesores registrados.</span>}
+                             </div>
                           </div>
                        </div>
 
@@ -467,6 +553,13 @@ export default function AdminStudentsPage() {
                           <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Información Personal</p>
                           <div className="space-y-4">
                              {[
+                               { 
+                                 label: 'Profesor(es)', 
+                                 val: selectedStudent?.assignedTeachers?.length > 0 
+                                   ? selectedStudent.assignedTeachers.map((t: any) => t.name).join(', ') 
+                                   : 'Sin asignar', 
+                                 icon: GraduationCap 
+                               },
                                { label: 'Correo', val: selectedStudent?.email, icon: Mail },
                                { label: 'RUT', val: selectedStudent?.rut, icon: CreditCard },
                                { label: 'Fecha Nacimiento', val: selectedStudent?.birthDate, icon: Calendar },

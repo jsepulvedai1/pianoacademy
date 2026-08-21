@@ -18,6 +18,10 @@ export const GET_STUDENTS_LIST = gql`
         id
         name
       }
+      assignedTeachers {
+        id
+        name
+      }
     }
     allStudentPacks {
       id

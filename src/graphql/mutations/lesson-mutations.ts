@@ -40,3 +40,36 @@ export const UPDATE_LESSON_STATUS = gql`
     }
   }
 `;
+
+export const CREATE_PRE_RESERVATION = gql`
+  mutation CreatePreReservation(
+    $nombre: String!
+    $telefono: String!
+    $email: String
+    $servicio: String
+    $profesorNombre: String!
+    $fecha: Date!
+    $hora: Time!
+    $sala: String
+    $modalidad: String
+    $notas: String
+  ) {
+    createPreReservation(
+      nombre: $nombre
+      telefono: $telefono
+      email: $email
+      servicio: $servicio
+      profesorNombre: $profesorNombre
+      fecha: $fecha
+      hora: $hora
+      sala: $sala
+      modalidad: $modalidad
+      notas: $notas
+    ) {
+      success
+      lesson {
+        id
+      }
+    }
+  }
+`;

@@ -30,6 +30,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@apollo/client/react/index.js";
 import { MY_TEACHER_PROFILE, MY_LESSONS } from "@/graphql/queries/portal-queries";
+import AnnouncementsWidget from "@/components/widgets/announcements-widget";
 
 export default function TeacherDashboardPage() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -124,76 +125,78 @@ export default function TeacherDashboardPage() {
   }, [lessons]);
 
   return (
-    <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
       <header className="space-y-1">
         <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
-          <LayoutDashboard className="h-3 w-3" /> Resumen General
+          <LayoutDashboard className="h-3.5 w-3.5" /> Resumen Docente
         </div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight text-slate-900">Bienvenido, Profesor Roberto</h1>
-        <p className="text-slate-500 italic">Aquí tienes un resumen de tu semana académica.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight text-slate-900">
+          {teacherProfile?.name ? `Bienvenido, ${teacherProfile.name}` : 'Bienvenido a tu Portal'}
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 italic">Aquí tienes un resumen de tu semana académica.</p>
       </header>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <Card className="bg-slate-900 text-white rounded-[2rem] border-none shadow-xl relative overflow-hidden group">
-            <TrendingUp className="absolute top-[-10px] right-[-10px] h-32 w-32 text-white/5 group-hover:scale-110 transition-transform duration-700" />
-            <CardContent className="p-8 relative z-10">
-               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-2">Horas esta Semana</p>
-               <p className="text-5xl font-black font-serif">{stats.weeklyHours}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+         <Card className="bg-slate-900 text-white rounded-3xl sm:rounded-[2rem] border-none shadow-xl relative overflow-hidden group">
+            <TrendingUp className="absolute top-[-10px] right-[-10px] h-24 sm:h-32 w-24 sm:w-32 text-white/5 group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+            <CardContent className="p-4 sm:p-8 relative z-10">
+               <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-[#DCA060] mb-1 sm:mb-2">Horas Semana</p>
+               <p className="text-3xl sm:text-5xl font-black font-serif">{stats.weeklyHours}</p>
             </CardContent>
          </Card>
 
-         <Card className="bg-white rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
-            <CardContent className="p-8">
-               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Alumnos Activos</p>
-               <div className="flex items-end gap-3">
-                  <p className="text-4xl font-black font-serif text-slate-900">{stats.studentsCount}</p>
-                  <Users className="h-6 w-6 text-slate-300 mb-1" />
+         <Card className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-4 sm:p-8">
+               <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 sm:mb-2">Alumnos</p>
+               <div className="flex items-end justify-between sm:justify-start gap-2 sm:gap-3">
+                  <p className="text-2xl sm:text-4xl font-black font-serif text-slate-900">{stats.studentsCount}</p>
+                  <Users className="h-5 sm:h-6 w-5 sm:w-6 text-slate-300 mb-0.5 sm:mb-1" />
                </div>
             </CardContent>
          </Card>
 
-         <Card className="bg-white rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
-            <CardContent className="p-8">
-               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Clases Realizadas</p>
-               <div className="flex items-end gap-3">
-                  <p className="text-4xl font-black font-serif text-emerald-600">{stats.completedLessons}</p>
-                  <CheckCircle2 className="h-6 w-6 text-emerald-200 mb-1" />
+         <Card className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-4 sm:p-8">
+               <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 sm:mb-2">Realizadas</p>
+               <div className="flex items-end justify-between sm:justify-start gap-2 sm:gap-3">
+                  <p className="text-2xl sm:text-4xl font-black font-serif text-emerald-600">{stats.completedLessons}</p>
+                  <CheckCircle2 className="h-5 sm:h-6 w-5 sm:w-6 text-emerald-300 mb-0.5 sm:mb-1" />
                </div>
             </CardContent>
          </Card>
 
-         <Card className="bg-white rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
-            <CardContent className="p-8">
-               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Por Realizar</p>
-               <div className="flex items-end gap-3">
-                  <p className="text-4xl font-black font-serif text-amber-500">{stats.pendingLessons}</p>
-                  <Clock className="h-6 w-6 text-amber-200 mb-1" />
+         <Card className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-4 sm:p-8">
+               <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1 sm:mb-2">Por Realizar</p>
+               <div className="flex items-end justify-between sm:justify-start gap-2 sm:gap-3">
+                  <p className="text-2xl sm:text-4xl font-black font-serif text-amber-500">{stats.pendingLessons}</p>
+                  <Clock className="h-5 sm:h-6 w-5 sm:w-6 text-amber-300 mb-0.5 sm:mb-1" />
                </div>
             </CardContent>
          </Card>
       </div>
 
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold font-serif text-slate-900 flex items-center gap-2">
-             <CalendarIcon className="h-5 w-5 text-primary" /> {viewMode === 'CALENDAR' ? 'Mi Horario Semanal' : 'Clases de Hoy'}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-lg sm:text-xl font-bold font-serif text-slate-900 flex items-center gap-2">
+             <CalendarIcon className="h-5 w-5 text-primary" /> {viewMode === 'CALENDAR' ? 'Horario Semanal' : 'Clases de Hoy'}
           </h2>
-          <div className="flex items-center gap-4">
-            <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+            <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 w-full sm:w-fit">
               <button 
                 onClick={() => setViewMode('LIST')} 
                 className={cn(
-                  "px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all",
+                  "flex-1 sm:flex-initial px-4 sm:px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer",
                   viewMode === 'LIST' ? "bg-slate-900 text-white shadow-md" : "text-slate-400 hover:text-slate-900"
                 )}
               >
-                Lista
+                Hoy ({todayLessons.length})
               </button>
               <button 
                 onClick={() => setViewMode('CALENDAR')} 
                 className={cn(
-                  "px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all",
+                  "flex-1 sm:flex-initial px-4 sm:px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer",
                   viewMode === 'CALENDAR' ? "bg-slate-900 text-white shadow-md" : "text-slate-400 hover:text-slate-900"
                 )}
               >
@@ -202,14 +205,14 @@ export default function TeacherDashboardPage() {
             </div>
 
             {viewMode === 'CALENDAR' && (
-              <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-                <button onClick={prevWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"><ChevronLeft className="h-4 w-4" /></button>
-                <span className="text-[10px] font-bold uppercase tracking-widest px-2 min-w-[140px] text-center">
+              <div className="flex items-center justify-between sm:justify-start gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+                <button onClick={prevWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900 cursor-pointer"><ChevronLeft className="h-4 w-4" /></button>
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 flex-1 sm:min-w-[140px] text-center">
                   {format(currentWeekStart, "MMMM yyyy", { locale: es })}
                 </span>
-                <button onClick={nextWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"><ChevronRight className="h-4 w-4" /></button>
+                <button onClick={nextWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900 cursor-pointer"><ChevronRight className="h-4 w-4" /></button>
                 <div className="w-[1px] h-4 bg-slate-100 mx-1" />
-                <button onClick={goToToday} className="px-4 py-2 hover:bg-slate-50 rounded-xl transition-colors text-[10px] font-bold uppercase tracking-widest text-primary">Hoy</button>
+                <button onClick={goToToday} className="px-3 sm:px-4 py-2 hover:bg-slate-50 rounded-xl transition-colors text-[10px] font-bold uppercase tracking-widest text-primary cursor-pointer">Hoy</button>
               </div>
             )}
           </div>
@@ -368,37 +371,7 @@ export default function TeacherDashboardPage() {
           {/* Sidebar Area (Avisos) */}
           <div className="space-y-6">
             <h2 className="text-xl font-bold font-serif text-slate-900">Avisos</h2>
-            <Card className="bg-indigo-50 border-none shadow-sm rounded-[2.5rem]">
-               <CardContent className="p-8">
-                  <div className="h-10 w-10 rounded-xl bg-white shadow-sm border border-indigo-100 flex items-center justify-center mb-4">
-                    <TrendingUp className="h-5 w-5 text-indigo-500" />
-                  </div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-2">Administración</p>
-                  <p className="text-sm text-indigo-900 font-medium leading-relaxed">
-                     Recuerda subir el material de estudio para tus alumnos nuevos de esta semana.
-                  </p>
-               </CardContent>
-            </Card>
-            
-            <Card className="bg-slate-50 border border-slate-100 shadow-sm rounded-[2rem]">
-               <CardContent className="p-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400">
-                      <CalendarDays className="h-4 w-4" />
-                    </div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Próximos Feriados</p>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-900">21 de Mayo</span>
-                      <Badge variant="outline" className="text-[8px] font-bold opacity-50 uppercase">Cerrado</Badge>
-                    </div>
-                    <p className="text-xs text-slate-500 italic leading-relaxed">
-                      La academia permanecerá cerrada. Las clases serán reprogramadas.
-                    </p>
-                  </div>
-               </CardContent>
-            </Card>
+            <AnnouncementsWidget targetAudience="TEACHERS" />
           </div>
         </div>
       </div>

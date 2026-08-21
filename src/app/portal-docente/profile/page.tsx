@@ -68,16 +68,16 @@ export default function TeacherProfilePage() {
   }
 
   return (
-    <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-4xl mx-auto">
       <header className="space-y-1">
         <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
-          <User className="h-3 w-3" /> Mi Cuenta
+          <User className="h-3.5 w-3.5" /> Mi Cuenta
         </div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight text-slate-900">Perfil Público</h1>
-        <p className="text-slate-500 italic">Administra cómo te ven los alumnos en la plataforma.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight text-slate-900">Perfil Público</h1>
+        <p className="text-xs sm:text-sm text-slate-500 italic">Administra cómo te ven los alumnos en la plataforma.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         {/* Photo Upload Section */}
         <div className="md:col-span-1 space-y-6">
           <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white text-center p-8 relative group">

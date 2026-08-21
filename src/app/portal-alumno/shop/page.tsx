@@ -48,7 +48,7 @@ export default function StudentShopPage() {
         name: student.name,
         email: student.email || "correo@detache.cl",
         phone: student.phoneNumber || "+56912345678",
-        backUrl: window.location.origin + "/portal-alumno/dashboard"
+        backUrl: window.location.origin
       }
     });
   };
@@ -91,22 +91,22 @@ export default function StudentShopPage() {
   const plans = data?.allPlans || [];
 
   return (
-    <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-700 max-w-7xl mx-auto">
-      <header className="text-center space-y-4 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-500 font-bold text-[10px] uppercase tracking-widest mb-2">
+    <div className="p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 animate-in fade-in duration-700 max-w-7xl mx-auto">
+      <header className="text-center space-y-3 sm:space-y-4 max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-500 font-bold text-[10px] uppercase tracking-widest mb-1">
           <BookOpen className="h-3 w-3" /> Continuidad Académica
         </div>
-        <h1 className="text-4xl font-bold font-serif tracking-tight text-slate-900">Tu Próximo Paso</h1>
-        <p className="text-slate-500 italic">Mantén el ritmo de tu aprendizaje. Elige el plan que mejor se adapte a tu disponibilidad para seguir creciendo en la música.</p>
+        <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight text-slate-900">Tu Próximo Paso</h1>
+        <p className="text-xs sm:text-sm text-slate-500 italic">Mantén el ritmo de tu aprendizaje. Elige el plan que mejor se adapte a tu disponibilidad para seguir creciendo en la música.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-8 sm:pb-12">
         {plans.map((plan: Plan) => (
-          <Card key={plan.id} className={`rounded-[3rem] border-none shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 flex flex-col relative overflow-hidden ${
-            plan.isFeatured ? 'bg-white ring-2 ring-primary/20 scale-105 z-10 shadow-lg' : 'bg-white border border-slate-100'
+          <Card key={plan.id} className={`rounded-3xl sm:rounded-[3rem] border-none shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 flex flex-col relative overflow-hidden ${
+            plan.isFeatured ? 'bg-white ring-2 ring-primary/20 sm:scale-105 z-10 shadow-lg' : 'bg-white border border-slate-100'
           }`}>
             
-            <CardContent className="p-10 flex-1 flex flex-col">
+            <CardContent className="p-6 sm:p-10 flex-1 flex flex-col">
               <div className="mb-8">
                 {plan.isFeatured && (
                   <Badge className="mb-4 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-widest border-none bg-primary text-white">

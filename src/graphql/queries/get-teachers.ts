@@ -10,6 +10,7 @@ export const GET_TEACHERS = gql`
     allTeachers {
       id
       name
+      status
       description
       photo
       phoneNumber

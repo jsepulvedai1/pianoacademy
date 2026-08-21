@@ -10,6 +10,13 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
     $facebookUrl: String
     $instagramUrl: String
     $trialClassEmailTemplate: String
+    $whatsappNumber: String
+    $whatsappAssignedTo: String
+    $evolutionApiUrl: String
+    $evolutionApiKey: String
+    $evolutionInstanceName: String
+    $whatsappAutoReply: Boolean
+    $whatsappWelcomeTemplate: String
   ) {
     updateGlobalSettings(
       phoneNumber: $phoneNumber
@@ -20,6 +27,13 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
       facebookUrl: $facebookUrl
       instagramUrl: $instagramUrl
       trialClassEmailTemplate: $trialClassEmailTemplate
+      whatsappNumber: $whatsappNumber
+      whatsappAssignedTo: $whatsappAssignedTo
+      evolutionApiUrl: $evolutionApiUrl
+      evolutionApiKey: $evolutionApiKey
+      evolutionInstanceName: $evolutionInstanceName
+      whatsappAutoReply: $whatsappAutoReply
+      whatsappWelcomeTemplate: $whatsappWelcomeTemplate
     ) {
       globalSettings {
         id
@@ -31,7 +45,23 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
         facebookUrl
         instagramUrl
         trialClassEmailTemplate
+        whatsappNumber
+        whatsappAssignedTo
+        evolutionApiUrl
+        evolutionApiKey
+        evolutionInstanceName
+        whatsappAutoReply
+        whatsappWelcomeTemplate
       }
+    }
+  }
+`;
+
+export const SEND_WHATSAPP_TEST = gql`
+  mutation SendWhatsAppTest($phoneNumber: String!, $message: String!) {
+    sendWhatsapp(phoneNumber: $phoneNumber, message: $message) {
+      success
+      response
     }
   }
 `;

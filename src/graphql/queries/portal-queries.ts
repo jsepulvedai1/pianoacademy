@@ -41,6 +41,24 @@ export const MY_TEACHER_PROFILE = gql`
   }
 `;
 
+export const MY_STUDENTS = gql`
+  query MyStudents {
+    myStudents {
+      id
+      name
+      email
+      photo
+      phoneNumber
+      level
+      startDate
+      primaryInstrument {
+        id
+        name
+      }
+    }
+  }
+`;
+
 export const MY_LESSONS = gql`
   query MyLessons($startDate: String, $endDate: String) {
     myLessons(startDate: $startDate, endDate: $endDate) {

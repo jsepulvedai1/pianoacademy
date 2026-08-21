@@ -8,6 +8,13 @@ export const GET_PAYMENTS_PAGE_DATA = gql`
       paymentDate
       method
       description
+      pack {
+        id
+        plan {
+          id
+          name
+        }
+      }
       student {
         id
         name

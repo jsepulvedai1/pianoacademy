@@ -129,11 +129,11 @@ export default function AdminLeadsPage() {
     }
   });
   const [createLeadMutation, { loading: isCreating }] = useMutation(CREATE_LEAD, {
+    refetchQueries: [{ query: GET_LEADS }],
     onCompleted: () => {
       toast.success("Lead creado exitosamente 🎻");
       setIsNewLeadOpen(false);
       setNewLead({ nombre: '', telefono: '', email: '', edad: '', servicio: 'CLASE_PRUEBA', fuente: 'WEB' });
-      refetch();
     }
   });
 

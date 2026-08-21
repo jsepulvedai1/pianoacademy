@@ -10,7 +10,8 @@ export const CREATE_STUDENT = gql`
     $guardianPhone: String, 
     $phoneNumber: String, 
     $level: String, 
-    $primaryInstrumentId: Int
+    $primaryInstrumentId: Int,
+    $assignedTeacherIds: [Int]
   ) {
     createStudent(
       name: $name, 
@@ -21,7 +22,8 @@ export const CREATE_STUDENT = gql`
       guardianPhone: $guardianPhone, 
       phoneNumber: $phoneNumber, 
       level: $level, 
-      primaryInstrumentId: $primaryInstrumentId
+      primaryInstrumentId: $primaryInstrumentId,
+      assignedTeacherIds: $assignedTeacherIds
     ) {
       student {
         id
@@ -29,6 +31,10 @@ export const CREATE_STUDENT = gql`
         email
         status
         phoneNumber
+        assignedTeachers {
+          id
+          name
+        }
       }
     }
   }
@@ -65,7 +71,8 @@ export const UPDATE_STUDENT = gql`
     $status: String,
     $phoneNumber: String,
     $level: String,
-    $primaryInstrumentId: Int
+    $primaryInstrumentId: Int,
+    $assignedTeacherIds: [Int]
   ) {
     updateStudent(
       id: $id,
@@ -78,7 +85,8 @@ export const UPDATE_STUDENT = gql`
       status: $status,
       phoneNumber: $phoneNumber,
       level: $level,
-      primaryInstrumentId: $primaryInstrumentId
+      primaryInstrumentId: $primaryInstrumentId,
+      assignedTeacherIds: $assignedTeacherIds
     ) {
       student {
         id
@@ -92,6 +100,10 @@ export const UPDATE_STUDENT = gql`
         phoneNumber
         level
         primaryInstrument {
+          id
+          name
+        }
+        assignedTeachers {
           id
           name
         }

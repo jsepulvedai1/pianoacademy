@@ -157,7 +157,14 @@ export default function AdminPaymentsPage() {
                       </div>
                     </td>
                     <td className="px-8 py-5">
-                      <p className="text-sm text-slate-700 font-medium">{pay.description || "Pago Mensualidad"}</p>
+                      <div>
+                        <p className="text-sm text-slate-700 font-medium">{pay.description || "Pago Mensualidad"}</p>
+                        {pay.pack?.plan?.name && (
+                          <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider text-[#70125F] bg-[#70125F]/5 px-2 py-0.5 rounded-md">
+                            Plan: {pay.pack.plan.name}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-8 py-5">
                       <span className="font-bold text-slate-900 font-serif text-sm">{formatCLP(pay.amount)}</span>
@@ -198,9 +205,11 @@ export default function AdminPaymentsPage() {
             </div>
             <div className="flex-1 p-8 space-y-6">
               {[
-                { label: 'Concepto', value: selectedPayment.description || "Pago Mensualidad" },
+                { label: 'Concepto / Detalle', value: selectedPayment.description || "Pago Mensualidad" },
+                { label: 'Plan Comprado', value: selectedPayment.pack?.plan?.name || "Sin pack específico" },
                 { label: 'Método de pago', value: selectedPayment.method },
                 { label: 'Fecha de pago', value: selectedPayment.paymentDate || '—' },
+                { label: 'Teléfono', value: selectedPayment.student?.phoneNumber || '—' },
                 { label: 'Alumno ID', value: selectedPayment.student?.id }
               ].map(row => (
                 <div key={row.label} className="flex items-start justify-between py-2 border-b border-slate-50">

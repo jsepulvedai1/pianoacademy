@@ -2,21 +2,21 @@ import { gql } from "@apollo/client";
 
 export const GET_DASHBOARD_NOTES = gql`
   query GetDashboardNotes {
-    allDashboardNotes {
+    allAcademyTasks {
       id
-      text
+      title
       isCompleted
-      author
+      assignedTo
     }
   }
 `;
 
 export const CREATE_NOTE = gql`
-  mutation CreateNote($text: String!, $author: String) {
-    createDashboardNote(text: $text, author: $author) {
-      note {
+  mutation CreateNote($text: String!) {
+    createAcademyTask(title: $text, priority: "RECORDATORIO", assignedTo: "ADMIN") {
+      task {
         id
-        text
+        title
         isCompleted
       }
     }
@@ -24,10 +24,9 @@ export const CREATE_NOTE = gql`
 `;
 
 export const TOGGLE_NOTE = gql`
-  mutation ToggleNote($id: Int!) {
-    toggleDashboardNote(id: $id) {
-      success
-      note {
+  mutation ToggleNote($id: Int!, $isCompleted: Boolean) {
+    updateAcademyTask(id: $id, isCompleted: $isCompleted) {
+      task {
         id
         isCompleted
       }
@@ -37,7 +36,7 @@ export const TOGGLE_NOTE = gql`
 
 export const DELETE_NOTE = gql`
   mutation DeleteNote($id: Int!) {
-    deleteDashboardNote(id: $id) {
+    deleteAcademyTask(id: $id) {
       success
     }
   }

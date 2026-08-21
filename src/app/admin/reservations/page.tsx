@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
-import { UPDATE_LESSON_STATUS } from "@/graphql/mutations/lesson-mutations";
+import { UPDATE_LESSON_STATUS, CREATE_PRE_RESERVATION } from "@/graphql/mutations/lesson-mutations";
 import { toast } from "sonner";
 import { normalizePhoneNumber } from "@/lib/utils";
 import {
@@ -185,31 +185,31 @@ export default function AdminReservationsPage() {
     setTimeout(() => setWaMsg(null), 3500);
   };
 
+  const [createPreReservation, { loading: creatingRes }] = useMutation(CREATE_PRE_RESERVATION, {
+    refetchQueries: [{ query: GET_RESERVATIONS }],
+    onCompleted: () => {
+      toast.success("Pre-reserva creada exitosamente");
+      setIsNewOpen(false);
+      setNewRes({ nombre: '', telefono: '', email: '', servicio: 'CLASE_PRUEBA', profesorNombre: '', fecha: '', hora: '', sala: '', modalidad: 'PRESENCIAL', aceptoReglamento: false });
+    },
+    onError: (e) => toast.error(`Error: ${e.message}`)
+  });
+
   const handleCreateRes = () => {
     if (!newRes.nombre || !newRes.telefono || !newRes.fecha || !newRes.hora) return;
-    const now = new Date();
-    const expiryDate = new Date(newRes.fecha);
-    expiryDate.setHours(20, 0, 0, 0);
-    const res: Reservation = {
-      id: `RES${Date.now()}`,
-      nombre: newRes.nombre,
-      telefono: normalizePhoneNumber(newRes.telefono),
-      email: newRes.email || undefined,
-      servicio: newRes.servicio,
-      profesorId: `T${Date.now()}`,
-      profesorNombre: newRes.profesorNombre,
-      fecha: newRes.fecha,
-      hora: newRes.hora,
-      sala: newRes.sala || undefined,
-      modalidad: newRes.modalidad,
-      estado: 'PRE_RESERVADA',
-      aceptoReglamento: newRes.aceptoReglamento,
-      pagoRegistrado: false,
-      expiraEn: expiryDate.toISOString(),
-      creadoEn: now.toISOString()
-    };
-    setIsNewOpen(false);
-    setNewRes({ nombre: '', telefono: '', email: '', servicio: 'CLASE_PRUEBA', profesorNombre: '', fecha: '', hora: '', sala: '', modalidad: 'PRESENCIAL', aceptoReglamento: false });
+    createPreReservation({
+      variables: {
+        nombre: newRes.nombre,
+        telefono: normalizePhoneNumber(newRes.telefono),
+        email: newRes.email,
+        servicio: newRes.servicio,
+        profesorNombre: newRes.profesorNombre,
+        fecha: newRes.fecha,
+        hora: newRes.hora,
+        sala: newRes.sala,
+        modalidad: newRes.modalidad
+      }
+    });
   };
 
   return (
@@ -500,8 +500,8 @@ export default function AdminReservationsPage() {
 
               <div className="flex gap-4 pt-2">
                 <Button variant="outline" className="flex-1 h-12 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsNewOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreateRes} disabled={!newRes.nombre || !newRes.telefono || !newRes.fecha || !newRes.hora} className="flex-1 h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg disabled:opacity-40">
-                  Crear Pre-Reserva
+                <Button onClick={handleCreateRes} disabled={!newRes.nombre || !newRes.telefono || !newRes.fecha || !newRes.hora || creatingRes} className="flex-1 h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg disabled:opacity-40">
+                  {creatingRes ? "Creando..." : "Crear Pre-Reserva"}
                 </Button>
               </div>
             </CardContent>

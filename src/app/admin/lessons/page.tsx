@@ -41,6 +41,26 @@ import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_ROOMS } from "@/graphql/queries/get-rooms";
 import { CREATE_LESSON, UPDATE_LESSON_STATUS } from "@/graphql/mutations/lesson-mutations";
 
+const DAY_MAP_NUM_TO_EN: Record<number, string> = {
+  0: 'SUNDAY',
+  1: 'MONDAY',
+  2: 'TUESDAY',
+  3: 'WEDNESDAY',
+  4: 'THURSDAY',
+  5: 'FRIDAY',
+  6: 'SATURDAY',
+};
+
+const DAY_MAP_EN_TO_ES: Record<string, string> = {
+  MONDAY: 'Lunes',
+  TUESDAY: 'Martes',
+  WEDNESDAY: 'Miércoles',
+  THURSDAY: 'Jueves',
+  FRIDAY: 'Viernes',
+  SATURDAY: 'Sábado',
+  SUNDAY: 'Domingo',
+};
+
 export default function AdminLessonsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -83,8 +103,20 @@ export default function AdminLessonsPage() {
   const [newClassTeacher, setNewClassTeacher] = useState("");
   const [newClassStudent, setNewClassStudent] = useState("");
   const [newClassDate, setNewClassDate] = useState("");
-  const [newClassTime, setNewClassTime] = useState("");
+  const [newClassStartTime, setNewClassStartTime] = useState("10:00");
+  const [newClassDuration, setNewClassDuration] = useState(60);
+  const [newClassEndTime, setNewClassEndTime] = useState("11:00");
   const [newClassRoom, setNewClassRoom] = useState("");
+
+  const calculateEndTime = (start: string, durationMinutes: number) => {
+    if (!start) return "";
+    const [h, m] = start.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return "";
+    const totalMinutes = h * 60 + m + durationMinutes;
+    const endH = Math.floor(totalMinutes / 60) % 24;
+    const endM = totalMinutes % 60;
+    return `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+  };
 
   const filteredLessons = useMemo(() => {
     return displayLessons.filter((lesson: any) => {
@@ -105,20 +137,19 @@ export default function AdminLessonsPage() {
   };
 
   const handleCreateLesson = () => {
-    if (!newClassTeacher || !newClassStudent || !newClassDate || !newClassTime || !newClassRoom) {
-      toast.error("Por favor completa todos los campos");
+    if (!newClassTeacher || !newClassStudent || !newClassDate || !newClassStartTime || !newClassEndTime || !newClassRoom) {
+      toast.error("Por favor completa todos los campos requeridos");
       return;
     }
     
-    const [start, end] = newClassTime.split(' - ');
     createLesson({
       variables: {
         teacherId: parseInt(newClassTeacher),
         studentId: parseInt(newClassStudent),
         roomId: parseInt(newClassRoom),
         date: newClassDate,
-        startTime: start + ":00",
-        endTime: end + ":00",
+        startTime: newClassStartTime.length === 5 ? newClassStartTime + ":00" : newClassStartTime,
+        endTime: newClassEndTime.length === 5 ? newClassEndTime + ":00" : newClassEndTime,
         lessonType: "INDIVIDUAL"
       }
     });
@@ -134,8 +165,13 @@ export default function AdminLessonsPage() {
   const goToToday = () => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const handleGridClick = (day: Date, hour: number) => {
-    setNewClassDate(format(day, "yyyy-MM-dd"));
-    setNewClassTime(`${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`);
+    const formattedDate = format(day, "yyyy-MM-dd");
+    const formattedStart = `${hour.toString().padStart(2, '0')}:00`;
+    const formattedEnd = `${(hour + 1).toString().padStart(2, '0')}:00`;
+    setNewClassDate(formattedDate);
+    setNewClassStartTime(formattedStart);
+    setNewClassDuration(60);
+    setNewClassEndTime(formattedEnd);
     setIsNewClassOpen(true);
   };
 
@@ -183,9 +219,13 @@ export default function AdminLessonsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "COMPLETED":
-        return <Badge className="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><CheckCircle2 className="mr-1.5 h-3 w-3" /> Completada</Badge>;
+        return <Badge className="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><CheckCircle2 className="mr-1.5 h-3 w-3" /> Asiste</Badge>;
       case "CANCELLED":
         return <Badge className="bg-rose-50 text-rose-700 ring-1 ring-rose-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><XCircle className="mr-1.5 h-3 w-3" /> Cancelada</Badge>;
+      case "ABSENT":
+        return <Badge className="bg-red-50 text-red-700 ring-1 ring-red-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><XCircle className="mr-1.5 h-3 w-3" /> Inasistencia</Badge>;
+      case "EXCUSED":
+        return <Badge className="bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><CheckCircle2 className="mr-1.5 h-3 w-3" /> Avisa Clase</Badge>;
       default:
         return <Badge className="bg-amber-50 text-amber-700 ring-1 ring-amber-600/20 font-bold uppercase text-[9px] tracking-widest px-3 py-1"><Clock className="mr-1.5 h-3 w-3" /> Pendiente</Badge>;
     }
@@ -219,7 +259,9 @@ export default function AdminLessonsPage() {
           <select className="flex-1 sm:flex-none h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-600 outline-none cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="ALL">Todos los Estados</option>
             <option value="PENDING">Pendientes</option>
-            <option value="COMPLETED">Completadas</option>
+            <option value="COMPLETED">Asiste (Descuenta)</option>
+            <option value="ABSENT">Inasistencia (Descuenta)</option>
+            <option value="EXCUSED">Avisa (No descuenta)</option>
             <option value="CANCELLED">Canceladas</option>
           </select>
         </div>
@@ -418,56 +460,220 @@ export default function AdminLessonsPage() {
                 </div>
                 {getStatusBadge(selectedLesson.status)}
               </div>
-              <div className="grid grid-cols-3 gap-4 pt-4">
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("CANCELLED")} variant="outline" className="h-12 rounded-xl text-rose-600 border-rose-100 font-bold uppercase text-[9px] tracking-widest">Cancelar</Button>
-                <Button disabled={isUpdating} onClick={() => handleStatusChange("COMPLETED")} className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[9px] tracking-widest shadow-lg">Asistencia</Button>
-                <Button onClick={() => setIsModalOpen(false)} variant="ghost" className="h-12 rounded-xl text-slate-400 font-bold uppercase text-[9px] tracking-widest">Cerrar</Button>
+              <div className="grid grid-cols-2 gap-3 pt-4">
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("COMPLETED")} className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[9px] tracking-widest shadow-lg">Sí Asiste</Button>
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("ABSENT")} variant="outline" className="h-12 rounded-xl text-rose-600 border-rose-100 font-bold uppercase text-[9px] tracking-widest hover:bg-rose-50">No Asiste</Button>
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("EXCUSED")} variant="outline" className="h-12 rounded-xl text-blue-600 border-blue-100 font-bold uppercase text-[9px] tracking-widest hover:bg-blue-50">Avisa Clase</Button>
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("PENDING")} variant="outline" className="h-12 rounded-xl text-slate-500 border-slate-200 font-bold uppercase text-[9px] tracking-widest">Pendiente</Button>
+                <Button disabled={isUpdating} onClick={() => handleStatusChange("CANCELLED")} variant="ghost" className="h-12 rounded-xl text-rose-400 font-bold uppercase text-[9px] tracking-widest col-span-2">Cancelar Clase</Button>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {isNewClassOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem]">
-            <header className="p-10 bg-primary text-white relative">
-              <button onClick={() => setIsNewClassOpen(false)} className="absolute top-8 right-8 p-3 rounded-full hover:bg-white/10"><XCircle className="h-6 w-6" /></button>
-              <h3 className="text-3xl font-bold font-serif">Agendar Clase</h3>
-            </header>
-            <CardContent className="p-10 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassTeacher} onChange={(e) => setNewClassTeacher(e.target.value)}>
-                    <option value="">Profesor...</option>
-                    {currentTeachers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassStudent} onChange={(e) => setNewClassStudent(e.target.value)}>
-                    <option value="">Alumno...</option>
-                    {currentStudents.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-                <input type="date" className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassDate} onChange={(e) => setNewClassDate(e.target.value)} />
-                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none" value={newClassRoom} onChange={(e) => setNewClassRoom(e.target.value)}>
-                    <option value="">Sala...</option>
-                    {currentRooms.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
-                <select className="w-full h-14 bg-slate-50 rounded-2xl px-6 outline-none col-span-full" value={newClassTime} onChange={(e) => setNewClassTime(e.target.value)}>
-                    <option value="">Horario...</option>
-                    {hours.map(h => {
-                      const slot = `${h.toString().padStart(2, '0')}:00 - ${(h + 1).toString().padStart(2, '0')}:00`;
-                      return <option key={slot} value={slot}>{slot}</option>
-                    })}
-                </select>
-              </div>
-              <footer className="flex gap-4 pt-6 border-t">
-                <Button variant="outline" className="flex-1 h-14 rounded-2xl" onClick={() => setIsNewClassOpen(false)}>Cancelar</Button>
-                <Button disabled={isCreating} onClick={handleCreateLesson} className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-bold uppercase text-[10px] tracking-widest">
-                  {isCreating ? "Agendando..." : "Confirmar"}
-                </Button>
-              </footer>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {isNewClassOpen && (() => {
+        const selectedTeacherObj = currentTeachers.find((t: any) => t.id === newClassTeacher);
+        const selectedDateObj = newClassDate ? parseISO(newClassDate) : null;
+        const selectedDayOfWeekEn = selectedDateObj ? DAY_MAP_NUM_TO_EN[selectedDateObj.getDay()] : null;
+        const teacherDayAvailabilities = selectedTeacherObj?.availabilities?.filter((a: any) => a.day === selectedDayOfWeekEn) || [];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+            <Card className="w-full max-w-xl bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem] max-h-[90vh] overflow-y-auto">
+              <header className="p-8 bg-[#70125F] text-white relative">
+                <button onClick={() => setIsNewClassOpen(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"><XCircle className="h-6 w-6" /></button>
+                <h3 className="text-2xl font-bold font-serif">Agendar Clase</h3>
+                <p className="text-white/80 text-xs mt-1">Configura el horario personalizado y la sala para la sesión.</p>
+              </header>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* Profesor */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesor *</label>
+                    <select 
+                      className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-xs font-bold text-slate-800 outline-none focus:border-[#70125F]" 
+                      value={newClassTeacher} 
+                      onChange={(e) => setNewClassTeacher(e.target.value)}
+                    >
+                      <option value="">Seleccionar profesor...</option>
+                      {currentTeachers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Alumno */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Alumno *</label>
+                    <select 
+                      className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-xs font-bold text-slate-800 outline-none focus:border-[#70125F]" 
+                      value={newClassStudent} 
+                      onChange={(e) => setNewClassStudent(e.target.value)}
+                    >
+                      <option value="">Seleccionar alumno...</option>
+                      {currentStudents.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Fecha */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha *</label>
+                    <input 
+                      type="date" 
+                      className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-xs font-bold text-slate-800 outline-none focus:border-[#70125F]" 
+                      value={newClassDate} 
+                      onChange={(e) => setNewClassDate(e.target.value)} 
+                    />
+                  </div>
+
+                  {/* Sala */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sala *</label>
+                    <select 
+                      className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-xs font-bold text-slate-800 outline-none focus:border-[#70125F]" 
+                      value={newClassRoom} 
+                      onChange={(e) => setNewClassRoom(e.target.value)}
+                    >
+                      <option value="">Seleccionar sala...</option>
+                      {currentRooms.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Disponibilidad del Profesor en Vivo */}
+                  {selectedTeacherObj && newClassDate && (
+                    <div className="col-span-full p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          Horario de {selectedTeacherObj.name} ({DAY_MAP_EN_TO_ES[selectedDayOfWeekEn || ''] || ''})
+                        </span>
+                        {teacherDayAvailabilities.length > 0 ? (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">
+                            {teacherDayAvailabilities.length} bloque(s) disponible(s)
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg">
+                            Sin bloques este día
+                          </span>
+                        )}
+                      </div>
+                      {teacherDayAvailabilities.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {teacherDayAvailabilities.map((a: any) => (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => {
+                                const start = a.startTime.substring(0, 5);
+                                setNewClassStartTime(start);
+                                setNewClassEndTime(calculateEndTime(start, newClassDuration));
+                              }}
+                              className="px-3 py-1.5 bg-white hover:bg-[#70125F]/5 border border-slate-200 hover:border-[#70125F]/40 rounded-xl text-xs font-mono font-bold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                              title="Hacer clic para usar este inicio"
+                            >
+                              <Clock className="h-3 w-3 text-[#70125F]" />
+                              {a.startTime.substring(0, 5)} - {a.endTime.substring(0, 5)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Hora de Inicio Granular */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Hora de Inicio *</label>
+                    <div className="space-y-1.5">
+                      <input
+                        type="time"
+                        value={newClassStartTime}
+                        onChange={(e) => {
+                          setNewClassStartTime(e.target.value);
+                          setNewClassEndTime(calculateEndTime(e.target.value, newClassDuration));
+                        }}
+                        className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-sm font-mono font-bold text-slate-800 outline-none focus:border-[#70125F]"
+                      />
+                      <div className="flex gap-1">
+                        {["00", "15", "30", "45"].map(min => (
+                          <button
+                            key={min}
+                            type="button"
+                            onClick={() => {
+                              const [h] = (newClassStartTime || "10:00").split(':');
+                              const newStart = `${h}:${min}`;
+                              setNewClassStartTime(newStart);
+                              setNewClassEndTime(calculateEndTime(newStart, newClassDuration));
+                            }}
+                            className="flex-1 py-1 rounded-lg text-[10px] font-mono font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                          >
+                            :{min}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Duración de la Clase */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Duración de la Clase</label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[30, 45, 60, 90].map(mins => (
+                        <button
+                          key={mins}
+                          type="button"
+                          onClick={() => {
+                            setNewClassDuration(mins);
+                            setNewClassEndTime(calculateEndTime(newClassStartTime, mins));
+                          }}
+                          className={`h-12 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+                            newClassDuration === mins 
+                              ? 'bg-[#70125F] text-white shadow-md shadow-[#70125F]/20' 
+                              : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {mins}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resumen Horario & Ajuste Fin */}
+                  <div className="col-span-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Horario Configurado</p>
+                      <p className="text-sm font-mono font-bold text-slate-900 mt-0.5">
+                        {newClassStartTime} - {newClassEndTime} <span className="text-xs text-[#70125F] font-bold">({newClassDuration} min)</span>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Fin:</label>
+                      <input
+                        type="time"
+                        value={newClassEndTime}
+                        onChange={(e) => setNewClassEndTime(e.target.value)}
+                        className="h-10 bg-white rounded-xl px-3 text-xs font-mono font-bold text-slate-800 border border-slate-200 outline-none focus:border-[#70125F]"
+                      />
+                    </div>
+                  </div>
+
+                </div>
+
+                <footer className="flex gap-4 pt-4 border-t border-slate-100">
+                  <Button variant="outline" className="flex-1 h-12 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer" onClick={() => setIsNewClassOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    disabled={isCreating || !newClassTeacher || !newClassStudent || !newClassDate || !newClassRoom} 
+                    onClick={handleCreateLesson} 
+                    className="flex-1 h-12 rounded-2xl bg-[#70125F] hover:bg-[#590e4b] text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-[#70125F]/20 cursor-pointer"
+                  >
+                    {isCreating ? "Agendando..." : "Confirmar Clase"}
+                  </Button>
+                </footer>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
     </div>
   );
 }

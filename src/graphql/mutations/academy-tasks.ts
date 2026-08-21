@@ -12,6 +12,7 @@ export const GET_ACADEMY_TASKS = gql`
         username
       }
       priority
+      status
       log
       isCompleted
       dueDate
@@ -30,6 +31,7 @@ export const CREATE_ACADEMY_TASK = gql`
     $assignedTo: String,
     $assignedUserId: Int,
     $priority: String,
+    $status: String,
     $dueDate: Date,
     $duration: Int,
     $log: String
@@ -40,6 +42,7 @@ export const CREATE_ACADEMY_TASK = gql`
       assignedTo: $assignedTo,
       assignedUserId: $assignedUserId,
       priority: $priority,
+      status: $status,
       dueDate: $dueDate,
       duration: $duration,
       log: $log
@@ -47,6 +50,7 @@ export const CREATE_ACADEMY_TASK = gql`
       task {
         id
         title
+        status
       }
     }
   }
@@ -60,6 +64,7 @@ export const UPDATE_ACADEMY_TASK = gql`
     $assignedTo: String,
     $assignedUserId: Int,
     $priority: String,
+    $status: String,
     $log: String,
     $isCompleted: Boolean,
     $dueDate: Date,
@@ -72,6 +77,7 @@ export const UPDATE_ACADEMY_TASK = gql`
       assignedTo: $assignedTo,
       assignedUserId: $assignedUserId,
       priority: $priority,
+      status: $status,
       log: $log,
       isCompleted: $isCompleted,
       dueDate: $dueDate,
@@ -80,6 +86,7 @@ export const UPDATE_ACADEMY_TASK = gql`
       task {
         id
         title
+        status
         isCompleted
         completedAt
       }

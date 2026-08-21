@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react/index.js";
 import { CREATE_LEAD, UPDATE_LEAD_STATUS } from "@/graphql/mutations/lead-mutations";
+import { CREATE_PRE_RESERVATION } from "@/graphql/mutations/lesson-mutations";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
 import { GET_CONTACT_CONTENT } from "@/graphql/queries/get-contact";
@@ -123,24 +124,18 @@ export default function BookPage() {
   const teachers = (teachersData as any)?.allTeachers || [];
   const lessons = (reservationsData as any)?.allLessons || [];
 
-  const [updateStatus] = useMutation(UPDATE_LEAD_STATUS);
-
-  const [createLead, { loading }] = useMutation(CREATE_LEAD, {
+  const [createPreReservation, { loading }] = useMutation(CREATE_PRE_RESERVATION, {
+    refetchQueries: [{ query: GET_RESERVATIONS }],
     onCompleted: (res: any) => {
-      const leadId = res.createLead?.lead?.id;
-      if (leadId) {
-        updateStatus({
-          variables: {
-            leadId: leadId,
-            status: "PRE_RESERVA"
-          }
-        }).catch((err) => console.error("Error setting lead status to PRE_RESERVA:", err));
+      if (res.createPreReservation?.success) {
+        setIsSuccess(true);
+      } else {
+        alert("Hubo un problema al registrar la reserva. Intenta nuevamente.");
       }
-      setIsSuccess(true);
     },
     onError: (err) => {
-      console.error("Error creating reservation lead:", err);
-      alert("Hubo un error al enviar tu reserva. Intenta nuevamente.");
+      console.error("Error creating pre-reservation:", err);
+      alert("Hubo un error al enviar tu reserva: " + err.message);
     }
   });
 
@@ -253,15 +248,25 @@ export default function BookPage() {
       return;
     }
 
-    const detailedEmail = `${formData.email || "sin-correo@detache.cl"} | Alumno: ${formData.nombre} ${formData.apellido} | Profesor: ${selectedTeacher?.name} | Fecha: ${selectedDateStr} | Horario: ${selectedSlot?.start}-${selectedSlot?.end} | Notas: ${formData.mensaje || "Sin notas"}`;
+    if (!selectedSlot?.start || !selectedDateStr) {
+      alert("Por favor selecciona una fecha y horario.");
+      return;
+    }
 
-    createLead({
+    const startHour = selectedSlot.start.length === 5 ? `${selectedSlot.start}:00` : selectedSlot.start;
+
+    createPreReservation({
       variables: {
         nombre: `${formData.nombre} ${formData.apellido}`.trim(),
         telefono: normalizePhoneNumber(formData.telefono),
-        email: detailedEmail,
+        email: formData.email || null,
         servicio: "CLASE_PRUEBA",
-        fuente: "Reserva Clinica Web"
+        profesorNombre: selectedTeacher?.name || "Profesor",
+        fecha: selectedDateStr,
+        hora: startHour,
+        sala: "Sala 1",
+        modalidad: "PRESENCIAL",
+        notas: formData.mensaje || ""
       }
     });
   };

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_STUDENT_PORTAL_DATA } from "@/graphql/queries/student-portal";
+import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
 import { CREATE_MATERIAL, CREATE_STUDENT_PRIVATE_NOTE, CREATE_STUDENT_WALL_MESSAGE } from "@/graphql/mutations/student-portal";
 
 export default function TeacherStudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,6 +21,8 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
     variables: { id: studentId },
     skip: isNaN(studentId)
   });
+  const { data: teacherData } = useQuery<any>(MY_TEACHER_PROFILE);
+  const teacherName = teacherData?.myTeacherProfile?.name || "Profesor";
 
   const [createPrivateNote] = useMutation<any, any>(CREATE_STUDENT_PRIVATE_NOTE);
   const [createWallMessage] = useMutation<any, any>(CREATE_STUDENT_WALL_MESSAGE);
@@ -53,7 +56,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
     if (!privateNote) return;
     try {
       await createPrivateNote({
-        variables: { studentId, text: privateNote, author: "Staff" }
+        variables: { studentId, text: privateNote, author: teacherName }
       });
       toast.success("Nota privada guardada. Solo visible para Staff.");
       setPrivateNote("");
@@ -83,7 +86,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
         variables: { 
           studentId, 
           text: publicNote, 
-          author: "Profesor", 
+          author: teacherName, 
           attachedMaterialId: materialId ? parseInt(materialId, 10) : null 
         }
       });

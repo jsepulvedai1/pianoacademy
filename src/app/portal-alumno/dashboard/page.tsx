@@ -32,6 +32,7 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import AnnouncementsWidget from "@/components/widgets/announcements-widget";
 
 export default function StudentDashboardPage() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -125,25 +126,25 @@ export default function StudentDashboardPage() {
   }, [lessons]);
 
   return (
-    <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
       <header className="space-y-1">
         <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
-          <GraduationCap className="h-3 w-3" /> Portal Alumno
+          <GraduationCap className="h-3.5 w-3.5" /> Portal Alumno
         </div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight text-slate-900">Hola, {student.name.split(' ')[0]}</h1>
-        <p className="text-slate-500 italic">Aquí está el resumen de tus clases y estado actual.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight text-slate-900">Hola, {student.name.split(' ')[0]}</h1>
+        <p className="text-xs sm:text-sm text-slate-500 italic">Aquí está el resumen de tus clases y estado actual.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         
         {/* Main Content: List or Calendar */}
         <div className="md:col-span-2 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-             <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 w-fit">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+             <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 w-full sm:w-fit">
                 <button 
                   onClick={() => setViewMode('LIST')} 
                   className={cn(
-                    "px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all",
+                    "flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer",
                     viewMode === 'LIST' ? "bg-slate-900 text-white shadow-md" : "text-slate-400 hover:text-slate-900"
                   )}
                 >
@@ -152,7 +153,7 @@ export default function StudentDashboardPage() {
                 <button 
                   onClick={() => setViewMode('CALENDAR')} 
                   className={cn(
-                    "px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all",
+                    "flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer",
                     viewMode === 'CALENDAR' ? "bg-slate-900 text-white shadow-md" : "text-slate-400 hover:text-slate-900"
                   )}
                 >
@@ -161,52 +162,52 @@ export default function StudentDashboardPage() {
              </div>
 
              {viewMode === 'CALENDAR' && (
-                <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-                   <button onClick={prevWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"><ChevronLeft className="h-4 w-4" /></button>
-                   <span className="text-[10px] font-bold uppercase tracking-widest px-2 min-w-[120px] text-center">
+                <div className="flex items-center justify-between sm:justify-start gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+                   <button onClick={prevWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900 cursor-pointer"><ChevronLeft className="h-4 w-4" /></button>
+                   <span className="text-[10px] font-bold uppercase tracking-widest px-2 flex-1 sm:min-w-[120px] text-center">
                      {format(currentWeekStart, "MMMM", { locale: es })}
                    </span>
-                   <button onClick={nextWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"><ChevronRight className="h-4 w-4" /></button>
+                   <button onClick={nextWeek} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900 cursor-pointer"><ChevronRight className="h-4 w-4" /></button>
                    <div className="w-[1px] h-4 bg-slate-100 mx-1" />
-                   <button onClick={goToToday} className="px-4 py-2 hover:bg-slate-50 rounded-xl transition-colors text-[10px] font-bold uppercase tracking-widest text-primary">Hoy</button>
+                   <button onClick={goToToday} className="px-3 sm:px-4 py-2 hover:bg-slate-50 rounded-xl transition-colors text-[10px] font-bold uppercase tracking-widest text-primary cursor-pointer">Hoy</button>
                 </div>
              )}
           </div>
 
           {viewMode === 'LIST' ? (
-            <Card className="rounded-[2.5rem] border-none shadow-xl bg-slate-900 text-white overflow-hidden relative group animate-in fade-in slide-in-from-left-4 duration-500">
+            <Card className="rounded-3xl sm:rounded-[2.5rem] border-none shadow-xl bg-slate-900 text-white overflow-hidden relative group animate-in fade-in slide-in-from-left-4 duration-500">
                <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-colors duration-700 pointer-events-none" />
-               <CardContent className="p-10 relative z-10">
+               <CardContent className="p-6 sm:p-10 relative z-10">
                   {nextClass ? (
                     <>
-                      <div className="flex items-center gap-3 mb-8">
+                      <div className="flex items-center gap-3 mb-6 sm:mb-8">
                         <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
-                          <Calendar className="h-6 w-6 text-primary" />
+                          <Calendar className="h-5 sm:h-6 w-5 sm:w-6 text-primary" />
                         </div>
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Tu Siguiente Sesión</p>
-                          <h2 className="text-xl font-bold font-serif text-white">{isToday(parseISO(nextClass.date)) ? "Hoy" : format(parseISO(nextClass.date), "EEEE d 'de' MMMM", { locale: es })}</h2>
+                          <h2 className="text-lg sm:text-xl font-bold font-serif text-white">{isToday(parseISO(nextClass.date)) ? "Hoy" : format(parseISO(nextClass.date), "EEEE d 'de' MMMM", { locale: es })}</h2>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-8 mb-8">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
+                        <div className="space-y-1 bg-white/5 p-3.5 rounded-2xl sm:bg-transparent sm:p-0">
                           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Clock className="h-3 w-3" /> Horario</p>
-                          <p className="text-lg font-bold">{nextClass.startTime.substring(0, 5)} - {nextClass.endTime.substring(0, 5)}</p>
+                          <p className="text-base sm:text-lg font-bold">{nextClass.startTime.substring(0, 5)} - {nextClass.endTime.substring(0, 5)}</p>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 bg-white/5 p-3.5 rounded-2xl sm:bg-transparent sm:p-0">
                           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Music className="h-3 w-3" /> Sala</p>
-                          <p className="text-lg font-bold">{nextClass.room?.name || "No asignada"}</p>
+                          <p className="text-base sm:text-lg font-bold truncate">{nextClass.room?.name || "No asignada"}</p>
                         </div>
                       </div>
 
-                      <div className="pt-8 border-t border-white/10 flex items-center justify-between">
+                      <div className="pt-6 sm:pt-8 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesor</p>
-                          <p className="font-medium text-slate-200">{nextClass.teacher?.name || "No asignado"}</p>
+                          <p className="font-medium text-slate-200 text-sm sm:text-base">{nextClass.teacher?.name || "No asignado"}</p>
                         </div>
-                        <Link href="/portal-alumno/wall">
-                          <Button className="rounded-xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-10 px-6 shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                        <Link href="/portal-alumno/wall" className="w-full sm:w-auto">
+                          <Button className="w-full sm:w-auto rounded-xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest h-11 sm:h-10 px-6 shadow-lg shadow-primary/20 transition-transform cursor-pointer">
                             Ver Muro <ArrowRight className="h-3 w-3 ml-2" />
                           </Button>
                         </Link>
@@ -369,6 +370,8 @@ export default function StudentDashboardPage() {
                </CardContent>
             </Card>
           )}
+
+          <AnnouncementsWidget targetAudience="STUDENTS" />
 
         </div>
       </div>

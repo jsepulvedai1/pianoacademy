@@ -62,9 +62,9 @@ export default function AdminTeachersPage() {
   // Availability Editor States
   const [isAddingAvail, setIsAddingAvail] = useState(false);
   const [availFormData, setAvailFormData] = useState({
-    day: "Lunes",
+    days: ["Lunes"] as string[],
     startTime: "09:00",
-    endTime: "14:00"
+    endTime: "13:00"
   });
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -197,7 +197,7 @@ export default function AdminTeachersPage() {
       setFormData({
         name: teacher.name,
         description: teacher.description || "",
-        status: teacher.status,
+        status: teacher.status || "ACTIVE",
         phoneNumber: teacher.phoneNumber || "",
         rut: teacher.rut || "",
         address: teacher.address || "",
@@ -635,95 +635,204 @@ export default function AdminTeachersPage() {
                        </div>
 
                        {isAddingAvail && (
-                          <div className="bg-[#F8F7F4] rounded-[1.5rem] p-5 border border-slate-200 space-y-4 animate-in fade-in duration-300 text-left">
-                             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Nuevo Bloque de Horario</h4>
-                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div className="space-y-1">
-                                   <label className="text-[9px] font-black uppercase text-slate-400">Día</label>
-                                   <select
-                                      value={availFormData.day}
-                                      onChange={(e) => setAvailFormData(prev => ({ ...prev, day: e.target.value }))}
-                                      className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 focus:outline-none focus:border-primary"
-                                   >
-                                      {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map((d) => (
-                                         <option key={d} value={d}>{d}</option>
-                                      ))}
-                                   </select>
+                          <div className="bg-[#F8F7F4] rounded-[1.5rem] p-6 border border-slate-200 space-y-5 animate-in fade-in duration-300 text-left">
+                             <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Nuevo Bloque de Disponibilidad</h4>
+                                <span className="text-[10px] font-mono font-bold text-[#70125F] bg-[#70125F]/10 px-2.5 py-1 rounded-lg">
+                                   Duración: {(() => {
+                                      const [sh, sm] = (availFormData.startTime || "00:00").split(':').map(Number);
+                                      const [eh, em] = (availFormData.endTime || "00:00").split(':').map(Number);
+                                      const diff = (eh * 60 + em) - (sh * 60 + sm);
+                                      if (diff <= 0) return "Inválida";
+                                      const h = Math.floor(diff / 60);
+                                      const m = diff % 60;
+                                      return `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}m` : ''}`.trim() || '0m';
+                                   })()}
+                                </span>
+                             </div>
+
+                             {/* Presets Rápidos */}
+                             <div className="space-y-1.5">
+                                <label className="text-[9px] font-black uppercase text-slate-400">Plantillas Rápidas</label>
+                                <div className="flex flex-wrap gap-2">
+                                   {[
+                                      { label: "🌅 Mañana", start: "09:00", end: "13:00" },
+                                      { label: "☀️ Tarde", start: "14:00", end: "18:30" },
+                                      { label: "🌙 Vespertino", start: "17:00", end: "21:30" },
+                                      { label: "⏰ Jornada Completa", start: "09:00", end: "19:00" },
+                                      { label: "🎹 Bloque 45m", start: "10:00", end: "10:45" },
+                                      { label: "⏳ Bloque 30m", start: "10:00", end: "10:30" },
+                                   ].map((preset) => (
+                                      <button
+                                         key={preset.label}
+                                         type="button"
+                                         onClick={() => setAvailFormData(prev => ({ ...prev, startTime: preset.start, endTime: preset.end }))}
+                                         className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-xs"
+                                      >
+                                         {preset.label} ({preset.start}-{preset.end})
+                                      </button>
+                                   ))}
                                 </div>
-                                <div className="space-y-1">
-                                   <label className="text-[9px] font-black uppercase text-slate-400">Hora Inicio</label>
+                             </div>
+
+                             {/* Selección de Días (Multi-Día) */}
+                             <div className="space-y-1.5">
+                                <label className="text-[9px] font-black uppercase text-slate-400">Días a Aplicar (Puedes elegir varios)</label>
+                                <div className="flex flex-wrap gap-1.5">
+                                   {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map((d) => {
+                                      const isSelected = availFormData.days.includes(d);
+                                      return (
+                                         <button
+                                            key={d}
+                                            type="button"
+                                            onClick={() => {
+                                               if (isSelected) {
+                                                  if (availFormData.days.length > 1) {
+                                                     setAvailFormData(prev => ({ ...prev, days: prev.days.filter(x => x !== d) }));
+                                                  }
+                                               } else {
+                                                  setAvailFormData(prev => ({ ...prev, days: [...prev.days, d] }));
+                                               }
+                                            }}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                               isSelected 
+                                               ? "bg-[#70125F] text-white shadow-sm shadow-[#70125F]/20" 
+                                               : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"
+                                            }`}
+                                         >
+                                            {d}
+                                         </button>
+                                      );
+                                   })}
+                                </div>
+                             </div>
+
+                             {/* Selección Exacta de Horas */}
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                                <div className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-slate-200">
+                                   <label className="text-[9px] font-black uppercase text-slate-500">Hora Inicio</label>
                                    <input
                                       type="time"
                                       value={availFormData.startTime}
                                       onChange={(e) => setAvailFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                                      className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-mono font-bold text-slate-700 focus:outline-none focus:border-primary"
+                                      className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm font-mono font-bold text-slate-800 focus:outline-none focus:border-[#70125F]"
                                    />
+                                   <div className="flex gap-1 pt-1">
+                                      {["00", "15", "30", "45"].map(min => (
+                                         <button
+                                            key={min}
+                                            type="button"
+                                            onClick={() => {
+                                               const [h] = (availFormData.startTime || "09:00").split(':');
+                                               setAvailFormData(prev => ({ ...prev, startTime: `${h}:${min}` }));
+                                            }}
+                                            className="flex-1 py-1 rounded-md text-[10px] font-mono font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                         >
+                                            :{min}
+                                         </button>
+                                      ))}
+                                   </div>
                                 </div>
-                                <div className="space-y-1">
-                                   <label className="text-[9px] font-black uppercase text-slate-400">Hora Fin</label>
+
+                                <div className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-slate-200">
+                                   <label className="text-[9px] font-black uppercase text-slate-500">Hora Fin</label>
                                    <input
                                       type="time"
                                       value={availFormData.endTime}
                                       onChange={(e) => setAvailFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                                      className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-mono font-bold text-slate-700 focus:outline-none focus:border-primary"
+                                      className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm font-mono font-bold text-slate-800 focus:outline-none focus:border-[#70125F]"
                                    />
+                                   <div className="flex gap-1 pt-1">
+                                      {["00", "15", "30", "45"].map(min => (
+                                         <button
+                                            key={min}
+                                            type="button"
+                                            onClick={() => {
+                                               const [h] = (availFormData.endTime || "14:00").split(':');
+                                               setAvailFormData(prev => ({ ...prev, endTime: `${h}:${min}` }));
+                                            }}
+                                            className="flex-1 py-1 rounded-md text-[10px] font-mono font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                         >
+                                            :{min}
+                                         </button>
+                                      ))}
+                                   </div>
                                 </div>
                              </div>
-                             <div className="flex gap-2 justify-end pt-2">
+
+                             <div className="flex gap-3 justify-end pt-2">
                                 <Button
                                    size="sm"
                                    variant="ghost"
                                    onClick={() => setIsAddingAvail(false)}
-                                   className="h-8 px-4 text-[10px] font-bold uppercase rounded-lg text-slate-500 hover:bg-slate-100"
+                                   className="h-10 px-5 text-xs font-bold uppercase rounded-xl text-slate-500 hover:bg-slate-200"
                                 >
                                    Cancelar
                                 </Button>
                                 <Button
                                    size="sm"
                                    disabled={creatingAvail}
-                                   onClick={() => {
-                                      createAvailability({
-                                         variables: {
-                                            teacherId: parseInt(selectedTeacher.id),
-                                            day: DAY_MAP_ES_TO_EN[availFormData.day] || availFormData.day,
-                                            startTime: `${availFormData.startTime}:00`,
-                                            endTime: `${availFormData.endTime}:00`
-                                         }
-                                      });
+                                   onClick={async () => {
+                                      for (const day of availFormData.days) {
+                                         await createAvailability({
+                                            variables: {
+                                               teacherId: parseInt(selectedTeacher.id),
+                                               day: DAY_MAP_ES_TO_EN[day] || day,
+                                               startTime: `${availFormData.startTime}:00`,
+                                               endTime: `${availFormData.endTime}:00`
+                                            }
+                                         });
+                                      }
+                                      toast.success(`Disponibilidad guardada para ${availFormData.days.length} día(s) ✅`);
+                                      setIsAddingAvail(false);
                                    }}
-                                   className="h-8 px-4 text-[10px] font-bold uppercase rounded-lg bg-primary hover:bg-primary/95 text-white flex items-center gap-1.5"
+                                   className="h-10 px-6 text-xs font-bold uppercase rounded-xl bg-[#70125F] hover:bg-[#590e4b] text-white flex items-center gap-2 shadow-lg shadow-[#70125F]/20 cursor-pointer"
                                 >
-                                   {creatingAvail && <Loader2 className="h-3 w-3 animate-spin" />}
-                                   Guardar
+                                   {creatingAvail && <Loader2 className="h-4 w-4 animate-spin" />}
+                                   Guardar Horario ({availFormData.days.length} días)
                                 </Button>
                              </div>
                           </div>
                        )}
 
                        <div className="grid grid-cols-1 gap-3">
-                          {selectedTeacher.availabilities?.map((d: any) => (
-                             <div key={d.id} className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 flex items-center justify-between hover:bg-slate-50 transition-colors group/item">
-                                <div className="flex items-center gap-3">
-                                   <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                                   <span className="text-xs font-bold text-slate-700">{DAY_MAP_EN_TO_ES[d.day] || d.day}</span>
+                          {selectedTeacher.availabilities?.map((d: any) => {
+                             const [sh, sm] = (d.startTime || "00:00").split(':').map(Number);
+                             const [eh, em] = (d.endTime || "00:00").split(':').map(Number);
+                             const diff = (eh * 60 + em) - (sh * 60 + sm);
+                             const h = Math.floor(diff / 60);
+                             const m = diff % 60;
+                             const durationStr = `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}m` : ''}`.trim() || '0m';
+
+                             return (
+                                <div key={d.id} className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 flex items-center justify-between hover:bg-slate-50 transition-colors group/item">
+                                   <div className="flex items-center gap-3">
+                                      <CalendarDays className="h-4 w-4 text-slate-400" />
+                                      <span className="text-xs font-bold text-slate-800">{DAY_MAP_EN_TO_ES[d.day] || d.day}</span>
+                                      <span className="text-[9px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-100">
+                                         {durationStr}
+                                      </span>
+                                   </div>
+                                   <div className="flex items-center gap-4">
+                                      <span className="text-xs font-mono font-bold text-slate-700 bg-white px-3.5 py-1 rounded-xl border border-slate-100 shadow-2xs">
+                                         {d.startTime?.substring(0, 5)} - {d.endTime?.substring(0, 5)}
+                                      </span>
+                                      <button
+                                         disabled={deletingAvail}
+                                         onClick={() => {
+                                            if (confirm(`¿Estás seguro de que deseas eliminar la disponibilidad del día ${DAY_MAP_EN_TO_ES[d.day] || d.day} de ${d.startTime?.substring(0, 5)} a ${d.endTime?.substring(0, 5)}?`)) {
+                                               deleteAvailability({ variables: { id: parseInt(d.id) } });
+                                            }
+                                         }}
+                                         className="p-2 hover:bg-rose-50 rounded-xl text-slate-300 hover:text-rose-600 transition-all cursor-pointer opacity-0 group-hover/item:opacity-100"
+                                         title="Eliminar Horario"
+                                      >
+                                         <Trash2 className="h-4 w-4" />
+                                      </button>
+                                   </div>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                   <span className="text-[10px] font-mono font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">{d.startTime?.substring(0, 5)} - {d.endTime?.substring(0, 5)}</span>
-                                   <button
-                                      disabled={deletingAvail}
-                                      onClick={() => {
-                                         if (confirm(`¿Estás seguro de que deseas eliminar la disponibilidad del día ${DAY_MAP_EN_TO_ES[d.day] || d.day} de ${d.startTime?.substring(0, 5)} a ${d.endTime?.substring(0, 5)}?`)) {
-                                            deleteAvailability({ variables: { id: parseInt(d.id) } });
-                                         }
-                                      }}
-                                      className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-300 hover:text-rose-600 transition-all cursor-pointer opacity-0 group-hover/item:opacity-100"
-                                      title="Eliminar Horario"
-                                   >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                   </button>
-                                </div>
-                             </div>
-                          ))}
+                             );
+                          })}
                           {selectedTeacher.availabilities?.length === 0 && (
                             <div className="text-center py-8 bg-slate-50/30 rounded-2xl border border-dashed border-slate-200 text-slate-300">
                                <p className="text-[10px] italic">Sin horario base configurado</p>

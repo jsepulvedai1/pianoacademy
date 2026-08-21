@@ -12,6 +12,13 @@ export const GET_GLOBAL_SETTINGS = gql`
       facebookUrl
       instagramUrl
       trialClassEmailTemplate
+      whatsappNumber
+      whatsappAssignedTo
+      evolutionApiUrl
+      evolutionApiKey
+      evolutionInstanceName
+      whatsappAutoReply
+      whatsappWelcomeTemplate
     }
   }
 `;

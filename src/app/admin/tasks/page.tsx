@@ -5,33 +5,45 @@ import {
   ClipboardList, Search, Plus, CheckCircle2, 
   Clock, User, AlertCircle, Info, History, Trash2, X,
   Loader2, CheckSquare, Square, Calendar, Kanban, List,
-  ChevronLeft, ChevronRight, Edit3, Save, Hourglass, ShieldAlert
+  ChevronLeft, ChevronRight, Edit3, Save, Hourglass, ArrowRight,
+  ArrowLeft, Check, Sparkles, UserCheck, Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_ACADEMY_TASKS, CREATE_ACADEMY_TASK, UPDATE_ACADEMY_TASK, DELETE_ACADEMY_TASK } from "@/graphql/mutations/academy-tasks";
-import { GET_ADMIN_ACCOUNTS } from "@/graphql/queries/admin-queries";
+import { GET_ADMIN_ACCOUNTS, ME_QUERY } from "@/graphql/queries/admin-queries";
 import { toast } from "sonner";
-import { format, startOfWeek, addDays, differenceInDays, parseISO } from "date-fns";
+import { format, startOfWeek, addDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
-const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-  URGENTE:     { label: 'Urgente',     color: 'text-rose-700 border-rose-200',   bg: 'bg-rose-50',     icon: AlertCircle },
-  IMPORTANTE:  { label: 'Importante',  color: 'text-amber-700 border-amber-200',  bg: 'bg-amber-50',    icon: Info },
-  RECORDATORIO: { label: 'Recordatorio', color: 'text-sky-700 border-sky-200',    bg: 'bg-sky-50',      icon: Clock },
-  INFORMATIVO: { label: 'Informativo', color: 'text-slate-600 border-slate-200',  bg: 'bg-slate-50',   icon: Info },
+const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; icon: any }> = {
+  URGENTE:      { label: 'Urgente',     color: 'text-rose-700 border-rose-200',   bg: 'bg-rose-50',    dot: '#f43f5e', icon: AlertCircle },
+  IMPORTANTE:   { label: 'Importante',  color: 'text-amber-700 border-amber-200', bg: 'bg-amber-50',   dot: '#f59e0b', icon: Info },
+  RECORDATORIO: { label: 'Recordatorio', color: 'text-sky-700 border-sky-200',   bg: 'bg-sky-50',     dot: '#38bdf8', icon: Clock },
+  INFORMATIVO:  { label: 'Informativo', color: 'text-slate-600 border-slate-200', bg: 'bg-slate-50',  dot: '#94a3b8', icon: Info },
 };
 
 const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
   VENTAS: 'Ventas',
   RECEPCION: 'Recepción',
-  ADMINISTRACION: 'Administración'
+  ADMINISTRACION: 'Administración',
+  STAFF: 'Staff',
+  COLLABORATOR: 'Colaborador',
+};
+
+const getTaskStatus = (task: any): 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' => {
+  if (task.status === 'COMPLETED' || task.status === 'IN_PROGRESS' || task.status === 'PENDING') {
+    return task.status;
+  }
+  if (task.isCompleted) return 'COMPLETED';
+  return 'PENDING';
 };
 
 export default function AdminTasksPage() {
-  const [activeTab, setActiveTab] = useState<"calendar" | "kanban" | "list">("calendar");
+  const [activeTab, setActiveTab] = useState<"kanban" | "calendar" | "list">("kanban");
   const [searchTerm, setSearchTerm] = useState("");
   const [collaboratorFilter, setCollaboratorFilter] = useState("ALL");
   const [weekOffset, setWeekOffset] = useState(0);
@@ -48,6 +60,7 @@ export default function AdminTasksPage() {
     assignedTo: "RECEPCION",
     assignedUserId: "" as string | number,
     priority: "RECORDATORIO",
+    status: "PENDING",
     dueDate: "",
     duration: 30,
     log: ""
@@ -56,14 +69,16 @@ export default function AdminTasksPage() {
   // Queries
   const { data: tasksData, loading: tasksLoading, refetch: refetchTasks } = useQuery<any>(GET_ACADEMY_TASKS);
   const { data: accountsData } = useQuery<any>(GET_ADMIN_ACCOUNTS);
+  const { data: meData } = useQuery<any>(ME_QUERY);
 
   const tasks = tasksData?.allAcademyTasks || [];
   const collaborators = accountsData?.allAdminAccounts || [];
+  const currentUserId = meData?.me?.id;
 
   // Mutations
   const [createTask, { loading: creating }] = useMutation(CREATE_ACADEMY_TASK, {
     onCompleted: () => {
-      toast.success("Tarea creada ✅");
+      toast.success("Tarea creada exitosamente ✅");
       setIsNewOpen(false);
       setFormData({
         title: "",
@@ -71,6 +86,7 @@ export default function AdminTasksPage() {
         assignedTo: "RECEPCION",
         assignedUserId: "",
         priority: "RECORDATORIO",
+        status: "PENDING",
         dueDate: "",
         duration: 30,
         log: ""
@@ -135,10 +151,16 @@ export default function AdminTasksPage() {
 
       // 2. Collaborator check
       if (collaboratorFilter === "ALL") return true;
+      if (collaboratorFilter === "MY_TASKS") return currentUserId && t.assignedUser?.id === currentUserId;
       if (collaboratorFilter === "UNASSIGNED") return !t.assignedUser;
       return t.assignedUser?.id === collaboratorFilter;
     });
-  }, [tasks, searchTerm, collaboratorFilter]);
+  }, [tasks, searchTerm, collaboratorFilter, currentUserId]);
+
+  // Grouped tasks by status
+  const pendingTasks = useMemo(() => filteredTasks.filter((t: any) => getTaskStatus(t) === 'PENDING'), [filteredTasks]);
+  const inProgressTasks = useMemo(() => filteredTasks.filter((t: any) => getTaskStatus(t) === 'IN_PROGRESS'), [filteredTasks]);
+  const completedTasks = useMemo(() => filteredTasks.filter((t: any) => getTaskStatus(t) === 'COMPLETED'), [filteredTasks]);
 
   // Drag and Drop handlers
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -162,22 +184,35 @@ export default function AdminTasksPage() {
     toast.success(`Tarea reprogramada para el ${format(parseISO(dateString), "dd 'de' MMMM", { locale: es })} 📅`);
   };
 
-  const handleDropStatus = (e: React.DragEvent, isCompleted: boolean) => {
+  const handleDropStatus = (e: React.DragEvent, targetStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED') => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData("text/plain");
     if (!taskId) return;
-    updateTask({
-      variables: {
-        id: parseInt(taskId),
-        isCompleted
-      }
-    });
-    toast.success(isCompleted ? "Tarea marcada como Completada ✨" : "Tarea reabierta 📂");
+    handleChangeStatus(taskId, targetStatus);
   };
 
-  const handleToggleComplete = (task: any) => {
-    updateTask({ variables: { id: parseInt(task.id), isCompleted: !task.isCompleted } });
-    toast.success(!task.isCompleted ? "Tarea completada ✨" : "Tarea reabierta 📂");
+  const handleChangeStatus = (taskId: string | number, newStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED') => {
+    updateTask({
+      variables: {
+        id: parseInt(taskId.toString()),
+        status: newStatus,
+        isCompleted: newStatus === 'COMPLETED'
+      }
+    });
+    if (newStatus === 'COMPLETED') toast.success("Tarea completada ✨");
+    else if (newStatus === 'IN_PROGRESS') toast.success("Tarea en proceso ⏳");
+    else toast.success("Tarea movida a pendientes 📂");
+  };
+
+  const handleReassignUser = (taskId: string | number, userId: string | number | null) => {
+    const assignedUserId = userId && userId !== "" ? parseInt(userId.toString()) : 0;
+    updateTask({
+      variables: {
+        id: parseInt(taskId.toString()),
+        assignedUserId: assignedUserId
+      }
+    });
+    toast.success("Responsable asignado exitosamente 👤");
   };
 
   const handleUpdateLog = (task: any, newLog: string) => {
@@ -196,12 +231,20 @@ export default function AdminTasksPage() {
         assignedTo: editingTask.assignedTo,
         assignedUserId: editingTask.assignedUserId ? parseInt(editingTask.assignedUserId) : 0,
         priority: editingTask.priority,
+        status: editingTask.status,
+        isCompleted: editingTask.status === 'COMPLETED',
         dueDate: editingTask.dueDate || null,
         duration: parseInt(editingTask.duration) || 30
       }
     });
     toast.success("Detalles de la tarea actualizados");
     setEditingTask(null);
+  };
+
+  const getCollaboratorName = (user: any) => {
+    if (!user) return "Sin Asignar";
+    const role = user.profile?.role ? ` (${ROLE_LABELS[user.profile.role] || user.profile.role})` : "";
+    return `${user.username}${role}`;
   };
 
   return (
@@ -211,34 +254,34 @@ export default function AdminTasksPage() {
         {/* Header Section */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-3xl font-extrabold text-slate-900 font-serif tracking-tight flex items-center gap-2">
-              <ClipboardList className="h-8 w-8 text-[#70125F]" /> Tareas y Calendario
+            <h1 className="text-3xl font-extrabold text-slate-900 font-serif tracking-tight flex items-center gap-3">
+              <ClipboardList className="h-8 w-8 text-[#70125F]" /> Tablero de Tareas y Operaciones
             </h1>
-            <p className="text-slate-400 text-xs italic">
-              Asigna tareas a tu equipo, realiza seguimiento de tiempos y arrastra actividades para reprogramarlas.
+            <p className="text-slate-500 text-xs">
+              Organiza flujos de trabajo, asigna colaboradores responsables y arrastra o mueve actividades entre estados.
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Tab Selector */}
-            <div className="bg-slate-200/60 p-1.5 rounded-2xl flex items-center gap-1">
+          <div className="flex items-center gap-3">
+            {/* View Switcher */}
+            <div className="bg-slate-200/70 p-1.5 rounded-2xl flex items-center gap-1 shadow-inner">
+              <button 
+                onClick={() => setActiveTab("kanban")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === "kanban" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <Kanban className="h-4 w-4 text-[#70125F]" /> Kanban
+              </button>
               <button 
                 onClick={() => setActiveTab("calendar")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === "calendar" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === "calendar" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
               >
                 <Calendar className="h-4 w-4" /> Semanal
               </button>
               <button 
-                onClick={() => setActiveTab("kanban")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === "kanban" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-              >
-                <Kanban className="h-4 w-4" /> Kanban
-              </button>
-              <button 
                 onClick={() => setActiveTab("list")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === "list" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === "list" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
               >
-                <List className="h-4 w-4" /> Completa
+                <List className="h-4 w-4" /> Lista
               </button>
             </div>
 
@@ -251,15 +294,15 @@ export default function AdminTasksPage() {
           </div>
         </header>
 
-        {/* Filters and Utilities Toolbar */}
+        {/* Filters & Collaborators Toolbar */}
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-4 flex-wrap flex-1">
             {/* Search Input */}
-            <div className="relative w-full md:w-64">
+            <div className="relative w-full md:w-72">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="Buscar tareas..." 
+                placeholder="Buscar tareas por título o detalle..." 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold"
@@ -268,16 +311,21 @@ export default function AdminTasksPage() {
 
             {/* Collaborator Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asignado a:</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                <User className="h-3 w-3" /> Responsable:
+              </span>
               <select 
                 value={collaboratorFilter} 
                 onChange={(e) => setCollaboratorFilter(e.target.value)}
-                className="h-10 bg-slate-50 border-none rounded-xl px-3 text-xs font-bold outline-none cursor-pointer"
+                className="h-10 bg-slate-50 border-none rounded-xl px-3 text-xs font-bold outline-none cursor-pointer hover:bg-slate-100 transition-colors"
               >
-                <option value="ALL">Cualquiera</option>
-                <option value="UNASSIGNED">Sin Asignar</option>
+                <option value="ALL">Todos los Colaboradores</option>
+                {currentUserId && <option value="MY_TASKS">⭐ Mis Tareas Asignadas</option>}
+                <option value="UNASSIGNED">⚪ Sin Asignar</option>
                 {collaborators.map((user: any) => (
-                  <option key={user.id} value={user.id}>{user.username}</option>
+                  <option key={user.id} value={user.id}>
+                    {getCollaboratorName(user)}
+                  </option>
                 ))}
               </select>
             </div>
@@ -321,8 +369,254 @@ export default function AdminTasksPage() {
             {tasksLoading ? (
               <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
                 <Loader2 className="h-8 w-8 text-[#70125F] animate-spin" />
-                <p className="text-slate-400 text-xs italic">Cargando tareas...</p>
+                <p className="text-slate-400 text-xs italic">Sincronizando tareas operativas...</p>
               </div>
+            ) : activeTab === "kanban" ? (
+              
+              /* ── 3-COLUMN KANBAN BOARD ── */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                
+                {/* 1. Pendientes Column */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDropStatus(e, 'PENDING')}
+                  className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm min-h-[550px] flex flex-col space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+                    <h3 className="font-extrabold text-slate-800 text-xs tracking-widest uppercase flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+                      📂 Pendientes
+                    </h3>
+                    <Badge className="bg-sky-50 text-sky-700 border-none rounded-lg text-xs font-bold">
+                      {pendingTasks.length}
+                    </Badge>
+                  </div>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[550px] pr-1">
+                    {pendingTasks.map((task: any) => {
+                      const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
+                      return (
+                        <div 
+                          key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onClick={() => setSelectedTask(task)}
+                          className="p-4 bg-slate-50/80 hover:bg-white rounded-2xl border border-slate-100 hover:border-slate-200/80 cursor-grab active:cursor-grabbing transition-all flex flex-col gap-2.5 shadow-sm hover:shadow-md group"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-bold text-slate-900 text-xs leading-snug group-hover:text-[#70125F] transition-colors">{task.title}</p>
+                            <Badge className={`border-0 text-[8px] font-black uppercase tracking-widest shrink-0 ${prio.bg} ${prio.color}`}>
+                              {prio.label}
+                            </Badge>
+                          </div>
+
+                          {task.description && (
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{task.description}</p>
+                          )}
+
+                          {/* Collaborator Selector Dropdown */}
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                            <div className="flex items-center gap-1.5 max-w-[140px]" onClick={(e) => e.stopPropagation()}>
+                              <User className="h-3 w-3 text-slate-400 shrink-0" />
+                              <select
+                                value={task.assignedUser?.id || ""}
+                                onChange={(e) => handleReassignUser(task.id, e.target.value)}
+                                className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none cursor-pointer truncate hover:text-[#70125F]"
+                              >
+                                <option value="">Sin Asignar</option>
+                                {collaborators.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{u.username}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <span className="text-[9px] text-[#70125F] font-bold shrink-0">
+                              ⏱️ {task.duration || 30}m
+                            </span>
+                          </div>
+
+                          {/* Quick Action Move Button */}
+                          <div className="flex items-center justify-end gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => handleChangeStatus(task.id, 'IN_PROGRESS')}
+                              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all flex items-center gap-1 cursor-pointer"
+                              title="Mover a En Proceso"
+                            >
+                              <Hourglass className="h-3 w-3" /> Iniciar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleChangeStatus(task.id, 'COMPLETED')}
+                              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center gap-1 cursor-pointer"
+                              title="Marcar como Completada"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {pendingTasks.length === 0 && (
+                      <div className="h-40 flex flex-col items-center justify-center text-center opacity-40">
+                        <Clock className="h-6 w-6 text-slate-300 mb-1" />
+                        <span className="text-[11px] font-bold text-slate-400 italic">No hay tareas pendientes</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. En Proceso Column */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDropStatus(e, 'IN_PROGRESS')}
+                  className="bg-white rounded-[2rem] p-5 border border-amber-100/60 shadow-sm min-h-[550px] flex flex-col space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+                    <h3 className="font-extrabold text-slate-800 text-xs tracking-widest uppercase flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                      ⏳ En Proceso
+                    </h3>
+                    <Badge className="bg-amber-50 text-amber-700 border-none rounded-lg text-xs font-bold">
+                      {inProgressTasks.length}
+                    </Badge>
+                  </div>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[550px] pr-1">
+                    {inProgressTasks.map((task: any) => {
+                      const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
+                      return (
+                        <div 
+                          key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onClick={() => setSelectedTask(task)}
+                          className="p-4 bg-amber-50/20 hover:bg-white rounded-2xl border border-amber-200/50 hover:border-amber-300 cursor-grab active:cursor-grabbing transition-all flex flex-col gap-2.5 shadow-sm hover:shadow-md group"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-bold text-slate-900 text-xs leading-snug group-hover:text-amber-700 transition-colors">{task.title}</p>
+                            <Badge className={`border-0 text-[8px] font-black uppercase tracking-widest shrink-0 ${prio.bg} ${prio.color}`}>
+                              {prio.label}
+                            </Badge>
+                          </div>
+
+                          {task.description && (
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{task.description}</p>
+                          )}
+
+                          {/* Collaborator Selector */}
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                            <div className="flex items-center gap-1.5 max-w-[140px]" onClick={(e) => e.stopPropagation()}>
+                              <User className="h-3 w-3 text-amber-600 shrink-0" />
+                              <select
+                                value={task.assignedUser?.id || ""}
+                                onChange={(e) => handleReassignUser(task.id, e.target.value)}
+                                className="bg-transparent border-none text-[10px] font-bold text-slate-700 outline-none cursor-pointer truncate hover:text-amber-700"
+                              >
+                                <option value="">Sin Asignar</option>
+                                {collaborators.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{u.username}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <span className="text-[9px] text-amber-700 font-bold shrink-0">
+                              ⏱️ {task.duration || 30}m
+                            </span>
+                          </div>
+
+                          {/* Quick Action Move Buttons */}
+                          <div className="flex items-center justify-between gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => handleChangeStatus(task.id, 'PENDING')}
+                              className="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center gap-1 cursor-pointer"
+                              title="Regresar a Pendientes"
+                            >
+                              <ArrowLeft className="h-3 w-3" /> Pendiente
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleChangeStatus(task.id, 'COMPLETED')}
+                              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center gap-1 cursor-pointer"
+                              title="Marcar como Completada"
+                            >
+                              <Check className="h-3 w-3" /> Completar
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {inProgressTasks.length === 0 && (
+                      <div className="h-40 flex flex-col items-center justify-center text-center opacity-40">
+                        <Hourglass className="h-6 w-6 text-slate-300 mb-1" />
+                        <span className="text-[11px] font-bold text-slate-400 italic">Sin tareas en progreso</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Completadas Column */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDropStatus(e, 'COMPLETED')}
+                  className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm min-h-[550px] flex flex-col space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-emerald-100 pb-3">
+                    <h3 className="font-extrabold text-slate-800 text-xs tracking-widest uppercase flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                      ✅ Completadas
+                    </h3>
+                    <Badge className="bg-emerald-50 text-emerald-700 border-none rounded-lg text-xs font-bold">
+                      {completedTasks.length}
+                    </Badge>
+                  </div>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[550px] pr-1">
+                    {completedTasks.map((task: any) => {
+                      const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
+                      return (
+                        <div 
+                          key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onClick={() => setSelectedTask(task)}
+                          className="p-4 bg-slate-50/50 hover:bg-white rounded-2xl border border-slate-100 hover:border-slate-200 cursor-grab active:cursor-grabbing transition-all flex flex-col gap-2 opacity-75 hover:opacity-100 group"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-bold text-slate-600 line-through text-xs leading-snug">{task.title}</p>
+                            <Badge className={`border-0 text-[8px] font-black uppercase tracking-widest shrink-0 ${prio.bg} ${prio.color}`}>
+                              {prio.label}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-bold">
+                            <span>👤 {task.assignedUser?.username || "Sin Asignar"}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleChangeStatus(task.id, 'IN_PROGRESS'); }}
+                              className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all cursor-pointer"
+                            >
+                              ↩️ Reanudar
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {completedTasks.length === 0 && (
+                      <div className="h-40 flex flex-col items-center justify-center text-center opacity-40">
+                        <CheckCircle2 className="h-6 w-6 text-slate-300 mb-1" />
+                        <span className="text-[11px] font-bold text-slate-400 italic">No hay tareas completadas</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
             ) : activeTab === "calendar" ? (
               
               /* WEEKLY CALENDAR VIEW */
@@ -347,6 +641,7 @@ export default function AdminTasksPage() {
 
                       <div className="flex-1 space-y-3 overflow-y-auto max-h-[400px] pr-1">
                         {dayTasks.map((task: any) => {
+                          const status = getTaskStatus(task);
                           const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
                           return (
                             <div 
@@ -354,19 +649,23 @@ export default function AdminTasksPage() {
                               draggable
                               onDragStart={(e) => handleDragStart(e, task.id)}
                               onClick={() => setSelectedTask(task)}
-                              className={`p-3 bg-slate-50 hover:bg-slate-100/80 rounded-2xl border border-slate-100 flex flex-col gap-2 cursor-pointer transition-all shadow-sm ${task.isCompleted ? 'opacity-50 line-through' : ''}`}
+                              className={`p-3 rounded-2xl border flex flex-col gap-2 cursor-pointer transition-all shadow-sm ${
+                                status === 'COMPLETED' ? 'bg-emerald-50/30 border-emerald-100 opacity-60 line-through' :
+                                status === 'IN_PROGRESS' ? 'bg-amber-50/40 border-amber-200' :
+                                'bg-slate-50 hover:bg-slate-100/80 border-slate-100'
+                              }`}
                             >
                               <div className="flex items-start justify-between gap-1">
                                 <p className="font-bold text-xs text-slate-800 line-clamp-2 leading-snug">{task.title}</p>
-                                <span className={`h-2 w-2 rounded-full shrink-0 ${prio.bg.replace('bg-', 'bg-').split(' ')[0]}`} style={{ backgroundColor: task.priority === 'URGENTE' ? '#f43f5e' : task.priority === 'IMPORTANTE' ? '#f59e0b' : '#38bdf8' }} />
+                                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: prio.dot }} />
                               </div>
 
                               <div className="flex items-center justify-between gap-1 flex-wrap pt-1 border-t border-slate-100/50">
-                                <span className="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[80px]">
+                                <span className="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[80px]">
                                   👤 {task.assignedUser?.username || "Sin Asignar"}
                                 </span>
                                 <span className="text-[9px] text-[#70125F] font-bold">
-                                  ⏱️ {task.duration || 30} min
+                                  ⏱️ {task.duration || 30}m
                                 </span>
                               </div>
                             </div>
@@ -384,98 +683,6 @@ export default function AdminTasksPage() {
                 })}
               </div>
 
-            ) : activeTab === "kanban" ? (
-              
-              /* KANBAN BOARD VIEW */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Pending Column */}
-                <div 
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDropStatus(e, false)}
-                  className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm min-h-[500px] flex flex-col space-y-4"
-                >
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <h3 className="font-extrabold text-slate-800 text-sm tracking-widest uppercase flex items-center gap-2">
-                      📂 Pendientes
-                    </h3>
-                    <Badge className="bg-sky-50 text-sky-700 border-none rounded-lg text-xs">
-                      {filteredTasks.filter((t: any) => !t.isCompleted).length}
-                    </Badge>
-                  </div>
-
-                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[500px] pr-1">
-                    {filteredTasks.filter((t: any) => !t.isCompleted).map((task: any) => {
-                      const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
-                      return (
-                        <div 
-                          key={task.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          onClick={() => setSelectedTask(task)}
-                          className="p-4 bg-slate-50 hover:bg-slate-100/80 rounded-2xl border border-slate-100 cursor-grab active:cursor-grabbing transition-all flex flex-col gap-2"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <p className="font-bold text-slate-800 text-sm leading-snug">{task.title}</p>
-                            <Badge className={`border-0 text-[8px] font-black uppercase tracking-widest shrink-0 ${prio.bg} ${prio.color}`}>
-                              {prio.label}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-slate-400 line-clamp-1">{task.description}</p>
-                          <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[10px] text-slate-400 font-bold uppercase">
-                            <span>👤 {task.assignedUser?.username || "Sin Asignar"}</span>
-                            <span className="text-[#70125F]">⏱️ {task.duration || 30} min</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Completed Column */}
-                <div 
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDropStatus(e, true)}
-                  className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm min-h-[500px] flex flex-col space-y-4"
-                >
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <h3 className="font-extrabold text-slate-800 text-sm tracking-widest uppercase flex items-center gap-2">
-                      ✅ Completadas
-                    </h3>
-                    <Badge className="bg-emerald-50 text-emerald-700 border-none rounded-lg text-xs">
-                      {filteredTasks.filter((t: any) => t.isCompleted).length}
-                    </Badge>
-                  </div>
-
-                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[500px] pr-1">
-                    {filteredTasks.filter((t: any) => t.isCompleted).map((task: any) => {
-                      const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
-                      return (
-                        <div 
-                          key={task.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          onClick={() => setSelectedTask(task)}
-                          className="p-4 bg-slate-50 hover:bg-slate-100/80 rounded-2xl border border-slate-100 cursor-grab active:cursor-grabbing transition-all flex flex-col gap-2 opacity-60 line-through"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <p className="font-bold text-slate-800 text-sm leading-snug">{task.title}</p>
-                            <Badge className={`border-0 text-[8px] font-black uppercase tracking-widest shrink-0 ${prio.bg} ${prio.color}`}>
-                              {prio.label}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[10px] text-slate-400 font-bold uppercase">
-                            <span>👤 {task.assignedUser?.username || "Sin Asignar"}</span>
-                            <span className="text-[#70125F]">⏱️ {task.duration || 30} min</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
-
             ) : (
               
               /* SIMPLE LIST VIEW */
@@ -485,6 +692,7 @@ export default function AdminTasksPage() {
                     {filteredTasks.length === 0 ? (
                       <div className="p-20 text-center italic text-slate-400">No se encontraron tareas.</div>
                     ) : filteredTasks.map((task: any) => {
+                      const status = getTaskStatus(task);
                       const prio = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.INFORMATIVO;
                       return (
                         <div 
@@ -492,16 +700,37 @@ export default function AdminTasksPage() {
                           onClick={() => setSelectedTask(task)}
                           className="p-6 hover:bg-slate-50/50 transition-all flex items-center justify-between gap-6 cursor-pointer group"
                         >
-                          <div className="flex gap-4 items-start">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }} 
-                              className="mt-1 transition-transform active:scale-90 text-slate-300 hover:text-emerald-500"
-                            >
-                              {task.isCompleted ? <CheckSquare className="h-5 w-5 text-emerald-500" /> : <Square className="h-5 w-5" />}
-                            </button>
-                            <div className="space-y-1">
-                              <p className={`font-bold text-slate-800 ${task.isCompleted ? 'line-through text-slate-400' : 'group-hover:text-primary transition-colors'}`}>{task.title}</p>
-                              <p className="text-xs text-slate-500 line-clamp-1">{task.description}</p>
+                          <div className="flex gap-4 items-start flex-1">
+                            <div className="mt-1">
+                              {status === 'COMPLETED' ? (
+                                <button onClick={(e) => { e.stopPropagation(); handleChangeStatus(task.id, 'PENDING'); }} title="Reabrir">
+                                  <CheckSquare className="h-5 w-5 text-emerald-500" />
+                                </button>
+                              ) : status === 'IN_PROGRESS' ? (
+                                <button onClick={(e) => { e.stopPropagation(); handleChangeStatus(task.id, 'COMPLETED'); }} title="Completar">
+                                  <Hourglass className="h-5 w-5 text-amber-500 animate-pulse" />
+                                </button>
+                              ) : (
+                                <button onClick={(e) => { e.stopPropagation(); handleChangeStatus(task.id, 'IN_PROGRESS'); }} title="Iniciar">
+                                  <Square className="h-5 w-5 text-slate-300 hover:text-amber-500" />
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-3">
+                                <p className={`font-bold text-slate-800 text-sm ${status === 'COMPLETED' ? 'line-through text-slate-400' : 'group-hover:text-[#70125F] transition-colors'}`}>
+                                  {task.title}
+                                </p>
+                                <Badge className={`border-none text-[8px] font-black uppercase tracking-widest ${
+                                  status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
+                                  status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700' :
+                                  'bg-sky-50 text-sky-700'
+                                }`}>
+                                  {status === 'COMPLETED' ? 'Completada' : status === 'IN_PROGRESS' ? 'En Proceso' : 'Pendiente'}
+                                </Badge>
+                              </div>
+                              {task.description && <p className="text-xs text-slate-500 line-clamp-1">{task.description}</p>}
                               
                               <div className="flex items-center gap-3 flex-wrap text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1">
                                 <Badge className={`border-none text-[8px] font-black uppercase tracking-widest ${prio.bg} ${prio.color}`}>
@@ -523,13 +752,13 @@ export default function AdminTasksPage() {
 
           </div>
 
-          {/* Right Column: Detailed View / Log */}
+          {/* Right Column: Detailed View / Log / Drawer */}
           <div className="lg:col-span-4 space-y-6">
             {activeTask ? (
               <div className="sticky top-8 animate-in slide-in-from-right-4 duration-500">
                 
                 {editingTask ? (
-                  /* EDITING FORM DRIVER */
+                  /* EDITING FORM */
                   <Card className="border-none shadow-xl bg-white rounded-[2.5rem] p-8 border border-slate-100 space-y-6">
                     <div className="flex justify-between items-center border-b pb-4">
                       <h3 className="text-lg font-extrabold text-slate-900 font-serif">Editar Tarea</h3>
@@ -562,32 +791,45 @@ export default function AdminTasksPage() {
 
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
+                          <label className="font-bold uppercase tracking-widest text-[#70125F]">Estado</label>
+                          <select 
+                            value={editingTask.status} 
+                            onChange={(e) => setEditingTask({...editingTask, status: e.target.value})}
+                            className="w-full h-11 bg-slate-50 border-none rounded-xl px-2 outline-none font-semibold"
+                          >
+                            <option value="PENDING">📂 Pendiente</option>
+                            <option value="IN_PROGRESS">⏳ En Proceso</option>
+                            <option value="COMPLETED">✅ Completada</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
                           <label className="font-bold uppercase tracking-widest text-[#70125F]">Prioridad</label>
                           <select 
                             value={editingTask.priority} 
                             onChange={(e) => setEditingTask({...editingTask, priority: e.target.value})}
                             className="w-full h-11 bg-slate-50 border-none rounded-xl px-2 outline-none font-semibold"
                           >
-                            <option value="URGENTE">Urgente</option>
-                            <option value="IMPORTANTE">Importante</option>
-                            <option value="RECORDATORIO">Recordatorio</option>
-                            <option value="INFORMATIVO">Informativo</option>
+                            <option value="URGENTE">Urgente 🔥</option>
+                            <option value="IMPORTANTE">Importante 🌟</option>
+                            <option value="RECORDATORIO">Recordatorio ⏱️</option>
+                            <option value="INFORMATIVO">Informativo 📝</option>
                           </select>
                         </div>
+                      </div>
 
-                        <div className="space-y-1">
-                          <label className="font-bold uppercase tracking-widest text-[#70125F]">Colaborador</label>
-                          <select 
-                            value={editingTask.assignedUserId || ""} 
-                            onChange={(e) => setEditingTask({...editingTask, assignedUserId: e.target.value})}
-                            className="w-full h-11 bg-slate-50 border-none rounded-xl px-2 outline-none font-semibold"
-                          >
-                            <option value="">Sin Asignar</option>
-                            {collaborators.map((user: any) => (
-                              <option key={user.id} value={user.id}>{user.username}</option>
-                            ))}
-                          </select>
-                        </div>
+                      <div className="space-y-1">
+                        <label className="font-bold uppercase tracking-widest text-[#70125F]">Colaborador Responsable</label>
+                        <select 
+                          value={editingTask.assignedUserId || ""} 
+                          onChange={(e) => setEditingTask({...editingTask, assignedUserId: e.target.value})}
+                          className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 outline-none font-semibold"
+                        >
+                          <option value="">Sin Asignar</option>
+                          {collaborators.map((user: any) => (
+                            <option key={user.id} value={user.id}>{getCollaboratorName(user)}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -602,7 +844,7 @@ export default function AdminTasksPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="font-bold uppercase tracking-widest text-[#70125F]">Tiempo (Minutos)</label>
+                          <label className="font-bold uppercase tracking-widest text-[#70125F]">Tiempo (Min)</label>
                           <input 
                             type="number" 
                             value={editingTask.duration || 30} 
@@ -622,12 +864,18 @@ export default function AdminTasksPage() {
                     </form>
                   </Card>
                 ) : (
-                  /* DETAILED STATIC CARD */
+                  /* DETAILED STATIC CARD WITH INTERACTIVE STATUS AND ASSIGNMENT */
                   <Card className="border-none shadow-xl bg-slate-900 text-white rounded-[2.5rem] overflow-hidden">
-                    <div className="p-8 space-y-8">
+                    <div className="p-8 space-y-6">
                       <div className="flex justify-between items-start">
-                        <Badge className="bg-primary/20 text-primary border-primary/20 font-black text-[9px] uppercase tracking-widest px-3 py-1">
-                          {activeTask.isCompleted ? "Tarea Completada" : "Detalle de Tarea"}
+                        <Badge className={`border-none font-black text-[9px] uppercase tracking-widest px-3 py-1 ${
+                          getTaskStatus(activeTask) === 'COMPLETED' ? 'bg-emerald-500/20 text-emerald-300' :
+                          getTaskStatus(activeTask) === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-300' :
+                          'bg-sky-500/20 text-sky-300'
+                        }`}>
+                          {getTaskStatus(activeTask) === 'COMPLETED' ? '✅ Completada' :
+                           getTaskStatus(activeTask) === 'IN_PROGRESS' ? '⏳ En Proceso' :
+                           '📂 Pendiente'}
                         </Badge>
                         <div className="flex items-center gap-1">
                           <button 
@@ -638,10 +886,12 @@ export default function AdminTasksPage() {
                               assignedTo: activeTask.assignedTo,
                               assignedUserId: activeTask.assignedUser?.id || "",
                               priority: activeTask.priority,
+                              status: getTaskStatus(activeTask),
                               dueDate: activeTask.dueDate,
                               duration: activeTask.duration
                             })}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-slate-400"
+                            title="Editar Tarea"
                           >
                             <Edit3 className="h-4 w-4" />
                           </button>
@@ -656,14 +906,71 @@ export default function AdminTasksPage() {
                         <p className="text-slate-400 text-xs leading-relaxed">{activeTask.description || "Sin descripción"}</p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Responsable</p>
-                          <p className="font-bold text-slate-200">{activeTask.assignedUser?.username || "Sin Asignar"}</p>
+                      {/* State Action Selector */}
+                      <div className="space-y-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cambiar Estado Rápido</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChangeStatus(activeTask.id, 'PENDING')}
+                            className={`py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              getTaskStatus(activeTask) === 'PENDING'
+                                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/30'
+                                : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                          >
+                            <Clock className="h-3 w-3" /> Pendiente
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleChangeStatus(activeTask.id, 'IN_PROGRESS')}
+                            className={`py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              getTaskStatus(activeTask) === 'IN_PROGRESS'
+                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                                : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                          >
+                            <Hourglass className="h-3 w-3" /> Proceso
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleChangeStatus(activeTask.id, 'COMPLETED')}
+                            className={`py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              getTaskStatus(activeTask) === 'COMPLETED'
+                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                                : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                          >
+                            <Check className="h-3 w-3" /> Hecho
+                          </button>
                         </div>
+                      </div>
+
+                      {/* Quick Assign Collaborator */}
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Responsable Asignado</p>
+                        <select
+                          value={activeTask.assignedUser?.id || ""}
+                          onChange={(e) => handleReassignUser(activeTask.id, e.target.value)}
+                          className="w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-100 outline-none cursor-pointer"
+                        >
+                          <option value="" className="bg-slate-900 text-slate-300">⚪ Sin Asignar</option>
+                          {collaborators.map((user: any) => (
+                            <option key={user.id} value={user.id} className="bg-slate-900 text-slate-100">
+                              👤 {getCollaboratorName(user)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs">
                         <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
                           <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Duración</p>
                           <p className="font-bold text-primary italic">{activeTask.duration || 30} minutos</p>
+                        </div>
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Prioridad</p>
+                          <p className="font-bold text-slate-200">{PRIORITY_CONFIG[activeTask.priority]?.label || activeTask.priority}</p>
                         </div>
                       </div>
 
@@ -686,9 +993,10 @@ export default function AdminTasksPage() {
                         </div>
                       )}
 
-                      <div className="space-y-4">
+                      {/* Log / Notes Area */}
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Registro y Notas</label>
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bitácora y Notas</label>
                           <button
                             type="button"
                             onClick={() => handleUpdateLog(activeTask, localLog)}
@@ -698,27 +1006,21 @@ export default function AdminTasksPage() {
                           </button>
                         </div>
                         <textarea 
-                          rows={5} 
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl p-3 text-xs text-slate-300 outline-none focus:ring-1 focus:ring-primary/40 font-medium" 
-                          placeholder="Registra avances, tiempos dedicados, etc..."
+                          rows={4} 
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl p-3 text-xs text-slate-200 outline-none focus:ring-1 focus:ring-primary/40 font-medium" 
+                          placeholder="Registra avances, tiempos dedicados, notas de gestión..."
                           value={localLog}
                           onChange={(e) => setLocalLog(e.target.value)}
                         />
                       </div>
 
-                      <div className="flex gap-4 pt-4">
-                        <Button 
-                          onClick={() => handleToggleComplete(activeTask)} 
-                          className="flex-1 bg-white hover:bg-white/95 text-slate-900 h-12 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer"
-                        >
-                          {activeTask.isCompleted ? "Reabrir Tarea" : "Marcar Realizada"}
-                        </Button>
+                      <div className="flex gap-3 pt-2">
                         <Button 
                           variant="ghost" 
                           onClick={() => { if(confirm("¿Eliminar tarea permanentemente?")) deleteTask({ variables: { id: parseInt(activeTask.id) } }) }} 
-                          className="h-12 w-12 rounded-2xl text-rose-400 hover:bg-rose-400/10 cursor-pointer"
+                          className="w-full h-11 rounded-2xl text-rose-400 hover:bg-rose-400/10 text-xs font-bold uppercase tracking-wider cursor-pointer"
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-4 w-4 mr-2" /> Eliminar Tarea
                         </Button>
                       </div>
                     </div>
@@ -727,12 +1029,14 @@ export default function AdminTasksPage() {
 
               </div>
             ) : (
-              <div className="h-[300px] bg-white rounded-[2.5rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8 shadow-sm">
+              <div className="h-[320px] bg-white rounded-[2.5rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8 shadow-sm">
                 <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 shadow-sm border border-slate-100 mb-4">
                   <ClipboardList className="h-6 w-6 text-[#70125F]" />
                 </div>
-                <h4 className="text-slate-400 font-bold text-sm">Sin tarea seleccionada</h4>
-                <p className="text-slate-300 text-xs mt-1 italic">Haz clic en una tarea para ver su bitácora e ingresar tiempos.</p>
+                <h4 className="text-slate-700 font-bold text-sm">Sin tarea seleccionada</h4>
+                <p className="text-slate-400 text-xs mt-1 italic max-w-xs">
+                  Haz clic en cualquier tarea del tablero para ver sus notas, reasignar responsable o cambiar su estado.
+                </p>
               </div>
             )}
           </div>
@@ -747,8 +1051,8 @@ export default function AdminTasksPage() {
           <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto border border-slate-100">
             <div className="flex justify-between items-center border-b pb-4">
               <div>
-                <h3 className="text-2xl font-bold font-serif">Nueva Tarea</h3>
-                <p className="text-slate-400 text-xs italic">Define la operación, el responsable y el calendario.</p>
+                <h3 className="text-2xl font-bold font-serif">Nueva Tarea Operativa</h3>
+                <p className="text-slate-400 text-xs italic">Define la actividad, el responsable y el estado inicial.</p>
               </div>
               <button onClick={() => setIsNewOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
                 <X className="h-6 w-6 text-slate-400" />
@@ -761,7 +1065,7 @@ export default function AdminTasksPage() {
                 <input 
                   required
                   type="text" 
-                  placeholder="Ej: Conciliar transferencias bancarias del día" 
+                  placeholder="Ej: Confirmar salas para clases del sábado" 
                   value={formData.title} 
                   onChange={(e) => setFormData({...formData, title: e.target.value})} 
                   className="w-full h-11 bg-slate-50 border-none rounded-xl px-4 font-bold outline-none" 
@@ -769,6 +1073,19 @@ export default function AdminTasksPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold uppercase tracking-widest text-[#70125F]">Estado Inicial</label>
+                  <select 
+                    value={formData.status} 
+                    onChange={(e) => setFormData({...formData, status: e.target.value})} 
+                    className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 font-semibold outline-none"
+                  >
+                    <option value="PENDING">📂 Pendiente</option>
+                    <option value="IN_PROGRESS">⏳ En Proceso</option>
+                    <option value="COMPLETED">✅ Completada</option>
+                  </select>
+                </div>
+
                 <div className="space-y-1">
                   <label className="font-bold uppercase tracking-widest text-[#70125F]">Prioridad</label>
                   <select 
@@ -782,20 +1099,20 @@ export default function AdminTasksPage() {
                     <option value="INFORMATIVO">Informativo 📝</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold uppercase tracking-widest text-[#70125F]">Colaborador Asignado</label>
-                  <select 
-                    value={formData.assignedUserId} 
-                    onChange={(e) => setFormData({...formData, assignedUserId: e.target.value})} 
-                    className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 font-semibold outline-none"
-                  >
-                    <option value="">Sin Asignar</option>
-                    {collaborators.map((user: any) => (
-                      <option key={user.id} value={user.id}>{user.username}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="font-bold uppercase tracking-widest text-[#70125F]">Colaborador Responsable</label>
+                <select 
+                  value={formData.assignedUserId} 
+                  onChange={(e) => setFormData({...formData, assignedUserId: e.target.value})} 
+                  className="w-full h-11 bg-slate-50 border-none rounded-xl px-3 font-semibold outline-none"
+                >
+                  <option value="">Sin Asignar</option>
+                  {collaborators.map((user: any) => (
+                    <option key={user.id} value={user.id}>{getCollaboratorName(user)}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -846,6 +1163,7 @@ export default function AdminTasksPage() {
                     assignedTo: formData.assignedTo,
                     assignedUserId: formData.assignedUserId ? parseInt(formData.assignedUserId as string) : null,
                     priority: formData.priority,
+                    status: formData.status,
                     dueDate: formData.dueDate || null,
                     duration: formData.duration,
                     log: formData.log

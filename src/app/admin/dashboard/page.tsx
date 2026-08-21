@@ -183,7 +183,7 @@ export default function AdminDashboard() {
         <Card className="border-none shadow-sm bg-white rounded-[2.5rem] p-10 space-y-8 flex flex-col h-full">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold font-serif text-slate-900 italic">Recordatorios</h2>
-            <Badge className="bg-primary/10 text-primary border-none">{notesData?.allDashboardNotes?.length || 0}</Badge>
+            <Badge className="bg-primary/10 text-primary border-none">{notesData?.allAcademyTasks?.length || 0}</Badge>
           </div>
 
           <form onSubmit={handleAddNote} className="relative group">
@@ -200,10 +200,10 @@ export default function AdminDashboard() {
           </form>
 
           <div className="flex-1 space-y-4 overflow-y-auto max-h-[400px] pr-2">
-            {notesData?.allDashboardNotes?.map((note: any) => (
+            {notesData?.allAcademyTasks?.map((note: any) => (
               <div key={note.id} className="group flex items-start gap-4 p-4 rounded-2xl bg-white border border-slate-50 hover:border-slate-100 hover:shadow-sm transition-all">
                 <button 
-                  onClick={() => toggleNote({ variables: { id: parseInt(note.id) } })}
+                  onClick={() => toggleNote({ variables: { id: parseInt(note.id), isCompleted: !note.isCompleted } })}
                   className={`mt-1 h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                     note.isCompleted ? 'bg-primary border-primary text-white' : 'border-slate-200 hover:border-primary'
                   }`}
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                 </button>
                 <div className="flex-1">
                   <p className={`text-sm font-medium transition-all ${note.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                    {note.text}
+                    {note.title}
                   </p>
                 </div>
                 <button 
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
               </div>
             ))}
 
-            {(!notesData?.allDashboardNotes || notesData?.allDashboardNotes.length === 0) && (
+            {(!notesData?.allAcademyTasks || notesData?.allAcademyTasks.length === 0) && (
               <div className="flex flex-col items-center justify-center py-10 text-slate-300 space-y-3">
                 <Clock className="h-8 w-8 opacity-20" />
                 <p className="text-xs italic font-medium">No hay tareas pendientes</p>
