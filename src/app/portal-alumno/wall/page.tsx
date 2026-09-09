@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
 import { useQuery } from "@apollo/client/react/index.js";
 import { MY_WALL_MESSAGES } from "@/graphql/queries/portal-queries";
 import { format, parseISO } from "date-fns";
@@ -110,7 +110,7 @@ export default function StudentWallPage() {
 
                         {note.attachedMaterial && (
                           <div className="mt-4">
-                            <a href={note.attachedMaterial.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-primary/50 hover:shadow-md transition-all group">
+                            <a href={getMediaUrl(note.attachedMaterial.url)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-primary/50 hover:shadow-md transition-all group">
                               <div className="flex items-center gap-4">
                                 <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-primary/5 transition-colors">
                                   {getTypeIcon(note.attachedMaterial.type)}

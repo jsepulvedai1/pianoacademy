@@ -18,6 +18,7 @@ import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { CREATE_MATERIAL, UPDATE_MATERIAL, DELETE_MATERIAL } from "@/graphql/mutations/material-mutations";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { getMediaUrl } from "@/lib/utils";
 
 type ScopeFilter = "ALL" | "DETACHE" | "TEACHER";
 
@@ -234,7 +235,7 @@ export default function AdminMaterialsPage() {
 
   const handleCopyLink = (material: any) => {
     if (!material.url) return;
-    navigator.clipboard.writeText(material.url);
+    navigator.clipboard.writeText(getMediaUrl(material.url));
     setCopiedId(material.id);
     toast.success("Enlace copiado al portapapeles 📋");
     setTimeout(() => setCopiedId(null), 2000);
@@ -497,7 +498,7 @@ export default function AdminMaterialsPage() {
                   <div className="space-y-2 pt-2">
                     <div className="flex items-center gap-2">
                       <a
-                        href={m.url}
+                        href={getMediaUrl(m.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"

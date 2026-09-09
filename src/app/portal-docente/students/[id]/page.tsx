@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getMediaUrl } from "@/lib/utils";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_STUDENT_PORTAL_DATA } from "@/graphql/queries/student-portal";
 import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
@@ -296,7 +296,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
                              {note.text && <p className="text-sm text-slate-600 mb-3">{note.text}</p>}
                              
                              {note.attachedMaterial && (
-                               <a href={note.attachedMaterial.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 hover:border-indigo-300 transition-colors group">
+                               <a href={getMediaUrl(note.attachedMaterial.url)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 hover:border-indigo-300 transition-colors group">
                                  <div className="flex items-center gap-3">
                                    <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center">
                                      {getTypeIcon(note.attachedMaterial.type)}
