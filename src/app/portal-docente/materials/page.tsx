@@ -101,9 +101,8 @@ export default function TeacherMaterialsPage() {
       uploadData.append("file", file);
       uploadData.append("folder", "materials");
 
-      const endpoint = process.env.NEXT_PUBLIC_DJANGO_API_URL 
-        ? `${process.env.NEXT_PUBLIC_DJANGO_API_URL}/api/media/upload/`
-        : "http://localhost:8000/api/media/upload/";
+      const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || process.env.NEXT_PUBLIC_DJANGO_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "https://api.detache.cl");
+      const endpoint = `${djangoUrl}/api/media/upload/`;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -111,16 +110,18 @@ export default function TeacherMaterialsPage() {
       });
 
       const data = await res.json();
-      if (data.status === "SUCCESS" && data.url) {
+      if (data.status === "SUCCESS") {
         const fileExt = file.name.split('.').pop()?.toLowerCase();
         let detectedType = "PDF";
         if (["mp3", "wav", "ogg", "aac", "flac"].includes(fileExt || "")) detectedType = "AUDIO";
         else if (["mp4", "mov", "avi", "webm", "mkv"].includes(fileExt || "")) detectedType = "VIDEO";
         else if (["pdf", "doc", "docx", "xls", "xlsx"].includes(fileExt || "")) detectedType = "PDF";
 
+        const resourceUrl = data.url || (data.relativeUrl ? `${djangoUrl}${data.relativeUrl}` : "");
+
         setFormData(prev => ({
           ...prev,
-          url: data.url,
+          url: resourceUrl,
           title: prev.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
           type: detectedType
         }));

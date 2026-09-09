@@ -201,9 +201,14 @@ export default function UsersAdminPage() {
 
   const handleUpdate = () => {
     if (!editForm.id) return;
+    const parsedId = parseInt(String(editForm.id), 10);
+    if (isNaN(parsedId)) {
+      toast.error("ID inválido");
+      return;
+    }
     updateAccount({
       variables: {
-        id: editForm.id,
+        id: parsedId,
         password: editForm.password || null,
         role: editForm.role,
         allowedSections: editForm.allowedSections
@@ -211,9 +216,14 @@ export default function UsersAdminPage() {
     });
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: number | string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este colaborador? Esta acción no se puede deshacer.")) {
-      deleteAccount({ variables: { id } });
+      const parsedId = parseInt(String(id), 10);
+      if (isNaN(parsedId)) {
+        toast.error("ID inválido");
+        return;
+      }
+      deleteAccount({ variables: { id: parsedId } });
     }
   };
 
