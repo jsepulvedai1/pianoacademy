@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, Camera, Lock, Loader2, Calendar, Clock, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { User, Camera, Lock, Loader2, Calendar, Clock, CheckCircle2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
 import { CHANGE_MY_PASSWORD } from "@/graphql/mutations/student-mutations";
-import { CREATE_AVAILABILITY, DELETE_AVAILABILITY } from "@/graphql/mutations/availability-mutations";
 
 const DAY_MAP_EN_TO_ES: Record<string, string> = {
   MONDAY: "Lunes",
@@ -21,16 +20,6 @@ const DAY_MAP_EN_TO_ES: Record<string, string> = {
   FRIDAY: "Viernes",
   SATURDAY: "Sábado",
   SUNDAY: "Domingo"
-};
-
-const DAY_MAP_ES_TO_EN: Record<string, string> = {
-  "Lunes": "MONDAY",
-  "Martes": "TUESDAY",
-  "Miércoles": "WEDNESDAY",
-  "Jueves": "THURSDAY",
-  "Viernes": "FRIDAY",
-  "Sábado": "SATURDAY",
-  "Domingo": "SUNDAY"
 };
 
 const DAYS_ORDER = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -43,34 +32,8 @@ export default function TeacherProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [isChangingPass, setIsChangingPass] = useState(false);
 
-  const [isAddingAvail, setIsAddingAvail] = useState(false);
-  const [availDay, setAvailDay] = useState("Lunes");
-  const [availStartTime, setAvailStartTime] = useState("09:00");
-  const [availEndTime, setAvailEndTime] = useState("13:00");
-
-  const { data: profileData, loading, refetch } = useQuery<any>(MY_TEACHER_PROFILE);
+  const { data: profileData, loading } = useQuery<any>(MY_TEACHER_PROFILE);
   const teacher = profileData?.myTeacherProfile;
-
-  const [createAvailability, { loading: isCreatingAvail }] = useMutation(CREATE_AVAILABILITY, {
-    onCompleted: () => {
-      toast.success("¡Horario de disponibilidad agregado! ✅");
-      setIsAddingAvail(false);
-      refetch();
-    },
-    onError: (err) => {
-      toast.error("Error al guardar horario: " + err.message);
-    }
-  });
-
-  const [deleteAvailability, { loading: isDeletingAvail }] = useMutation(DELETE_AVAILABILITY, {
-    onCompleted: () => {
-      toast.success("Horario eliminado");
-      refetch();
-    },
-    onError: (err) => {
-      toast.error("Error al eliminar horario: " + err.message);
-    }
-  });
 
   const [changePassword] = useMutation(CHANGE_MY_PASSWORD, {
     onCompleted: (res: any) => {
@@ -95,25 +58,6 @@ export default function TeacherProfilePage() {
     setIsChangingPass(true);
     changePassword({
       variables: { currentPassword, newPassword }
-    });
-  };
-
-  const handleAddAvailability = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!teacher?.id) return;
-    createAvailability({
-      variables: {
-        teacherId: parseInt(teacher.id),
-        day: DAY_MAP_ES_TO_EN[availDay] || "MONDAY",
-        startTime: availStartTime,
-        endTime: availEndTime
-      }
-    });
-  };
-
-  const handleDeleteAvailability = (id: string | number) => {
-    deleteAvailability({
-      variables: { id: parseInt(id.toString()) }
     });
   };
 
@@ -178,10 +122,10 @@ export default function TeacherProfilePage() {
                 {isUploading ? "Subiendo..." : "Cambiar Foto"}
              </Button>
           </Card>
-          <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-100 flex items-start gap-4">
-             <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-             <p className="text-xs text-emerald-800 leading-relaxed font-medium">
-                La foto y los horarios que configures aquí serán los que los alumnos verán al agendar clases contigo.
+          <div className="bg-slate-100/80 rounded-3xl p-6 border border-slate-200/80 flex items-start gap-4">
+             <Clock className="h-5 w-5 text-[#70125F] shrink-0 mt-0.5" />
+             <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Tus horarios de atención son asignados y administrados por Coordinación Académica. Si requieres cambios en tu disponibilidad, por favor contacta a Gerencia.
              </p>
           </div>
         </div>
@@ -195,80 +139,17 @@ export default function TeacherProfilePage() {
                           <Calendar className="h-4 w-4" />
                           <h3 className="text-sm font-bold uppercase tracking-widest">Mi Disponibilidad Horaria</h3>
                        </div>
-                       <p className="text-xs text-slate-500 mt-1">Bloques en los que estás disponible para dictar clases.</p>
+                       <p className="text-xs text-slate-500 mt-1">Bloques semanales asignados por administración para dictar clases.</p>
                     </div>
-                    <Button
-                       onClick={() => setIsAddingAvail(!isAddingAvail)}
-                       size="sm"
-                       className="bg-[#70125F] hover:bg-[#590e4b] text-white rounded-xl text-xs font-bold gap-1.5 cursor-pointer shadow-md shadow-[#70125F]/20"
-                    >
-                       <Plus className="h-3.5 w-3.5" /> {isAddingAvail ? "Cancelar" : "Agregar Horario"}
-                    </Button>
+                    <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-400 border-slate-200 bg-slate-50 px-3 py-1 rounded-lg">
+                       Solo Lectura
+                    </Badge>
                  </div>
-
-                 {isAddingAvail && (
-                    <form onSubmit={handleAddAvailability} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 animate-in fade-in">
-                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Nuevo Bloque de Atención</h4>
-                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="space-y-1">
-                             <Label className="text-[10px] font-bold uppercase text-slate-400">Día de la Semana</Label>
-                             <select
-                                value={availDay}
-                                onChange={(e) => setAvailDay(e.target.value)}
-                                className="w-full h-10 bg-white border border-slate-200 rounded-xl text-xs px-3 outline-none"
-                             >
-                                {DAYS_ORDER.map((d) => (
-                                   <option key={d} value={d}>{d}</option>
-                                ))}
-                             </select>
-                          </div>
-                          <div className="space-y-1">
-                             <Label className="text-[10px] font-bold uppercase text-slate-400">Hora Inicio</Label>
-                             <Input
-                                type="time"
-                                required
-                                value={availStartTime}
-                                onChange={(e) => setAvailStartTime(e.target.value)}
-                                className="h-10 bg-white border-slate-200 rounded-xl text-xs"
-                             />
-                          </div>
-                          <div className="space-y-1">
-                             <Label className="text-[10px] font-bold uppercase text-slate-400">Hora Término</Label>
-                             <Input
-                                type="time"
-                                required
-                                value={availEndTime}
-                                onChange={(e) => setAvailEndTime(e.target.value)}
-                                className="h-10 bg-white border-slate-200 rounded-xl text-xs"
-                             />
-                          </div>
-                       </div>
-                       <div className="flex justify-end gap-2 pt-1">
-                          <Button
-                             type="button"
-                             variant="outline"
-                             size="sm"
-                             onClick={() => setIsAddingAvail(false)}
-                             className="rounded-xl text-xs"
-                          >
-                             Cancelar
-                          </Button>
-                          <Button
-                             type="submit"
-                             size="sm"
-                             disabled={isCreatingAvail}
-                             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5"
-                          >
-                             {isCreatingAvail ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Guardar Bloque
-                          </Button>
-                       </div>
-                    </form>
-                 )}
 
                  <div className="space-y-2.5">
                     {availabilities.length === 0 ? (
                        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs italic">
-                          No tienes horarios registrados.
+                          No tienes horarios de disponibilidad registrados por administración.
                        </div>
                     ) : (
                        groupedAvailabilities.map(({ dayName, items }) => (
@@ -285,13 +166,6 @@ export default function TeacherProfilePage() {
                                             <span className="font-mono font-bold text-slate-800 text-[11px]">
                                                {av.startTime?.slice(0, 5)} - {av.endTime?.slice(0, 5)}
                                             </span>
-                                            <button
-                                               onClick={() => handleDeleteAvailability(av.id)}
-                                               disabled={isDeletingAvail}
-                                               className="ml-1 text-slate-300 hover:text-red-600 transition-colors cursor-pointer"
-                                            >
-                                               <Trash2 className="h-3 w-3" />
-                                            </button>
                                          </div>
                                       ))
                                    )}
