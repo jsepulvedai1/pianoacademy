@@ -104,10 +104,15 @@ export default function AdminSettingsPage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const rawVal = formData.trialClassPrice as any;
+    const parsedPrice = rawVal === "" || rawVal === null || isNaN(Number(rawVal))
+      ? 15000
+      : Number(rawVal);
+
     updateSettings({
       variables: {
         ...formData,
-        trialClassPrice: Number(formData.trialClassPrice) || 15000
+        trialClassPrice: parsedPrice
       }
     });
   };
@@ -333,8 +338,11 @@ export default function AdminSettingsPage() {
                           min="0"
                           step="500"
                           required
-                          value={formData.trialClassPrice}
-                          onChange={(e) => setFormData({ ...formData, trialClassPrice: Number(e.target.value) })}
+                          value={formData.trialClassPrice === 0 ? "0" : (formData.trialClassPrice ?? "")}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData({ ...formData, trialClassPrice: val === "" ? ("" as any) : Number(val) });
+                          }}
                           className="h-12 bg-slate-50 border-none rounded-xl font-mono text-base font-bold text-slate-800"
                           placeholder="15000"
                         />

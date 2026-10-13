@@ -69,6 +69,7 @@ export const UPDATE_STUDENT = gql`
     $guardianName: String,
     $guardianPhone: String,
     $status: String,
+    $returnDate: Date,
     $phoneNumber: String,
     $level: String,
     $primaryInstrumentId: Int,
@@ -83,6 +84,7 @@ export const UPDATE_STUDENT = gql`
       guardianName: $guardianName,
       guardianPhone: $guardianPhone,
       status: $status,
+      returnDate: $returnDate,
       phoneNumber: $phoneNumber,
       level: $level,
       primaryInstrumentId: $primaryInstrumentId,
@@ -97,6 +99,7 @@ export const UPDATE_STUDENT = gql`
         guardianName
         guardianPhone
         status
+        returnDate
         phoneNumber
         level
         primaryInstrument {

@@ -30,12 +30,14 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; i
 };
 
 function ProgressBar({ used, total }: { used: number; total: number }) {
-  const pct = Math.round((used / total) * 100);
+  const safeUsed = Math.max(0, used);
+  const safeTotal = Math.max(1, total);
+  const pct = Math.min(100, Math.max(0, Math.round((safeUsed / safeTotal) * 100)));
   const color = pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{used}/{total} clases</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{safeUsed}/{safeTotal} clases</span>
         <span className={`text-[10px] font-bold ${pct >= 90 ? 'text-rose-600' : pct >= 70 ? 'text-amber-600' : 'text-emerald-600'}`}>{pct}%</span>
       </div>
       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -60,14 +62,14 @@ export default function AdminPacksPage() {
     id: p.id,
     nombre: p.plan.name,
     totalClases: p.totalClasses,
-    clasesUsadas: p.totalClasses - p.remainingClasses,
+    clasesUsadas: Math.max(0, p.totalClasses - p.remainingClasses),
     clasesRestantes: p.remainingClasses,
     precio: parseFloat(p.plan.price),
     alumnoId: p.student.id,
     alumnoNombre: p.student.name,
     profesorNombre: "Por asignar", // Se podría enriquecer en el modelo
     instrumento: "General",
-    estado: p.isActive ? (p.remainingClasses > 0 ? 'ACTIVO' : 'COMPLETADO') : 'PAUSADO',
+    estado: p.isActive ? (p.remainingClasses > 0 ? 'ACTIVO' : 'COMPLETADO') : 'COMPLETADO',
     fechaInicio: p.purchaseDate
   })), [packsData]);
 
@@ -194,7 +196,7 @@ export default function AdminPacksPage() {
           <input type="text" placeholder="Buscar alumno, profesor, instrumento..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-2">
-          {(['ALL', 'ACTIVO', 'COMPLETADO', 'VENCIDO', 'PAUSADO'] as const).map(s => (
+          {(['ALL', 'ACTIVO', 'COMPLETADO', 'VENCIDO'] as const).map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${statusFilter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'}`}>
               {s === 'ALL' ? 'Todos' : statusConfig[s]?.label || s}

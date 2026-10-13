@@ -9,6 +9,7 @@ export const CREATE_TEACHER = gql`
     $rut: String,
     $address: String,
     $email: String,
+    $birthDate: Date,
     $specialtyIds: [Int],
     $provisionalPassword: String
   ) {
@@ -20,6 +21,7 @@ export const CREATE_TEACHER = gql`
       rut: $rut, 
       address: $address, 
       email: $email, 
+      birthDate: $birthDate,
       specialtyIds: $specialtyIds,
       provisionalPassword: $provisionalPassword
     ) {
@@ -35,6 +37,7 @@ export const CREATE_TEACHER = gql`
         rut
         address
         email
+        birthDate
         specialties {
           id
           name
@@ -54,6 +57,7 @@ export const UPDATE_TEACHER = gql`
     $rut: String,
     $address: String,
     $email: String,
+    $birthDate: Date,
     $specialtyIds: [Int]
   ) {
     updateTeacher(
@@ -62,9 +66,10 @@ export const UPDATE_TEACHER = gql`
       description: $description, 
       status: $status, 
       phoneNumber: $phoneNumber, 
-      rut: $rut,
-      address: $address,
-      email: $email,
+      rut: $rut, 
+      address: $address, 
+      email: $email, 
+      birthDate: $birthDate,
       specialtyIds: $specialtyIds
     ) {
       teacher {
@@ -76,10 +81,37 @@ export const UPDATE_TEACHER = gql`
         rut
         address
         email
+        birthDate
         specialties {
           id
           name
         }
+      }
+    }
+  }
+`;
+
+export const UPDATE_MY_TEACHER_PROFILE = gql`
+  mutation UpdateMyTeacherProfile(
+    $phoneNumber: String
+    $email: String
+    $birthDate: Date
+    $description: String
+  ) {
+    updateMyTeacherProfile(
+      phoneNumber: $phoneNumber
+      email: $email
+      birthDate: $birthDate
+      description: $description
+    ) {
+      success
+      teacher {
+        id
+        name
+        email
+        phoneNumber
+        birthDate
+        description
       }
     }
   }

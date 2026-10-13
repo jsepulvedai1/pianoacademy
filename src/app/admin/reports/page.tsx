@@ -26,6 +26,8 @@ const SERVICE_LABELS: Record<string, string> = {
   PIANO_NINOS: "Piano Niños",
   PIANO_ADULTOS: "Piano Adultos",
   CANTO: "Canto",
+  VIOLIN: "Violín",
+  GUITARRA: "Guitarra",
   CLASE_GRUPAL: "Clase Grupal",
   CLASE_PRUEBA: "Clase de Prueba",
 };

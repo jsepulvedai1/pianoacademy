@@ -1,0 +1,19 @@
+{
+  "name": "Détaché Academia de Música",
+  "short_name": "Détaché",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#9b177e",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

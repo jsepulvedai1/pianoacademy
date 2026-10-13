@@ -131,8 +131,18 @@ export default function StudentDashboardPage() {
         <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
           <GraduationCap className="h-3.5 w-3.5" /> Portal Alumno
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight text-slate-900">Hola, {student.name.split(' ')[0]}</h1>
-        <p className="text-xs sm:text-sm text-slate-500 italic">Aquí está el resumen de tus clases y estado actual.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight text-slate-900">Hola, {student.name.split(' ')[0]}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 italic">Aquí está el resumen de tus clases y estado actual.</p>
+          </div>
+          {activePack && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-[#8E44AD] border border-purple-200/60 rounded-2xl text-xs font-bold shadow-xs">
+              <Calendar className="h-4 w-4" />
+              <span>Vencimiento del Plan: <strong>{student.plan.expirationDate}</strong></span>
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
@@ -339,9 +349,21 @@ export default function StudentDashboardPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Vencimiento</p>
-                    <p className="font-medium text-slate-900">{student.plan.expirationDate}</p>
+                  <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-purple-50 text-[#8E44AD] flex items-center justify-center shrink-0">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha de Vencimiento</p>
+                        <p className="font-bold text-slate-900 text-sm mt-0.5">{student.plan.expirationDate}</p>
+                      </div>
+                    </div>
+                    {isExpiring && (
+                      <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        Pronto
+                      </span>
+                    )}
                   </div>
                 </div>
              </CardContent>

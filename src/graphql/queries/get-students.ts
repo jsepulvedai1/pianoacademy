@@ -8,6 +8,7 @@ export const GET_STUDENTS_LIST = gql`
       email
       photo
       status
+      returnDate
       phoneNumber
       rut
       birthDate
@@ -22,6 +23,23 @@ export const GET_STUDENTS_LIST = gql`
       assignedTeachers {
         id
         name
+      }
+      privateNotes {
+        id
+        text
+        author
+        createdAt
+      }
+      wallMessages {
+        id
+        text
+        author
+        createdAt
+        attachedMaterial {
+          id
+          title
+          url
+        }
       }
     }
     allStudentPacks {

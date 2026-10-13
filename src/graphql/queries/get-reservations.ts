@@ -18,11 +18,23 @@ export const GET_RESERVATIONS = gql`
         id
         name
         phoneNumber
+        email
+        guardianName
+        guardianPhone
       }
       room {
         id
         name
       }
+      lead {
+        id
+        nombre
+        telefono
+        email
+        edad
+        apoderadoNombre
+      }
+      notes
     }
   }
 `;

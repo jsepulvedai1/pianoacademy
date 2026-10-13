@@ -5,6 +5,7 @@ export const GET_PLANS = gql`
     allPlans {
       id
       name
+      category
       price
       duration
       classesCount

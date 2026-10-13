@@ -135,6 +135,12 @@ export default function AdminLessonsPage() {
   const [newClassStartTime, setNewClassStartTime] = useState("10:00");
   const [newClassDuration, setNewClassDuration] = useState(60);
   const [newClassEndTime, setNewClassEndTime] = useState("11:00");
+  
+  const [isAvisaModalOpen, setIsAvisaModalOpen] = useState(false);
+  const [avisaNotes, setAvisaNotes] = useState("");
+  const [avisaDate, setAvisaDate] = useState("");
+  const [avisaStartTime, setAvisaStartTime] = useState("");
+  const [avisaEndTime, setAvisaEndTime] = useState("");
   const [newClassRoom, setNewClassRoom] = useState("");
 
   const calculateEndTime = (start: string, durationMinutes: number) => {
@@ -162,7 +168,32 @@ export default function AdminLessonsPage() {
 
   const handleStatusChange = (status: string) => {
     if (!selectedLesson) return;
+    if (status === 'EXCUSED') {
+      setIsAvisaModalOpen(true);
+      setAvisaNotes("");
+      setAvisaDate("");
+      setAvisaStartTime("");
+      setAvisaEndTime("");
+      return;
+    }
     updateStatus({ variables: { lessonId: parseInt(selectedLesson.id), status } });
+  };
+  
+  const handleAvisaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLesson) return;
+    const variables: any = {
+      lessonId: parseInt(selectedLesson.id),
+      status: 'EXCUSED',
+      notes: avisaNotes
+    };
+    if (avisaDate && avisaStartTime && avisaEndTime) {
+      variables.rescheduleDate = avisaDate;
+      variables.rescheduleStartTime = avisaStartTime + ":00";
+      variables.rescheduleEndTime = avisaEndTime + ":00";
+    }
+    updateStatus({ variables });
+    setIsAvisaModalOpen(false);
   };
 
   const handleCreateLesson = () => {
@@ -765,6 +796,74 @@ export default function AdminLessonsPage() {
           </div>
         );
       })()}
+
+      {isAvisaModalOpen && selectedLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <Card className="w-full max-w-md bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem]">
+            <header className="p-6 bg-blue-600 text-white relative">
+              <button 
+                onClick={() => setIsAvisaModalOpen(false)} 
+                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <h2 className="text-xl font-bold font-serif mb-1 text-white">Avisar Inasistencia</h2>
+              <p className="text-blue-100 text-sm">Esta clase no descontará del plan</p>
+            </header>
+            <form onSubmit={handleAvisaSubmit} className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Motivo del aviso (Opcional)</label>
+                <textarea 
+                  value={avisaNotes}
+                  onChange={(e) => setAvisaNotes(e.target.value)}
+                  className="w-full min-h-[80px] p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/20 resize-none"
+                  placeholder="Ej: Problemas de salud, viaje..."
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-800 mb-4">Reagendar (Opcional)</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Nueva Fecha</label>
+                    <input 
+                      type="date" 
+                      value={avisaDate}
+                      onChange={(e) => setAvisaDate(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/20 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Hora Inicio</label>
+                    <input 
+                      type="time" 
+                      value={avisaStartTime}
+                      onChange={(e) => setAvisaStartTime(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/20 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Hora Fin</label>
+                    <input 
+                      type="time" 
+                      value={avisaEndTime}
+                      onChange={(e) => setAvisaEndTime(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600/20 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <footer className="pt-6 border-t border-slate-100 flex gap-3">
+                <button type="button" onClick={() => setIsAvisaModalOpen(false)} className="flex-1 py-3 px-4 rounded-xl text-slate-600 font-bold text-xs uppercase tracking-widest hover:bg-slate-50">Cancelar</button>
+                <button type="submit" disabled={isUpdating} className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-600/20 disabled:opacity-50">
+                  {isUpdating ? "Guardando..." : "Confirmar"}
+                </button>
+              </footer>
+            </form>
+          </Card>
+        </div>
+      )}
 
       {isNewClassOpen && (() => {
         const selectedTeacherObj = currentTeachers.find((t: any) => t.id === newClassTeacher);

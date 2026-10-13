@@ -90,29 +90,37 @@ export default function AdminReservationsPage() {
 
   const reservations: Reservation[] = useMemo(() => {
     if (!data?.allLessons) return [];
-    return data.allLessons.map((l: any) => {
-      // Map backend Lesson to frontend Reservation
-      const expiryDate = new Date(l.date);
-      expiryDate.setHours(20, 0, 0, 0);
+    return data.allLessons.filter((l: any) => l.student || l.lead).map((l: any) => {
+      // Expiration is at 20:00 of the reservation date
+      const expiryDate = new Date(`${l.date}T20:00:00`);
+      const isPast20 = l.isPreReservation && new Date() > expiryDate;
+
+      const estado: ReservationStatus = 
+        l.status === 'COMPLETED' ? 'COMPLETADA' : 
+        l.status === 'CANCELLED' ? 'CANCELADA' : 
+        l.isPreReservation && isPast20 ? 'VENCIDA' :
+        l.isPreReservation ? 'PRE_RESERVADA' : 'CONFIRMADA';
 
       return {
         id: l.id,
-        nombre: l.student?.name || "Sin Nombre",
-        telefono: l.student?.phoneNumber || "",
+        nombre: l.student?.name || l.lead?.nombre || "Sin Nombre",
+        telefono: l.student?.phoneNumber || l.lead?.telefono || "",
+        email: l.student?.email || l.lead?.email || "",
+        edad: l.lead?.edad,
+        apoderadoNombre: l.student?.guardianName || l.lead?.apoderadoNombre || "",
         servicio: l.lessonType as LeadService,
         profesorId: l.teacher?.id,
         profesorNombre: l.teacher?.name || "Sin Profesor",
         fecha: l.date,
         hora: l.startTime,
         room: l.room?.name,
-        estado: l.status === 'COMPLETED' ? 'COMPLETADA' : 
-                l.status === 'CANCELLED' ? 'CANCELADA' : 
-                l.status === 'PENDING' && l.isPreReservation ? 'PRE_RESERVADA' : 'CONFIRMADA',
+        estado,
         pagoRegistrado: l.status === 'COMPLETED' || (l.status === 'PENDING' && !l.isPreReservation),
         expiraEn: l.isPreReservation ? expiryDate.toISOString() : undefined,
         creadoEn: l.date,
         modalidad: 'PRESENCIAL',
-        aceptoReglamento: true // Assume true for backend-synced reservations for now
+        notas: l.notes,
+        aceptoReglamento: true
       } as Reservation;
     });
   }, [data]);
@@ -127,6 +135,7 @@ export default function AdminReservationsPage() {
 
   const [newRes, setNewRes] = useState({
     nombre: '', telefono: '', email: '',
+    edad: '', apoderadoNombre: '',
     servicio: 'CLASE_PRUEBA' as LeadService,
     profesorNombre: '', fecha: '', hora: '',
     sala: '', modalidad: 'PRESENCIAL' as 'PRESENCIAL' | 'ONLINE',
@@ -169,6 +178,27 @@ export default function AdminReservationsPage() {
     }
   };
 
+  const handleLiberarTodasVencidas = async () => {
+    const vencidas = reservations.filter(r => r.estado === 'VENCIDA');
+    if (vencidas.length === 0) {
+      toast.info("No hay reservas vencidas pendientes de liberación.");
+      return;
+    }
+    if (!confirm(`¿Deseas liberar ${vencidas.length} cupos de reservas vencidas tras las 20:00 hrs?`)) return;
+    
+    let count = 0;
+    for (const r of vencidas) {
+      try {
+        await updateStatus({ variables: { lessonId: parseInt(r.id), status: 'CANCELLED' } });
+        count++;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    toast.success(`${count} cupos vencidos liberados correctamente ✅`);
+    refetch();
+  };
+
   const handleLiberarManual = async (res: Reservation) => {
     await handleCancelar(res.id);
     if (res.telefono) {
@@ -200,7 +230,7 @@ export default function AdminReservationsPage() {
     onCompleted: () => {
       toast.success("Pre-reserva creada exitosamente");
       setIsNewOpen(false);
-      setNewRes({ nombre: '', telefono: '', email: '', servicio: 'CLASE_PRUEBA', profesorNombre: '', fecha: '', hora: '', sala: '', modalidad: 'PRESENCIAL', aceptoReglamento: false });
+      setNewRes({ nombre: '', telefono: '', email: '', edad: '', apoderadoNombre: '', servicio: 'CLASE_PRUEBA', profesorNombre: '', fecha: '', hora: '', sala: '', modalidad: 'PRESENCIAL', aceptoReglamento: false });
     },
     onError: (e) => toast.error(`Error: ${e.message}`)
   });
@@ -216,7 +246,9 @@ export default function AdminReservationsPage() {
       variables: {
         nombre: newRes.nombre,
         telefono: normalizePhoneNumber(newRes.telefono),
-        email: newRes.email,
+        email: newRes.email || null,
+        edad: newRes.edad ? parseInt(newRes.edad) : null,
+        apoderadoNombre: newRes.apoderadoNombre || null,
         servicio: newRes.servicio,
         profesorNombre: newRes.profesorNombre,
         fecha: newRes.fecha,
@@ -260,14 +292,25 @@ export default function AdminReservationsPage() {
       </div>
 
       {/* Regla de negocio banner */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 flex items-center gap-5">
-        <div className="h-12 w-12 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400 flex-shrink-0">
-          <Timer className="h-6 w-6" />
+      <div className="bg-slate-900 text-white rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="flex items-center gap-5">
+          <div className="h-12 w-12 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400 flex-shrink-0">
+            <Timer className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="font-bold text-sm">Regla de negocio: Vencimiento a las 20:00 hrs</p>
+            <p className="text-slate-400 text-xs mt-1 italic">Toda pre-reserva que no reciba pago antes de las 20:00 del día se clasifica automáticamente como Vencida.</p>
+          </div>
         </div>
-        <div>
-          <p className="font-bold text-sm">Regla de negocio: Vencimiento a las 20:00</p>
-          <p className="text-slate-400 text-xs mt-1 italic">Toda pre-reserva que no reciba pago antes de las 20:00 del día se libera automáticamente y se envía un mensaje de liberación al prospecto vía WhatsApp.</p>
-        </div>
+        {stats.vencidas > 0 && (
+          <Button 
+            onClick={handleLiberarTodasVencidas}
+            className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider h-11 px-6 rounded-2xl shadow-lg shrink-0 cursor-pointer"
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            Liberar {stats.vencidas} Cupo{stats.vencidas > 1 ? 's' : ''} Vencido{stats.vencidas > 1 ? 's' : ''}
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -386,6 +429,8 @@ export default function AdminReservationsPage() {
                 { label: 'Fecha', value: selectedRes.fecha },
                 { label: 'Hora', value: selectedRes.hora },
                 { label: 'Sala', value: selectedRes.sala || 'Sin sala asignada' },
+                { label: 'Edad', value: selectedRes.edad ? `${selectedRes.edad} años` : '—' },
+                { label: 'Apoderado', value: selectedRes.apoderadoNombre || '—' },
                 { label: 'Teléfono', value: `+${selectedRes.telefono.slice(0, 2)} ${selectedRes.telefono.slice(2)}` },
                 { label: 'Email', value: selectedRes.email || '—' },
                 { label: 'Pago', value: selectedRes.pagoRegistrado ? 'Registrado ✓' : 'Sin pago' },
@@ -412,19 +457,30 @@ export default function AdminReservationsPage() {
               <div className="space-y-3 pt-2">
                 {selectedRes.estado === 'PRE_RESERVADA' && (
                   <>
-                    <Button onClick={() => handleConfirmar(selectedRes.id)} className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg">
+                    <Button onClick={() => handleConfirmar(selectedRes.id)} className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg cursor-pointer">
                       <CheckCircle2 className="mr-2 h-4 w-4" /> Confirmar + Registrar Pago
                     </Button>
-                    <Button onClick={() => handleSendPreReserva(selectedRes)} disabled={isSending} variant="outline" className="w-full h-12 rounded-2xl border-slate-200 font-bold uppercase text-[10px] tracking-widest">
+                    <Button onClick={() => handleSendPreReserva(selectedRes)} disabled={isSending} variant="outline" className="w-full h-12 rounded-2xl border-slate-200 font-bold uppercase text-[10px] tracking-widest cursor-pointer">
                       <MessageCircle className="mr-2 h-4 w-4 text-emerald-600" /> Reenviar WA Pre-Reserva
                     </Button>
-                    <Button onClick={() => handleLiberarManual(selectedRes)} variant="outline" className="w-full h-12 rounded-2xl border-rose-200 text-rose-700 hover:bg-rose-50 font-bold uppercase text-[10px] tracking-widest">
+                    <Button onClick={() => handleLiberarManual(selectedRes)} variant="outline" className="w-full h-12 rounded-2xl border-rose-200 text-rose-700 hover:bg-rose-50 font-bold uppercase text-[10px] tracking-widest cursor-pointer">
                       <XCircle className="mr-2 h-4 w-4" /> Liberar Cupo + Notificar
                     </Button>
                   </>
                 )}
+                {selectedRes.estado === 'VENCIDA' && (
+                  <>
+                    <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 space-y-1">
+                      <p className="font-bold">⚠️ Pre-reserva Vencida tras las 20:00 hrs</p>
+                      <p className="text-[11px] text-rose-700">El plazo límite venció. Puedes liberar el cupo en la agenda y avisar al alumno.</p>
+                    </div>
+                    <Button onClick={() => handleLiberarManual(selectedRes)} className="w-full h-12 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg cursor-pointer">
+                      <XCircle className="mr-2 h-4 w-4" /> Liberar Cupo Vencido + Notificar WA
+                    </Button>
+                  </>
+                )}
                 {selectedRes.estado === 'CONFIRMADA' && (
-                  <Button onClick={() => handleSendConfirmacion(selectedRes)} disabled={isSending} className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest">
+                  <Button onClick={() => handleSendConfirmacion(selectedRes)} disabled={isSending} className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest cursor-pointer">
                     <MessageCircle className="mr-2 h-4 w-4" /> Enviar Confirmación WA
                   </Button>
                 )}
@@ -457,9 +513,17 @@ export default function AdminReservationsPage() {
                   <input type="email" placeholder="correo@ejemplo.com" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-orange-400/30" value={newRes.email} onChange={e => setNewRes({ ...newRes, email: e.target.value })} />
                 </div>
                 <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Edad</label>
+                  <input type="number" placeholder="Ej. 28" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-orange-400/30" value={newRes.edad} onChange={e => setNewRes({ ...newRes, edad: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Apoderado (Si es menor)</label>
+                  <input type="text" placeholder="Ej. Juan Pérez" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-orange-400/30" value={newRes.apoderadoNombre} onChange={e => setNewRes({ ...newRes, apoderadoNombre: e.target.value })} />
+                </div>
+                <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Servicio</label>
                   <select className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-xs font-bold uppercase tracking-widest outline-none" value={newRes.servicio} onChange={e => setNewRes({ ...newRes, servicio: e.target.value as LeadService })}>
-                    {(['PIANO_NINOS', 'PIANO_ADULTOS', 'CANTO', 'CLASE_GRUPAL', 'CLASE_PRUEBA'] as LeadService[]).map(s => (
+                    {(['PIANO_NINOS', 'PIANO_ADULTOS', 'CANTO', 'VIOLIN', 'GUITARRA', 'BATERIA', 'CONTRABAJO', 'CLASE_GRUPAL', 'CLASE_PRUEBA'] as LeadService[]).map(s => (
                       <option key={s} value={s}>{serviceLabel[s]}</option>
                     ))}
                   </select>

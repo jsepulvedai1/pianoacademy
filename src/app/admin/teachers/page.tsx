@@ -104,6 +104,7 @@ export default function AdminTeachersPage() {
     rut: "",
     address: "",
     email: "",
+    birthDate: "",
     specialtyIds: [] as number[]
   });
 
@@ -209,11 +210,12 @@ export default function AdminTeachersPage() {
         rut: teacher.rut || "",
         address: teacher.address || "",
         email: teacher.email || "",
+        birthDate: teacher.birthDate || "",
         specialtyIds: teacher.specialties?.map((s: any) => parseInt(s.id)) || []
       });
     } else {
       setEditingTeacher(null);
-      setFormData({ name: "", description: "", status: "ACTIVE", phoneNumber: "", rut: "", address: "", email: "", specialtyIds: [] });
+      setFormData({ name: "", description: "", status: "ACTIVE", phoneNumber: "", rut: "", address: "", email: "", birthDate: "", specialtyIds: [] });
     }
     setIsModalOpen(true);
   };
@@ -225,10 +227,17 @@ export default function AdminTeachersPage() {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) return;
-    const { __typename, specialtyIds, ...rest } = formData as any;
+    const { specialtyIds, ...rest } = formData as any;
     const variables = { 
-      ...rest, 
-      specialtyIds: specialtyIds.map((id: any) => parseInt(id.toString())) 
+      name: rest.name.trim(),
+      status: rest.status || "ACTIVE",
+      description: rest.description?.trim() || null,
+      phoneNumber: rest.phoneNumber?.trim() || null,
+      rut: rest.rut?.trim() || null,
+      address: rest.address?.trim() || null,
+      email: rest.email?.trim() || null,
+      birthDate: rest.birthDate || null,
+      specialtyIds: (specialtyIds || []).map((id: any) => parseInt(id.toString())).filter((id: number) => !isNaN(id))
     };
     
     if (editingTeacher) {
@@ -309,6 +318,11 @@ export default function AdminTeachersPage() {
                        <option value="ACTIVE">Activo</option>
                        <option value="INACTIVE">Inactivo</option>
                     </select>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha de Nacimiento (Cumpleaños 🎂)</label>
+                    <input type="date" value={formData.birthDate} onChange={(e) => setFormData({...formData, birthDate: e.target.value})} className="w-full h-12 bg-slate-50 rounded-2xl px-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
                  </div>
 
                  {!editingTeacher && (
@@ -462,7 +476,14 @@ export default function AdminTeachersPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 leading-none group-hover:text-primary transition-colors">{teacher.name}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-1">{teacher.phoneNumber || 'Sin teléfono'}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[10px] text-slate-400 font-mono">{teacher.phoneNumber || 'Sin teléfono'}</p>
+                            {teacher.birthDate && (
+                              <span className="text-[10px] bg-rose-50 text-rose-600 font-bold px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 border border-rose-100/80">
+                                🎂 {new Date(teacher.birthDate + "T12:00:00").toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -575,6 +596,7 @@ export default function AdminTeachersPage() {
                             { label: 'RUT', val: selectedTeacher.rut, icon: CreditCard },
                             { label: 'Teléfono', val: selectedTeacher.phoneNumber, icon: Phone },
                             { label: 'Correo', val: selectedTeacher.email, icon: Mail },
+                            { label: 'Cumpleaños 🎂', val: selectedTeacher.birthDate ? `${new Date(selectedTeacher.birthDate + "T12:00:00").toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })} (${selectedTeacher.birthDate})` : null, icon: CalendarDays },
                             { label: 'Dirección', val: selectedTeacher.address, icon: MapPin },
                           ].map(item => (
                             <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50 text-left">

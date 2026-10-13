@@ -6,7 +6,7 @@ import {
   ChevronRight, Activity, Phone, Mail, MapPin, X, CreditCard,
   History, TrendingUp, BookOpen, AlertCircle, Shield, DollarSign,
   CheckCircle2, Clock, Edit3, MessageSquare, MessageCircle, Send,
-  RefreshCw, Loader2, ExternalLink, Sparkles, CheckCheck
+  RefreshCw, Loader2, ExternalLink, Sparkles, CheckCheck, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +31,7 @@ export default function AdminStudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'GENERAL' | 'ACADEMICO' | 'PAGOS' | 'ASISTENCIA' | 'WHATSAPP'>('GENERAL');
+  const [activeTab, setActiveTab] = useState<'GENERAL' | 'ACADEMICO' | 'NOTAS_MURO' | 'PAGOS' | 'ASISTENCIA' | 'WHATSAPP'>('GENERAL');
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [isEditingStudent, setIsEditingStudent] = useState(false);
 
@@ -64,6 +64,7 @@ export default function AdminStudentsPage() {
     guardianName: "",
     guardianPhone: "",
     status: "ACTIVE",
+    returnDate: "",
     phoneNumber: "",
     level: "BEGINNER",
     primaryInstrumentId: "",
@@ -237,12 +238,19 @@ export default function AdminStudentsPage() {
   [selectedStudent, allLessons]);
 
   const handleCreate = () => {
-    if (!formData.name) return;
+    if (!formData.name.trim()) return;
     createStudent({
       variables: {
-        ...formData,
+        name: formData.name.trim(),
+        email: formData.email?.trim() || null,
+        rut: formData.rut?.trim() || null,
+        birthDate: formData.birthDate || null,
+        guardianName: formData.guardianName?.trim() || null,
+        guardianPhone: formData.guardianPhone?.trim() || null,
+        phoneNumber: formData.phoneNumber?.trim() || null,
+        level: formData.level || "BEGINNER",
         primaryInstrumentId: formData.primaryInstrumentId ? parseInt(formData.primaryInstrumentId) : null,
-        assignedTeacherIds: formData.assignedTeacherIds
+        assignedTeacherIds: (formData.assignedTeacherIds || []).map((id: any) => parseInt(id)).filter((id: number) => !isNaN(id))
       }
     });
   };
@@ -257,6 +265,7 @@ export default function AdminStudentsPage() {
       guardianName: selectedStudent?.guardianName || "",
       guardianPhone: selectedStudent?.guardianPhone || "",
       status: selectedStudent?.status || "ACTIVE",
+      returnDate: selectedStudent?.returnDate || "",
       phoneNumber: selectedStudent?.phoneNumber || "",
       level: selectedStudent?.level || "BEGINNER",
       primaryInstrumentId: selectedStudent?.primaryInstrument?.id || "",
@@ -277,6 +286,7 @@ export default function AdminStudentsPage() {
         guardianName: editFormData.guardianName || null,
         guardianPhone: editFormData.guardianPhone || null,
         status: editFormData.status,
+        returnDate: editFormData.returnDate || null,
         phoneNumber: editFormData.phoneNumber || null,
         level: editFormData.level,
         primaryInstrumentId: editFormData.primaryInstrumentId ? parseInt(editFormData.primaryInstrumentId) : null,
@@ -564,6 +574,7 @@ export default function AdminStudentsPage() {
                     {[
                       { key: 'GENERAL', label: 'GENERAL' },
                       { key: 'ACADEMICO', label: 'ACADÉMICO' },
+                      { key: 'NOTAS_MURO', label: 'NOTAS Y MURO' },
                       { key: 'PAGOS', label: 'PAGOS' },
                       { key: 'ASISTENCIA', label: 'ASISTENCIA' },
                       { key: 'WHATSAPP', label: '💬 WHATSAPP' }
@@ -614,6 +625,18 @@ export default function AdminStudentsPage() {
                                  <option value="ON_HOLD">En Pausa 🟡</option>
                               </select>
                            </div>
+                           
+                           {editFormData.status === 'ON_HOLD' && (
+                             <div className="space-y-2 col-span-2 sm:col-span-1">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Fecha de Regreso</label>
+                                <input
+                                   type="date"
+                                   value={editFormData.returnDate}
+                                   onChange={(e) => setEditFormData({...editFormData, returnDate: e.target.value})}
+                                   className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                                />
+                             </div>
+                           )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -823,6 +846,101 @@ export default function AdminStudentsPage() {
                            <p className="text-xs italic">No hay packs activos</p>
                          </div>
                        )}
+                    </div>
+                 )}
+
+                 {activeTab === 'NOTAS_MURO' && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
+                       {/* Notas Privadas Pedagógicas */}
+                       <div className="space-y-4">
+                          <div className="flex items-center justify-between px-2">
+                             <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-[#70125F]" />
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-700">Notas Pedagógicas Privadas (Profesores / Staff)</p>
+                             </div>
+                             <Badge className="bg-[#70125F]/10 text-[#70125F] border-0 text-[9px] font-bold">
+                                {(selectedStudent?.privateNotes || []).length} notas
+                             </Badge>
+                          </div>
+                          
+                          {(selectedStudent?.privateNotes || []).length > 0 ? (
+                            <div className="space-y-3">
+                              {selectedStudent.privateNotes.map((note: any) => (
+                                <div key={note.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-2 hover:border-[#70125F]/20 transition-all">
+                                   <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                         <Badge className="bg-slate-100 text-slate-700 border-0 text-[9px] font-bold">
+                                            {note.author}
+                                         </Badge>
+                                         <span className="text-[10px] text-slate-400 font-mono">
+                                            {note.createdAt ? new Date(note.createdAt).toLocaleDateString('es-CL', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                         </span>
+                                      </div>
+                                      <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">Confidencial</span>
+                                   </div>
+                                   <p className="text-sm text-slate-700 leading-relaxed font-medium bg-slate-50/60 p-3.5 rounded-2xl border border-slate-50">
+                                      {note.text}
+                                   </p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
+                               <FileText className="h-8 w-8 mx-auto opacity-20 mb-2" />
+                               <p className="text-xs italic">No hay notas pedagógicas privadas registradas para este alumno.</p>
+                            </div>
+                          )}
+                       </div>
+
+                       {/* Mensajes del Muro del Alumno */}
+                       <div className="space-y-4 pt-4 border-t border-slate-100">
+                          <div className="flex items-center justify-between px-2">
+                             <div className="flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4 text-primary" />
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-700">Mensajes del Muro del Alumno</p>
+                             </div>
+                             <Badge className="bg-primary/10 text-primary border-0 text-[9px] font-bold">
+                                {(selectedStudent?.wallMessages || []).length} publicaciones
+                             </Badge>
+                          </div>
+
+                          {(selectedStudent?.wallMessages || []).length > 0 ? (
+                            <div className="space-y-3">
+                              {selectedStudent.wallMessages.map((msg: any) => (
+                                <div key={msg.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-3 hover:border-primary/20 transition-all">
+                                   <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                         <Badge className="bg-primary/10 text-primary border-0 text-[9px] font-bold">
+                                            {msg.author}
+                                         </Badge>
+                                         <span className="text-[10px] text-slate-400 font-mono">
+                                            {msg.createdAt ? new Date(msg.createdAt).toLocaleDateString('es-CL', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                         </span>
+                                      </div>
+                                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Visible al Alumno</span>
+                                   </div>
+                                   <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                                      {msg.text}
+                                   </p>
+                                   {msg.attachedMaterial && (
+                                     <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
+                                        <div className="flex items-center gap-2">
+                                           <Music className="h-4 w-4 text-[#70125F]" />
+                                           <span className="font-bold text-slate-800">{msg.attachedMaterial.title}</span>
+                                        </div>
+                                        <Badge variant="outline" className="text-[9px]">Material Adjunto</Badge>
+                                     </div>
+                                   )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
+                               <MessageSquare className="h-8 w-8 mx-auto opacity-20 mb-2" />
+                               <p className="text-xs italic">El muro del alumno aún no contiene mensajes de profesores.</p>
+                            </div>
+                          )}
+                       </div>
                     </div>
                  )}
 

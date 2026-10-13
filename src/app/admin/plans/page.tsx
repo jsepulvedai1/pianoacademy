@@ -44,9 +44,11 @@ export default function AdminPlansMasterPage() {
   });
 
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'INDIVIDUAL_REGULAR' | 'INDIVIDUAL_PREFERENTIAL' | 'GROUP'>('ALL');
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [newPlan, setNewPlan] = useState<{
     name: string;
+    category: string;
     price: number;
     duration: number;
     classesCount: number;
@@ -54,6 +56,7 @@ export default function AdminPlansMasterPage() {
     benefits: string[];
   }>({
     name: '',
+    category: 'INDIVIDUAL_REGULAR',
     price: 0,
     duration: 1,
     classesCount: 4,
@@ -64,9 +67,12 @@ export default function AdminPlansMasterPage() {
 
   const plans = data?.allPlans || [];
 
-  const filtered = useMemo(() => plans.filter((p: any) => 
-    p.name.toLowerCase().includes(search.toLowerCase())
-  ), [plans, search]);
+  const filtered = useMemo(() => plans.filter((p: any) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const planCat = p.category || 'INDIVIDUAL_REGULAR';
+    const matchesCategory = categoryFilter === 'ALL' || planCat === categoryFilter;
+    return matchesSearch && matchesCategory;
+  }), [plans, search, categoryFilter]);
 
   const handleCreateOrUpdate = () => {
     if (!newPlan.name || newPlan.price <= 0) return;
@@ -76,6 +82,7 @@ export default function AdminPlansMasterPage() {
         variables: {
           id: parseInt(isEditing),
           name: newPlan.name,
+          category: newPlan.category,
           price: parseFloat(newPlan.price.toString()),
           duration: parseInt(newPlan.duration.toString()),
           classesCount: parseInt(newPlan.classesCount.toString()),
@@ -87,6 +94,7 @@ export default function AdminPlansMasterPage() {
       createPlan({
         variables: {
           name: newPlan.name,
+          category: newPlan.category,
           price: parseFloat(newPlan.price.toString()),
           duration: parseInt(newPlan.duration.toString()),
           classesCount: parseInt(newPlan.classesCount.toString()),
@@ -106,6 +114,7 @@ export default function AdminPlansMasterPage() {
   const openEdit = (plan: any) => {
     setNewPlan({
       name: plan.name,
+      category: plan.category || 'INDIVIDUAL_REGULAR',
       price: parseFloat(plan.price),
       duration: plan.duration,
       classesCount: plan.classesCount,
@@ -119,6 +128,7 @@ export default function AdminPlansMasterPage() {
   const openNew = () => {
     setNewPlan({
       name: '',
+      category: 'INDIVIDUAL_REGULAR',
       price: 0,
       duration: 1,
       classesCount: 4,
@@ -131,6 +141,12 @@ export default function AdminPlansMasterPage() {
 
   const formatCLP = (n: number) => `$${n.toLocaleString('es-CL')}`;
 
+  const categoryConfig: Record<string, { label: string; badge: string }> = {
+    INDIVIDUAL_REGULAR: { label: 'Individual Regular', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200/50' },
+    INDIVIDUAL_PREFERENTIAL: { label: 'Preferencial (10:00 - 13:00)', badge: 'bg-amber-50 text-amber-700 border-amber-200/50' },
+    GROUP: { label: 'Clases Grupales', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200/50' },
+  };
+
   return (
     <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
@@ -141,23 +157,46 @@ export default function AdminPlansMasterPage() {
             <Tag className="h-3 w-3" /> Configuración Comercial
           </div>
           <h1 className="text-3xl font-bold font-serif tracking-tight">Programas y Planes</h1>
-          <p className="text-slate-500 italic text-sm">Define los packs de clases que se ofrecen a los alumnos.</p>
+          <p className="text-slate-500 italic text-sm">Define los packs de clases que se ofrecen a los alumnos organizados por sección.</p>
         </div>
-        <Button onClick={openNew} size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-12 px-8 font-bold uppercase tracking-[0.1em] group rounded-2xl">
+        <Button onClick={openNew} size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-12 px-8 font-bold uppercase tracking-[0.1em] group rounded-2xl cursor-pointer">
           <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" /> Crear Programa
         </Button>
       </header>
 
-      {/* Search */}
-      <div className="max-w-md relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-        <input 
-          type="text" 
-          placeholder="Buscar programa..." 
-          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      {/* Search & Category Filter Tabs */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="max-w-md w-full relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Buscar programa..." 
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/80 rounded-2xl overflow-x-auto">
+          {[
+            { id: 'ALL', label: 'Todos los Planes' },
+            { id: 'INDIVIDUAL_REGULAR', label: '🎻 Individuales Regulares' },
+            { id: 'INDIVIDUAL_PREFERENTIAL', label: '☀️ Horario Preferencial' },
+            { id: 'GROUP', label: '👥 Clases Grupales' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setCategoryFilter(tab.id as any)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                categoryFilter === tab.id
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Grid */}
@@ -167,62 +206,70 @@ export default function AdminPlansMasterPage() {
              <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mb-4" />
              Cargando planes...
           </div>
-        ) : filtered.map((plan: any) => (
-          <Card 
-            key={plan.id} 
-            className={`bg-white border rounded-3xl p-8 shadow-sm hover:shadow-md transition-all group ${plan.isFeatured ? 'border-primary ring-1 ring-primary/20' : 'border-slate-100 hover:border-primary/20'}`}
-          >
-            <div className="relative">
-              <div className="flex justify-between items-start mb-6">
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${plan.isFeatured ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
-                  <Zap className="h-6 w-6" />
+        ) : filtered.map((plan: any) => {
+          const catInfo = categoryConfig[plan.category || 'INDIVIDUAL_REGULAR'] || categoryConfig.INDIVIDUAL_REGULAR;
+          return (
+            <Card 
+              key={plan.id} 
+              className={`bg-white border rounded-3xl p-8 shadow-sm hover:shadow-md transition-all group ${plan.isFeatured ? 'border-primary ring-1 ring-primary/20' : 'border-slate-100 hover:border-primary/20'}`}
+            >
+              <div className="relative">
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${plan.isFeatured ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {plan.isFeatured && (
+                      <Badge className="bg-secondary text-black text-[9px] font-black uppercase tracking-widest px-3 py-1 border-none">Recomendado</Badge>
+                    )}
+                    <Badge variant="outline" className={`text-[8px] font-bold uppercase tracking-wider px-2.5 py-0.5 border ${catInfo.badge}`}>
+                      {catInfo.label}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => openEdit(plan)}
+                      className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="h-5 w-5" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(plan.id)}
+                      className="p-2 rounded-full hover:bg-rose-500/20 text-rose-500 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
-                {plan.isFeatured && (
-                  <Badge className="bg-secondary text-black text-[9px] font-black uppercase tracking-widest px-3 py-1 border-none">Recomendado</Badge>
-                )}
-                <div className="flex items-center gap-1">
-                  <button 
-                    onClick={() => openEdit(plan)}
-                    className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors"
-                  >
-                    <Edit2 className="h-5 w-5" />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(plan.id)}
-                    className="p-2 rounded-full hover:bg-rose-500/20 text-rose-500 transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
+                
+                <h3 className="text-xl font-bold font-serif mb-1">{plan.name}</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  {plan.classesCount} Clases · {plan.duration} Meses
+                </p>
+
+                <div className="mt-8 flex items-baseline gap-1">
+                  <span className="text-4xl font-bold font-serif">{formatCLP(parseFloat(plan.price))}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total</span>
                 </div>
               </div>
               
-              <h3 className="text-xl font-bold font-serif mb-1">{plan.name}</h3>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                {plan.classesCount} Clases · {plan.duration} Meses
-              </p>
-
-              <div className="mt-8 flex items-baseline gap-1">
-                <span className="text-4xl font-bold font-serif">{formatCLP(parseFloat(plan.price))}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total</span>
+              <div className="mt-6 pt-6 flex justify-between items-center border-t border-slate-50">
+                 <div className="flex items-center gap-2">
+                   <Shield className="h-4 w-4 text-primary" />
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Validez: {plan.duration} meses</span>
+                 </div>
+                 <Badge className="bg-primary/20 text-primary border-none text-[9px] font-bold uppercase tracking-widest px-3 py-1">
+                   {Math.round(parseFloat(plan.price) / plan.classesCount).toLocaleString('es-CL')}/clase
+                 </Badge>
               </div>
-            </div>
-            
-            <div className="mt-6 pt-6 flex justify-between items-center border-t border-slate-50">
-               <div className="flex items-center gap-2">
-                 <Shield className="h-4 w-4 text-primary" />
-                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Validez: {plan.duration} meses</span>
-               </div>
-               <Badge className="bg-primary/20 text-primary border-none text-[9px] font-bold uppercase tracking-widest px-3 py-1">
-                 {Math.round(parseFloat(plan.price) / plan.classesCount).toLocaleString('es-CL')}/clase
-               </Badge>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
 
         {filtered.length === 0 && !loading && (
           <div className="col-span-full py-20 flex flex-col items-center gap-4 text-slate-300">
             <Package className="h-16 w-16 opacity-20" />
-            <p className="text-sm italic font-medium">No hay programas creados</p>
+            <p className="text-sm italic font-medium">No hay programas en esta sección</p>
           </div>
         )}
       </div>
@@ -248,6 +295,19 @@ export default function AdminPlansMasterPage() {
                     value={newPlan.name}
                     onChange={e => setNewPlan({...newPlan, name: e.target.value})}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Categoría / Sección del Plan *</label>
+                  <select 
+                    value={newPlan.category} 
+                    onChange={e => setNewPlan({...newPlan, category: e.target.value})}
+                    className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                  >
+                    <option value="INDIVIDUAL_REGULAR">🎻 Planes Individuales Regulares</option>
+                    <option value="INDIVIDUAL_PREFERENTIAL">☀️ Horario Preferencial (10:00 a 13:00 hrs)</option>
+                    <option value="GROUP">👥 Planes de Clases Grupales</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

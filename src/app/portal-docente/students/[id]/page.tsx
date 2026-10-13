@@ -16,8 +16,10 @@ import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_STUDENT_PORTAL_DATA } from "@/graphql/queries/student-portal";
 import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
 import { CREATE_MATERIAL, CREATE_STUDENT_PRIVATE_NOTE, CREATE_STUDENT_WALL_MESSAGE } from "@/graphql/mutations/student-portal";
+import { SecureDocumentModal } from "@/components/modals/secure-document-modal";
 
 export default function TeacherStudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const [selectedDocument, setSelectedDocument] = useState<{ title: string; url: string; type: string } | null>(null);
   const { id } = use(params);
   const studentId = parseInt(id, 10);
   
@@ -296,18 +298,26 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
                              {note.text && <p className="text-sm text-slate-600 mb-3">{note.text}</p>}
                              
                              {note.attachedMaterial && (
-                               <a href={getMediaUrl(note.attachedMaterial.url)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 hover:border-indigo-300 transition-colors group">
+                               <button
+                                 type="button"
+                                 onClick={() => setSelectedDocument({
+                                   title: note.attachedMaterial.title,
+                                   url: getMediaUrl(note.attachedMaterial.url),
+                                   type: note.attachedMaterial.type
+                                 })}
+                                 className="w-full text-left flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 hover:border-indigo-300 transition-colors group cursor-pointer"
+                               >
                                  <div className="flex items-center gap-3">
                                    <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center">
                                      {getTypeIcon(note.attachedMaterial.type)}
                                    </div>
                                    <div>
                                      <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{note.attachedMaterial.title}</p>
-                                     <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{note.attachedMaterial.type}</p>
+                                     <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{note.attachedMaterial.type} · Protegido</p>
                                    </div>
                                  </div>
                                  <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                               </a>
+                               </button>
                              )}
                           </div>
                        </div>
@@ -500,6 +510,14 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
           </Card>
         </div>
       )}
+      {/* Visor Seguro de Documento */}
+      <SecureDocumentModal
+        isOpen={Boolean(selectedDocument)}
+        onClose={() => setSelectedDocument(null)}
+        title={selectedDocument?.title || ""}
+        url={selectedDocument?.url || ""}
+        type={selectedDocument?.type || "PDF"}
+      />
     </div>
   );
 }

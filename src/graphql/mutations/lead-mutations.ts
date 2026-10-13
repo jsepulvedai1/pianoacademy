@@ -1,11 +1,33 @@
 import { gql } from "@apollo/client";
 
 export const CREATE_LEAD = gql`
-  mutation CreateLead($nombre: String!, $telefono: String!, $email: String, $servicio: String, $fuente: String) {
-    createLead(nombre: $nombre, telefono: $telefono, email: $email, servicio: $servicio, fuente: $fuente) {
+  mutation CreateLead(
+    $nombre: String!, 
+    $telefono: String!, 
+    $email: String, 
+    $edad: Int,
+    $apoderadoNombre: String,
+    $servicio: String, 
+    $fuente: String
+  ) {
+    createLead(
+      nombre: $nombre, 
+      telefono: $telefono, 
+      email: $email, 
+      edad: $edad,
+      apoderadoNombre: $apoderadoNombre,
+      servicio: $servicio, 
+      fuente: $fuente
+    ) {
       lead {
         id
         nombre
+        telefono
+        email
+        edad
+        apoderadoNombre
+        servicio
+        fuente
         estado
       }
     }

@@ -26,6 +26,8 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
     'piano-ninos': 'PIANO_NINOS',
     'piano-adultos': 'PIANO_ADULTOS',
     'canto': 'CANTO',
+    'violin': 'VIOLIN',
+    'guitarra': 'GUITARRA',
     'clases-grupales': 'CLASE_GRUPAL',
     'clase-prueba': 'CLASE_PRUEBA'
   };

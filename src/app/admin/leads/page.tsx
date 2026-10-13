@@ -61,7 +61,7 @@ import { CREATE_LEAD, CONVERT_LEAD_TO_STUDENT, UPDATE_LEAD_STATUS, CREATE_LEAD_N
 import { SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { ON_LEAD_UPDATED } from "@/graphql/subscriptions/on-lead-updated";
 import { normalizePhoneNumber } from "@/lib/utils";
-
+import { DndContext, useDraggable, useDroppable, DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 
 const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: React.ElementType; dot: string }[] = [
   { status: 'NUEVO',               color: 'text-sky-700',     bg: 'bg-sky-50',      icon: Star,         dot: 'bg-sky-400'    },
@@ -81,7 +81,34 @@ const SOURCE_ICONS: Record<LeadSource, React.ElementType> = {
   OTRO: Tag
 };
 
-// ─── COMPONENT ──────────────────────────────────────────────
+function DroppableColumn({ id, children }: { id: string, children: React.ReactNode }) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={`flex-1 flex flex-col gap-3 min-h-[500px] rounded-3xl p-2 transition-colors ${isOver ? 'bg-slate-100 ring-2 ring-primary/20 ring-inset' : ''}`}>
+      {children}
+    </div>
+  );
+}
+
+function DraggableCard({ lead, children }: { lead: any, children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: lead.id,
+    data: { currentStatus: lead.estado }
+  });
+  
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: isDragging ? 999 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  } : undefined;
+
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing touch-none">
+      {children}
+    </div>
+  );
+}
+
 export default function AdminLeadsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'ALL'>('ALL');
@@ -104,9 +131,18 @@ export default function AdminLeadsPage() {
     telefono: '', 
     email: '', 
     edad: '', 
+    apoderadoNombre: '',
     servicio: 'CLASE_PRUEBA' as LeadService, 
     fuente: 'WEB' as LeadSource 
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // ── GraphQL Hooks ───────────────────────────────────────────
   const { data, loading, refetch } = useQuery<any>(GET_LEADS, {
@@ -184,7 +220,7 @@ export default function AdminLeadsPage() {
     onCompleted: () => {
       toast.success("Lead creado exitosamente 🎻");
       setIsNewLeadOpen(false);
-      setNewLead({ nombre: '', telefono: '', email: '', edad: '', servicio: 'CLASE_PRUEBA', fuente: 'WEB' });
+      setNewLead({ nombre: '', telefono: '', email: '', edad: '', apoderadoNombre: '', servicio: 'CLASE_PRUEBA', fuente: 'WEB' });
     }
   });
 
@@ -396,6 +432,13 @@ export default function AdminLeadsPage() {
     updateStatusMutation({ variables: { leadId, status: newStatus } });
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && over.id !== active.data.current?.currentStatus) {
+      handleStatusChange(String(active.id), over.id as LeadStatus);
+    }
+  };
+
   const handleSubmitConfirmReservation = (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetLeadForConfirm || !confirmLessonForm.teacherId || !confirmLessonForm.date || !confirmLessonForm.startTime || !confirmLessonForm.endTime) {
@@ -476,7 +519,9 @@ export default function AdminLeadsPage() {
       variables: {
         nombre: newLead.nombre,
         telefono: normalizePhoneNumber(newLead.telefono),
-        email: newLead.email,
+        email: newLead.email || null,
+        edad: newLead.edad ? parseInt(newLead.edad) : null,
+        apoderadoNombre: newLead.apoderadoNombre || null,
         servicio: newLead.servicio,
         fuente: newLead.fuente
       }
@@ -567,14 +612,15 @@ export default function AdminLeadsPage() {
 
       {/* ── KANBAN VIEW ── */}
       {viewMode === 'KANBAN' && (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
-            {(statusFilter === 'ALL' ? KANBAN_COLUMNS : [statusFilter]).map(status => {
-              const config = getColConfig(status);
-              const Icon = config.icon;
-              const colLeads = leadsByStatus[status] || [];
-              return (
-                <div key={status} className="w-72 flex-shrink-0">
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="overflow-x-auto pb-4">
+            <div className="flex gap-4 min-w-max">
+              {(statusFilter === 'ALL' ? KANBAN_COLUMNS : [statusFilter]).map(status => {
+                const config = getColConfig(status);
+                const Icon = config.icon;
+                const colLeads = leadsByStatus[status] || [];
+                return (
+                  <div key={status} className="w-72 flex-shrink-0">
                   <div className={`flex items-center justify-between px-4 py-3 ${config.bg} rounded-2xl mb-3 border border-black/5`}>
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${config.dot}`} />
@@ -587,15 +633,15 @@ export default function AdminLeadsPage() {
                     </Badge>
                   </div>
 
-                  <div className="space-y-3 min-h-[200px]">
+                  <DroppableColumn id={status}>
                     {loading ? (
                        <div className="py-10 text-center text-slate-300 italic text-xs">Cargando leads...</div>
                     ) : colLeads.map((lead: any) => {
                       const SrcIcon = SOURCE_ICONS[lead.fuente as LeadSource] || Tag;
                       return (
-                        <div
-                          key={lead.id}
-                          onClick={() => { setSelectedLead(lead); setIsDetailOpen(true); setCustomMessage(''); setActiveTemplate(''); }}
+                        <DraggableCard key={lead.id} lead={lead}>
+                          <div
+                            onClick={() => { setSelectedLead(lead); setIsDetailOpen(true); setCustomMessage(''); setActiveTemplate(''); }}
                           className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group"
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -639,10 +685,21 @@ export default function AdminLeadsPage() {
                                   setIsDetailOpen(true);
                                   applyTemplate('RESPUESTA_INICIAL');
                                 }}
+                                title="Abrir asistente de WhatsApp con plantillas"
                                 className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg cursor-pointer"
                               >
                                 <MessageCircle className="h-3 w-3" /> WA
                               </button>
+                              <a
+                                href={`https://wa.me/${lead.telefono?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${lead.nombre?.split(' ')[0]}! Te contactamos desde Academia Détaché 🎻`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                title="Abrir chat directo en WhatsApp Web / App"
+                                className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
                               <button
                                 onClick={e => handleDeleteLead(lead.id, lead.nombre, e)}
                                 title="Eliminar prospecto"
@@ -653,14 +710,16 @@ export default function AdminLeadsPage() {
                             </div>
                           </div>
                         </div>
+                        </DraggableCard>
                       );
                     })}
-                  </div>
+                  </DroppableColumn>
                 </div>
               );
             })}
           </div>
         </div>
+        </DndContext>
       )}
 
       {/* ── LIST VIEW ── */}
@@ -713,10 +772,21 @@ export default function AdminLeadsPage() {
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={e => { e.stopPropagation(); setSelectedLead(lead); setIsDetailOpen(true); applyTemplate('RESPUESTA_INICIAL'); }}
+                            title="Abrir asistente de WhatsApp con plantillas"
                             className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl transition-colors cursor-pointer"
                           >
-                            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                            <MessageCircle className="h-3.5 w-3.5" /> Asistente WA
                           </button>
+                          <a
+                            href={`https://wa.me/${lead.telefono?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${lead.nombre?.split(' ')[0]}! Te contactamos desde Academia Détaché 🎻`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            title="Abrir WhatsApp Web / App directamente"
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
                           <button
                             onClick={e => handleDeleteLead(lead.id, lead.nombre, e)}
                             title="Eliminar prospecto"
@@ -871,6 +941,8 @@ export default function AdminLeadsPage() {
                           { key: 'INFO_PACKS', label: 'Info Packs' },
                           { key: 'PRE_RESERVA', label: 'Pre-Reserva' },
                           { key: 'RECORDATORIO_PAGO', label: 'Recordatorio pago' },
+                          { key: 'SEGUIMIENTO', label: 'Seguimiento' },
+                          { key: 'LIBERACION_CUPO', label: 'Liberación cupo' },
                         ].map(t => (
                           <button
                             key={t.key}
@@ -902,17 +974,28 @@ export default function AdminLeadsPage() {
                         </div>
                       )}
 
-                      <Button
-                        onClick={handleSendWA}
-                        disabled={!customMessage.trim() || isSendingWA}
-                        className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/10 disabled:opacity-40"
-                      >
-                        {isSendingWA ? (
-                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
-                        ) : (
-                          <><Send className="mr-2 h-4 w-4" /> Enviar Mensaje</>
-                        )}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSendWA}
+                          disabled={!customMessage.trim() || isSendingWA}
+                          className="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/10 disabled:opacity-40"
+                        >
+                          {isSendingWA ? (
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
+                          ) : (
+                            <><Send className="mr-2 h-4 w-4" /> Enviar API</>
+                          )}
+                        </Button>
+                        <a
+                          href={`https://wa.me/${selectedLead.telefono?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(customMessage || `Hola ${selectedLead.nombre?.split(' ')[0]}!`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 px-4 h-12 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-bold uppercase text-[10px] tracking-widest transition-colors cursor-pointer"
+                          title="Abrir directamente en WhatsApp Web o App"
+                        >
+                          <ExternalLink className="h-4 w-4" /> WA Web
+                        </a>
+                      </div>
                     </div>
 
                     {/* Notes Section moved down */}
@@ -1131,13 +1214,17 @@ export default function AdminLeadsPage() {
                   <input type="number" placeholder="Ej. 28" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-primary/20" value={newLead.edad} onChange={e => setNewLead({...newLead, edad: e.target.value})} />
                 </div>
                 <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Apoderado (Si es menor)</label>
+                  <input type="text" placeholder="Ej. Juan Pérez" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-primary/20" value={newLead.apoderadoNombre} onChange={e => setNewLead({...newLead, apoderadoNombre: e.target.value})} />
+                </div>
+                <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email</label>
                   <input type="email" placeholder="correo@ejemplo.com" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-primary/20" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Servicio</label>
                   <select className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-xs font-bold uppercase tracking-widest outline-none" value={newLead.servicio} onChange={e => setNewLead({...newLead, servicio: e.target.value as LeadService})}>
-                    {(['PIANO_NINOS', 'PIANO_ADULTOS', 'CANTO', 'CLASE_GRUPAL', 'CLASE_PRUEBA'] as LeadService[]).map(s => <option key={s} value={s}>{serviceLabel[s]}</option>)}
+                    {(['PIANO_NINOS', 'PIANO_ADULTOS', 'CANTO', 'VIOLIN', 'GUITARRA', 'BATERIA', 'CONTRABAJO', 'CLASE_GRUPAL', 'CLASE_PRUEBA'] as LeadService[]).map(s => <option key={s} value={s}>{serviceLabel[s]}</option>)}
                   </select>
                 </div>
                 <div className="col-span-2 space-y-2">

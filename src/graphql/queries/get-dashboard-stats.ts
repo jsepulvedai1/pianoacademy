@@ -16,18 +16,42 @@ export const GET_DASHBOARD_STATS = gql`
       id
       amount
       paymentDate
+      method
+      description
       student {
+        id
         name
+        email
+        phoneNumber
+      }
+      pack {
+        id
+        totalClasses
+        remainingClasses
+        plan {
+          id
+          name
+        }
       }
     }
     totalLessons: allLessons {
       id
       status
       date
+      startTime
+      endTime
+      lessonType
+      notes
       teacher {
+        id
         name
       }
       student {
+        id
+        name
+      }
+      room {
+        id
         name
       }
     }

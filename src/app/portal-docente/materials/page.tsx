@@ -5,7 +5,7 @@ import {
   BookOpen, Plus, FileText, Link as LinkIcon, Video, Trash2, 
   Search, ExternalLink, Music, Loader2, X, Sparkles, Copy, 
   Check, Filter, ShieldCheck, UserCheck, Edit2, Layers,
-  UploadCloud, Paperclip, CheckCircle2
+  UploadCloud, Paperclip, CheckCircle2, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,10 +19,12 @@ import { CREATE_MATERIAL, UPDATE_MATERIAL, DELETE_MATERIAL } from "@/graphql/mut
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { getMediaUrl } from "@/lib/utils";
+import { SecureDocumentModal } from "@/components/modals/secure-document-modal";
 
 type ScopeFilter = "DETACHE" | "MY_MATERIALS" | "ALL";
 
 export default function TeacherMaterialsPage() {
+  const [selectedDocument, setSelectedDocument] = useState<{ title: string; url: string; type: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<ScopeFilter>("DETACHE");
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -469,14 +471,17 @@ export default function TeacherMaterialsPage() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2 pt-2">
-                    <a
-                      href={getMediaUrl(m.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDocument({
+                        title: m.title,
+                        url: getMediaUrl(m.url),
+                        type: m.type
+                      })}
                       className="flex-1 h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" /> Abrir Recurso
-                    </a>
+                      <Lock className="h-3.5 w-3.5 text-purple-400" /> Visor Seguro
+                    </button>
 
                     <Button
                       variant="outline"
@@ -683,6 +688,14 @@ export default function TeacherMaterialsPage() {
           </Card>
         </div>
       )}
+      {/* Visor Protegido de Documento */}
+      <SecureDocumentModal
+        isOpen={Boolean(selectedDocument)}
+        onClose={() => setSelectedDocument(null)}
+        title={selectedDocument?.title || ""}
+        url={selectedDocument?.url || ""}
+        type={selectedDocument?.type || "PDF"}
+      />
     </div>
   );
 }

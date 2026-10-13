@@ -321,6 +321,8 @@ export default function TeacherDashboardPage() {
                               "rounded-xl shadow-sm border-l-4 flex flex-col gap-0.5",
                               lesson.status === 'COMPLETED' ? "bg-emerald-50 border-emerald-500 text-emerald-900" :
                               lesson.status === 'CANCELLED' ? "bg-rose-50 border-rose-500 text-rose-900" :
+                              lesson.status === 'ABSENT' ? "bg-red-50 border-red-500 text-red-900" :
+                              lesson.status === 'EXCUSED' ? "bg-blue-50 border-blue-500 text-blue-900" :
                               "bg-amber-50 border-amber-500 text-amber-900"
                             )}
                             style={{
@@ -330,15 +332,27 @@ export default function TeacherDashboardPage() {
                               height: `${duration * 80 - 2}px`,
                             }}
                           >
-                            <span className="text-[8px] font-bold uppercase opacity-60">
-                              {lesson.startTime.substring(0, 5)}
-                            </span>
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[8px] font-bold uppercase opacity-60 shrink-0">
+                                {lesson.startTime.substring(0, 5)}
+                              </span>
+                              <div className="flex items-center gap-1 overflow-hidden">
+                                {lesson.status === 'EXCUSED' && <span className="text-[8px] font-bold text-blue-600 bg-blue-100 px-1 rounded shrink-0">AVISÓ</span>}
+                                {lesson.status === 'ABSENT' && <span className="text-[8px] font-bold text-red-600 bg-red-100 px-1 rounded shrink-0">NO ASISTE</span>}
+                                {lesson.student?.status === 'ON_HOLD' && <span className="text-[7px] font-bold text-amber-700 bg-amber-100 px-1 rounded shrink-0">CONGELADO</span>}
+                              </div>
+                            </div>
                             <p className="text-[10px] font-bold leading-tight truncate">
-                              {lesson.student?.name}
+                              {lesson.student?.name || lesson.lead?.nombre || "Sin nombre"}
                             </p>
+                            {lesson.notes && (
+                              <p className="text-[8px] text-slate-500 italic truncate" title={lesson.notes}>
+                                📝 {lesson.notes}
+                              </p>
+                            )}
                             <div className="mt-auto flex items-center gap-1 opacity-40">
                               <Music className="h-2 w-2" />
-                              <span className="text-[7px] font-bold uppercase truncate">{lesson.room?.name}</span>
+                              <span className="text-[7px] font-bold uppercase truncate">{lesson.room?.name || "Sin Sala"}</span>
                             </div>
                           </div>
                         );
@@ -372,16 +386,32 @@ export default function TeacherDashboardPage() {
                               <span className="text-[10px] font-bold uppercase">{format(parseISO(lesson.date), "EEE", { locale: es })}</span>
                           </div>
                           <div>
-                              <p className="font-bold text-slate-900">{lesson.student?.name || "Pre-reserva/Lead"}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-900">{lesson.student?.name || lesson.lead?.nombre || "Sin nombre asignado"}</p>
+                                {lesson.student?.status === 'ON_HOLD' && (
+                                  <Badge className="bg-amber-100 text-amber-800 text-[8px] font-bold border-0">
+                                    Congelado (Vuelve: {lesson.student.returnDate || 'Pendiente'})
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs font-mono font-bold text-slate-500 mt-0.5">
                                 {lesson.startTime.substring(0, 5)} - {lesson.endTime.substring(0, 5)} 
                                 <span className="text-slate-300 mx-2">•</span> 
                                 {lesson.room?.name || "Sin Sala"}
                               </p>
+                              {lesson.notes && (
+                                <p className="text-[11px] text-slate-500 italic mt-1">📝 Nota: {lesson.notes}</p>
+                              )}
                           </div>
                         </div>
                         {lesson.status === 'COMPLETED' ? (
                           <Badge className="bg-emerald-50 text-emerald-600 border-0 text-[10px] font-black uppercase px-4 py-1.5 rounded-xl">Completada</Badge>
+                        ) : lesson.status === 'EXCUSED' ? (
+                          <Badge className="bg-blue-50 text-blue-700 border-0 text-[10px] font-black uppercase px-4 py-1.5 rounded-xl">Avisó Inasistencia</Badge>
+                        ) : lesson.status === 'ABSENT' ? (
+                          <Badge className="bg-red-50 text-red-700 border-0 text-[10px] font-black uppercase px-4 py-1.5 rounded-xl">No Asiste</Badge>
+                        ) : lesson.status === 'CANCELLED' ? (
+                          <Badge className="bg-rose-50 text-rose-700 border-0 text-[10px] font-black uppercase px-4 py-1.5 rounded-xl">Cancelada</Badge>
                         ) : (
                           <Badge className="bg-amber-50 text-amber-600 border-0 text-[10px] font-black uppercase px-4 py-1.5 rounded-xl">Pendiente</Badge>
                         )}

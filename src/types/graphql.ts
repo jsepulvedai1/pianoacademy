@@ -32,6 +32,7 @@ export interface GetTeachersData {
 export interface Plan {
   id: string;
   name: string;
+  category?: string;
   price: string;
   duration: number;
   classesCount: number;

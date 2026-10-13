@@ -33,6 +33,7 @@ export const MY_TEACHER_PROFILE = gql`
       rut
       address
       email
+      birthDate
       specialties {
         id
         name
@@ -85,7 +86,15 @@ export const MY_LESSONS = gql`
       student {
         id
         name
+        status
+        returnDate
       }
+      lead {
+        id
+        nombre
+      }
+      notes
+      isPreReservation
     }
   }
 `;

@@ -18,7 +18,13 @@ import {
   ChevronRight,
   MessageSquare,
   Plus,
-  XCircle
+  XCircle,
+  X,
+  CreditCard,
+  User,
+  Mail,
+  Phone,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +36,7 @@ import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const [noteText, setNoteText] = useState("");
+  const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
   const { data, loading } = useQuery<any>(GET_DASHBOARD_STATS, {
     fetchPolicy: 'network-only'
   });
@@ -106,21 +113,23 @@ export default function AdminDashboard() {
   const recentActivity = useMemo(() => {
     if (!data) return [];
     
-    const payments = (data.totalPayments || []).slice(-3).map((p: any) => ({
+    const payments = (data.totalPayments || []).slice(-10).map((p: any) => ({
       id: p.id,
       type: 'PAYMENT',
       text: `Pago de ${p.student?.name || 'Alumno'}`,
       amount: p.amount,
       date: p.paymentDate,
-      status: 'PAID'
+      status: 'PAID',
+      raw: p
     }));
     
-    const lessons = (data.totalLessons || []).slice(-3).map((l: any) => ({
+    const lessons = (data.totalLessons || []).slice(-10).map((l: any) => ({
       id: l.id,
       type: 'LESSON',
       text: `${l.student?.name} con ${l.teacher?.name}`,
       date: l.date,
-      status: l.status
+      status: l.status,
+      raw: l
     }));
 
     return [...payments, ...lessons].sort((a, b) => 
@@ -181,27 +190,38 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-[2.5rem] p-10 space-y-10">
           <div className="flex items-center justify-between border-b border-slate-50 pb-8">
-            <h2 className="text-2xl font-bold font-serif text-slate-900 italic">Actividad Reciente</h2>
+            <div>
+              <h2 className="text-2xl font-bold font-serif text-slate-900 italic">Actividad Reciente</h2>
+              <p className="text-xs text-slate-400 mt-1">Haz clic en cualquier movimiento para auditar fecha, hora, origen y detalle.</p>
+            </div>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-4">
              {recentActivity.map((act, i) => (
-                <div key={i} className="flex items-center justify-between p-6 rounded-3xl bg-slate-50/50 hover:bg-white transition-all cursor-pointer border border-transparent hover:border-slate-100">
-                   <div className="flex items-center gap-6">
-                      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
+                <div 
+                  key={i} 
+                  onClick={() => setSelectedActivity(act)}
+                  className="flex items-center justify-between p-5 rounded-3xl bg-slate-50/50 hover:bg-white transition-all cursor-pointer border border-transparent hover:border-slate-200 hover:shadow-md group"
+                >
+                   <div className="flex items-center gap-5">
+                      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${
                         act.type === 'PAYMENT' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'
                       }`}>
                          {act.type === 'PAYMENT' ? <DollarSign className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
                       </div>
                       <div className="space-y-0.5">
-                         <p className="text-sm font-bold text-slate-800">{act.text}</p>
-                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{act.date}</p>
+                         <p className="text-sm font-bold text-slate-800 group-hover:text-primary transition-colors">{act.text}</p>
+                         <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{act.date}</span>
+                            <span className="text-[10px] text-slate-300">•</span>
+                            <span className="text-[10px] text-slate-500 font-semibold">{act.type === 'PAYMENT' ? 'Transacción' : 'Clase en Agenda'}</span>
+                         </div>
                       </div>
                    </div>
-                   <div className="flex items-center gap-8">
+                   <div className="flex items-center gap-6">
                       {'amount' in act && <p className="text-sm font-bold text-emerald-600 font-mono">+{formatCurrency(act.amount || 0)}</p>}
-                      <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest px-2 py-0 border-0 bg-slate-100">{act.status}</Badge>
-                      <ChevronRight className="h-5 w-5 text-slate-200" />
+                      <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 border-0 bg-slate-100">{act.status}</Badge>
+                      <ChevronRight className="h-5 w-5 text-slate-300 group-hover:translate-x-1 transition-transform" />
                    </div>
                 </div>
              ))}
@@ -262,6 +282,157 @@ export default function AdminDashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Modal de Detalle de Actividad / Pago / Clase */}
+      {selectedActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg bg-white border-none shadow-2xl rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-300">
+            <header className={`p-8 text-white relative ${selectedActivity.type === 'PAYMENT' ? 'bg-emerald-600' : 'bg-indigo-600'}`}>
+              <button 
+                onClick={() => setSelectedActivity(null)}
+                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  {selectedActivity.type === 'PAYMENT' ? <DollarSign className="h-6 w-6" /> : <Calendar className="h-6 w-6" />}
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
+                    {selectedActivity.type === 'PAYMENT' ? 'Auditoría de Pago' : 'Auditoría de Sesión'}
+                  </span>
+                  <h3 className="text-xl font-bold font-serif">{selectedActivity.text}</h3>
+                </div>
+              </div>
+            </header>
+
+            <CardContent className="p-8 space-y-6">
+              {/* Información General */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha Registrada</p>
+                  <p className="text-sm font-bold text-slate-800 font-mono mt-0.5">{selectedActivity.date}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Estado Actual</p>
+                  <div className="mt-1">
+                    <Badge className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider">
+                      {selectedActivity.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Si es Pago */}
+              {selectedActivity.type === 'PAYMENT' && (
+                <div className="space-y-4">
+                  <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Monto del Pago</p>
+                      <p className="text-2xl font-black font-serif text-emerald-900 mt-0.5">
+                        {formatCurrency(selectedActivity.amount || 0)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Método</p>
+                      <Badge className="bg-emerald-600 text-white font-bold text-[10px] mt-1">
+                        {selectedActivity.raw?.method === 'TRANSFER' ? 'Transferencia' : selectedActivity.raw?.method === 'CASH' ? 'Efectivo' : 'Tarjeta / Online'}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                      <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                        <User className="h-3.5 w-3.5" /> Alumno
+                      </span>
+                      <span className="text-xs font-bold text-slate-800">{selectedActivity.raw?.student?.name || 'No especificado'}</span>
+                    </div>
+                    {selectedActivity.raw?.student?.email && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                        <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5" /> Correo
+                        </span>
+                        <span className="text-xs text-slate-700 font-mono">{selectedActivity.raw?.student?.email}</span>
+                      </div>
+                    )}
+                    {selectedActivity.raw?.student?.phoneNumber && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                        <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5" /> Teléfono
+                        </span>
+                        <span className="text-xs text-slate-700 font-mono">{selectedActivity.raw?.student?.phoneNumber}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                      <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                        <CreditCard className="h-3.5 w-3.5" /> Pack / Plan Asignado
+                      </span>
+                      <span className="text-xs font-bold text-primary">
+                        {selectedActivity.raw?.pack?.plan?.name || 'Pago sin pack asociado'}
+                      </span>
+                    </div>
+                    <div className="py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Origen / Glosa de Transacción</p>
+                      <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                        {selectedActivity.raw?.description || 'Ingreso registrado desde módulo administrativo de pagos.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Si es Clase */}
+              {selectedActivity.type === 'LESSON' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5" /> Horario
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 font-mono">
+                      {selectedActivity.raw?.startTime?.slice(0, 5) || '—'} - {selectedActivity.raw?.endTime?.slice(0, 5) || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                      <User className="h-3.5 w-3.5" /> Profesor
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">{selectedActivity.raw?.teacher?.name || 'Sin profesor'}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                      <User className="h-3.5 w-3.5" /> Alumno
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">{selectedActivity.raw?.student?.name || 'Sin alumno'}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                      <Building2 className="h-3.5 w-3.5" /> Sala
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">{selectedActivity.raw?.room?.name || 'No asignada'}</span>
+                  </div>
+                  {selectedActivity.raw?.notes && (
+                    <div className="py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Notas / Motivo</p>
+                      <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                        {selectedActivity.raw?.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <Button 
+                onClick={() => setSelectedActivity(null)} 
+                className="w-full h-12 rounded-2xl bg-slate-900 text-white font-bold uppercase text-[10px] tracking-widest hover:bg-slate-800"
+              >
+                Cerrar Detalle
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

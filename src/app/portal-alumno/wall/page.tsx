@@ -12,7 +12,10 @@ import { MY_WALL_MESSAGES } from "@/graphql/queries/portal-queries";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
+import { SecureDocumentModal } from "@/components/modals/secure-document-modal";
+
 export default function StudentWallPage() {
+  const [selectedDocument, setSelectedDocument] = useState<{ title: string; url: string; type: string } | null>(null);
   const { data, loading } = useQuery<any>(MY_WALL_MESSAGES, {
     fetchPolicy: "network-only"
   });
@@ -110,18 +113,29 @@ export default function StudentWallPage() {
 
                         {note.attachedMaterial && (
                           <div className="mt-4">
-                            <a href={getMediaUrl(note.attachedMaterial.url)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-primary/50 hover:shadow-md transition-all group">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDocument({
+                                title: note.attachedMaterial.title,
+                                url: getMediaUrl(note.attachedMaterial.url),
+                                type: note.attachedMaterial.type
+                              })}
+                              className="w-full text-left flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-primary/50 hover:shadow-md transition-all group cursor-pointer"
+                            >
                               <div className="flex items-center gap-4">
                                 <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-primary/5 transition-colors">
                                   {getTypeIcon(note.attachedMaterial.type)}
                                 </div>
                                 <div>
                                   <p className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">{note.attachedMaterial.title}</p>
-                                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-1">{note.attachedMaterial.type}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{note.attachedMaterial.type}</span>
+                                    <span className="text-[9px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">Lectura Protegida</span>
+                                  </div>
                                 </div>
                               </div>
                               <ExternalLink className="h-5 w-5 text-slate-300 group-hover:text-primary transition-colors" />
-                            </a>
+                            </button>
                           </div>
                         )}
 
@@ -144,6 +158,15 @@ export default function StudentWallPage() {
           ))
         )}
       </div>
+
+      {/* Visor Seguro de Documento */}
+      <SecureDocumentModal
+        isOpen={Boolean(selectedDocument)}
+        onClose={() => setSelectedDocument(null)}
+        title={selectedDocument?.title || ""}
+        url={selectedDocument?.url || ""}
+        type={selectedDocument?.type || "PDF"}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, Camera, Lock, Loader2, Calendar, Clock, CheckCircle2, ShieldAlert } from "lucide-react";
+import { User, Camera, Lock, Loader2, Calendar, Clock, CheckCircle2, ShieldAlert, Edit3, Cake, Phone, Mail, FileText, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
 import { CHANGE_MY_PASSWORD } from "@/graphql/mutations/student-mutations";
+import { UPDATE_MY_TEACHER_PROFILE } from "@/graphql/mutations/create-teacher";
 
 const DAY_MAP_EN_TO_ES: Record<string, string> = {
   MONDAY: "Lunes",
@@ -32,8 +33,29 @@ export default function TeacherProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [isChangingPass, setIsChangingPass] = useState(false);
 
+  const [isEditingData, setIsEditingData] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    email: "",
+    phoneNumber: "",
+    birthDate: "",
+    description: ""
+  });
+
   const { data: profileData, loading } = useQuery<any>(MY_TEACHER_PROFILE);
   const teacher = profileData?.myTeacherProfile;
+
+  const [updateProfile, { loading: isUpdatingProfile }] = useMutation(UPDATE_MY_TEACHER_PROFILE, {
+    refetchQueries: [{ query: MY_TEACHER_PROFILE }],
+    onCompleted: (res: any) => {
+      if (res?.updateMyTeacherProfile?.success) {
+        toast.success("Tus datos han sido actualizados con éxito ✅");
+        setIsEditingData(false);
+      } else {
+        toast.error("Error al actualizar datos.");
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Error al conectar.")
+  });
 
   const [changePassword] = useMutation(CHANGE_MY_PASSWORD, {
     onCompleted: (res: any) => {
@@ -180,37 +202,152 @@ export default function TeacherProfilePage() {
 
            <Card className="border-none shadow-sm rounded-[2.5rem] bg-white">
               <CardContent className="p-8 space-y-8">
-                 <div>
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6">Datos de Cuenta</h3>
-                    <div className="grid grid-cols-2 gap-6">
-                       <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email</p>
-                          <p className="font-medium text-slate-900">{teacher?.email || "—"}</p>
-                       </div>
-                       <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Teléfono</p>
-                          <p className="font-medium text-slate-900">{teacher?.phoneNumber || "—"}</p>
-                       </div>
-                    </div>
-                 </div>
-                 
-                 <div className="pt-6 border-t border-slate-50">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6">Perfil Académico</h3>
-                    <div className="space-y-6">
-                       <div className="space-y-2">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Especialidades</p>
-                          <div className="flex flex-wrap gap-2">
-                             {teacher?.specialties?.map((s: any) => (
-                                <Badge key={s.id} className="bg-[#70125F]/10 text-[#70125F] border-0 font-bold px-3 py-1.5">{s.name}</Badge>
-                             ))}
-                          </div>
-                       </div>
-                       <div className="space-y-2">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Biografía</p>
-                          <p className="text-sm text-slate-600 italic bg-slate-50 p-4 rounded-2xl">{teacher?.description || "Sin descripción."}</p>
-                       </div>
-                    </div>
-                 </div>
+                  {isEditingData ? (
+                     <form onSubmit={(e) => {
+                       e.preventDefault();
+                       updateProfile({
+                         variables: {
+                           email: profileForm.email.trim() || null,
+                           phoneNumber: profileForm.phoneNumber.trim() || null,
+                           birthDate: profileForm.birthDate || null,
+                           description: profileForm.description.trim() || null
+                         }
+                       });
+                     }} className="space-y-6 animate-in fade-in duration-300">
+                        <div className="flex items-center justify-between border-b pb-4">
+                           <h3 className="text-sm font-bold uppercase tracking-widest text-[#70125F] flex items-center gap-2">
+                              <Edit3 className="h-4 w-4" /> Editar Datos Personales
+                           </h3>
+                           <span className="text-[10px] text-slate-400">Actualiza tu contacto y cumpleaños</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           <div className="space-y-1.5">
+                              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Correo Electrónico</Label>
+                              <div className="relative">
+                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                 <Input 
+                                    type="email"
+                                    value={profileForm.email}
+                                    onChange={(e) => setProfileForm({...profileForm, email: e.target.value})}
+                                    className="pl-9 h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                    placeholder="profesor@ejemplo.com"
+                                 />
+                              </div>
+                           </div>
+                           <div className="space-y-1.5">
+                              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Teléfono / WhatsApp</Label>
+                              <div className="relative">
+                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                 <Input 
+                                    type="text"
+                                    value={profileForm.phoneNumber}
+                                    onChange={(e) => setProfileForm({...profileForm, phoneNumber: e.target.value})}
+                                    className="pl-9 h-11 bg-slate-50 border-none rounded-xl text-sm font-mono"
+                                    placeholder="56912345678"
+                                 />
+                              </div>
+                           </div>
+                           <div className="space-y-1.5 sm:col-span-2">
+                              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Fecha de Nacimiento (Para tu Cumpleaños 🎂)</Label>
+                              <div className="relative">
+                                 <Cake className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#70125F]" />
+                                 <Input 
+                                    type="date"
+                                    value={profileForm.birthDate}
+                                    onChange={(e) => setProfileForm({...profileForm, birthDate: e.target.value})}
+                                    className="pl-9 h-11 bg-slate-50 border-none rounded-xl text-sm font-mono"
+                                 />
+                              </div>
+                           </div>
+                           <div className="space-y-1.5 sm:col-span-2">
+                              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Biografía / Presentación Docente</Label>
+                              <textarea 
+                                 rows={3}
+                                 value={profileForm.description}
+                                 onChange={(e) => setProfileForm({...profileForm, description: e.target.value})}
+                                 className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#70125F]/20 resize-none"
+                                 placeholder="Comparte tu trayectoria y pasión musical..."
+                              />
+                           </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                           <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setIsEditingData(false)}
+                              className="flex-1 h-11 rounded-xl text-xs font-bold uppercase tracking-wider"
+                           >
+                              Cancelar
+                           </Button>
+                           <Button 
+                              type="submit" 
+                              disabled={isUpdatingProfile}
+                              className="flex-1 h-11 rounded-xl bg-[#70125F] hover:bg-[#590e4b] text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-[#70125F]/20"
+                           >
+                              {isUpdatingProfile ? "Guardando..." : "Guardar Cambios"}
+                           </Button>
+                        </div>
+                     </form>
+                  ) : (
+                     <>
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Datos de Cuenta</h3>
+                           <button 
+                              onClick={() => {
+                                 setProfileForm({
+                                    email: teacher?.email || "",
+                                    phoneNumber: teacher?.phoneNumber || "",
+                                    birthDate: teacher?.birthDate || "",
+                                    description: teacher?.description || ""
+                                 });
+                                 setIsEditingData(true);
+                              }}
+                              className="px-3 py-1.5 bg-[#70125F]/10 hover:bg-[#70125F]/20 text-[#70125F] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                           >
+                              <Edit3 className="h-3.5 w-3.5" /> Editar Datos
+                           </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email</p>
+                              <p className="font-medium text-slate-900 break-all">{teacher?.email || "—"}</p>
+                           </div>
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Teléfono</p>
+                              <p className="font-medium text-slate-900 font-mono">{teacher?.phoneNumber || "—"}</p>
+                           </div>
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#70125F] flex items-center gap-1">
+                                 <Cake className="h-3 w-3" /> Cumpleaños
+                              </p>
+                              <p className="font-medium text-slate-900 font-mono">
+                                 {teacher?.birthDate ? new Date(teacher.birthDate + "T12:00:00").toLocaleDateString('es-CL', { day: 'numeric', month: 'long' }) : "No registrado"}
+                              </p>
+                           </div>
+                        </div>
+                        
+                        <div className="pt-6 border-t border-slate-50 space-y-4">
+                           <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Perfil Académico</h3>
+                           <div className="space-y-4">
+                              <div className="space-y-2">
+                                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Especialidades</p>
+                                 <div className="flex flex-wrap gap-2">
+                                    {teacher?.specialties?.map((s: any) => (
+                                       <Badge key={s.id} className="bg-[#70125F]/10 text-[#70125F] border-0 font-bold px-3 py-1.5">{s.name}</Badge>
+                                    ))}
+                                 </div>
+                              </div>
+                              <div className="space-y-2">
+                                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Biografía</p>
+                                 <p className="text-sm text-slate-600 italic bg-slate-50 p-4 rounded-2xl">{teacher?.description || "Sin descripción."}</p>
+                              </div>
+                           </div>
+                        </div>
+                     </>
+                  )}
 
                  <form onSubmit={handlePasswordSubmit} className="pt-6 border-t border-slate-50 space-y-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Seguridad: Cambiar Contraseña</h3>

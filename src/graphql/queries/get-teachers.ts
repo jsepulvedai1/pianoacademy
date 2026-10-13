@@ -17,6 +17,7 @@ export const GET_TEACHERS = gql`
       rut
       address
       email
+      birthDate
       specialties {
         id
         name

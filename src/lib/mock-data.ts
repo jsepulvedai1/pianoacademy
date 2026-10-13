@@ -76,7 +76,7 @@ export type LeadStatus =
   | 'RESERVA_CONFIRMADA';
 
 export type LeadSource = 'WEB' | 'WHATSAPP' | 'INSTAGRAM' | 'REFERIDO' | 'GOOGLE' | 'OTRO';
-export type LeadService = 'PIANO_NINOS' | 'PIANO_ADULTOS' | 'CANTO' | 'CLASE_GRUPAL' | 'CLASE_PRUEBA';
+export type LeadService = 'PIANO_NINOS' | 'PIANO_ADULTOS' | 'CANTO' | 'VIOLIN' | 'GUITARRA' | 'BATERIA' | 'CONTRABAJO' | 'CLASE_GRUPAL' | 'CLASE_PRUEBA';
 
 export interface LeadNote {
   id: string;
@@ -135,6 +135,8 @@ export interface Reservation {
   nombre: string;
   telefono: string;
   email?: string;
+  edad?: number;
+  apoderadoNombre?: string;
   servicio: LeadService;
   profesorId: string;
   profesorNombre: string;
@@ -398,6 +400,10 @@ export const serviceLabel: Record<LeadService, string> = {
   PIANO_NINOS: 'Piano Niños',
   PIANO_ADULTOS: 'Piano Adultos',
   CANTO: 'Canto',
+  VIOLIN: 'Violín',
+  GUITARRA: 'Guitarra',
+  BATERIA: 'Batería',
+  CONTRABAJO: 'Contrabajo / Bajo',
   CLASE_GRUPAL: 'Clase Grupal',
   CLASE_PRUEBA: 'Clase de Prueba'
 };

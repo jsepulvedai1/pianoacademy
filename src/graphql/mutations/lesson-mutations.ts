@@ -30,12 +30,27 @@ export const CREATE_LESSON = gql`
 `;
 
 export const UPDATE_LESSON_STATUS = gql`
-  mutation UpdateLessonStatus($lessonId: Int!, $status: String!) {
-    updateLessonStatus(lessonId: $lessonId, status: $status) {
+  mutation UpdateLessonStatus(
+    $lessonId: Int!, 
+    $status: String!, 
+    $notes: String,
+    $rescheduleDate: Date,
+    $rescheduleStartTime: Time,
+    $rescheduleEndTime: Time
+  ) {
+    updateLessonStatus(
+      lessonId: $lessonId, 
+      status: $status,
+      notes: $notes,
+      rescheduleDate: $rescheduleDate,
+      rescheduleStartTime: $rescheduleStartTime,
+      rescheduleEndTime: $rescheduleEndTime
+    ) {
       success
       lesson {
         id
         status
+        notes
       }
     }
   }
@@ -46,6 +61,8 @@ export const CREATE_PRE_RESERVATION = gql`
     $nombre: String!
     $telefono: String!
     $email: String
+    $edad: Int
+    $apoderadoNombre: String
     $servicio: String
     $profesorNombre: String!
     $fecha: Date!
@@ -58,6 +75,8 @@ export const CREATE_PRE_RESERVATION = gql`
       nombre: $nombre
       telefono: $telefono
       email: $email
+      edad: $edad
+      apoderadoNombre: $apoderadoNombre
       servicio: $servicio
       profesorNombre: $profesorNombre
       fecha: $fecha

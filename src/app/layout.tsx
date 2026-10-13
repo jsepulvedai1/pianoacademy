@@ -10,6 +10,18 @@ import { HeaderWrapper, FooterWrapper } from "@/components/layout/BackofficeWrap
 export const metadata: Metadata = {
   title: "Détaché | Academia de Música",
   description: "Reserva tus clases de piano con los mejores profesores.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -26,8 +38,9 @@ export default function RootLayout({
         <ApolloWrapper>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
+            forcedTheme="light"
             disableTransitionOnChange
           >
             <HeaderWrapper />
