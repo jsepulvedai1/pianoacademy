@@ -1,16 +1,35 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ChevronRight, MessageSquare, Mail, Calendar, Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { CheckCircle2, ChevronRight, MessageSquare, Mail, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const paymentId = searchParams.get("payment_id");
-  const status = searchParams.get("status");
+  const paymentId = searchParams.get("payment_id") || searchParams.get("collection_id");
+  const status = searchParams.get("status") || searchParams.get("collection_status");
+  const externalReference = searchParams.get("external_reference");
+  const [verified, setVerified] = useState(false);
+
+  useEffect(() => {
+    if (!paymentId) return;
+    const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:8000/graphql/";
+    const backendBase = graphqlUrl.replace(/\/graphql\/?$/, "");
+    fetch(`${backendBase}/api/mercadopago/webhook/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "payment",
+        data: { id: paymentId },
+        external_reference: externalReference
+      })
+    })
+      .then(() => setVerified(true))
+      .catch(() => setVerified(true));
+  }, [paymentId, externalReference]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-12 md:py-24 text-slate-800 flex items-center justify-center">

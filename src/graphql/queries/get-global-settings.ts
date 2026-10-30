@@ -13,6 +13,10 @@ export const GET_GLOBAL_SETTINGS = gql`
       instagramUrl
       trialClassPrice
       trialClassEmailTemplate
+      trialClassDescription
+      sedeSalasInfo
+      bankTransferDetails
+      termsAndConditions
       whatsappNumber
       whatsappAssignedTo
       evolutionApiUrl

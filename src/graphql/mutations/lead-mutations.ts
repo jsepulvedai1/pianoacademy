@@ -35,8 +35,21 @@ export const CREATE_LEAD = gql`
 `;
 
 export const CONVERT_LEAD_TO_STUDENT = gql`
-  mutation ConvertLeadToStudent($leadId: ID!) {
-    convertLeadToStudent(leadId: $leadId) {
+  mutation ConvertLeadToStudent(
+    $leadId: ID!
+    $planId: Int
+    $paymentMethod: String
+    $paymentAmount: Float
+    $leaveInFollowup: Boolean
+  ) {
+    convertLeadToStudent(
+      leadId: $leadId
+      planId: $planId
+      paymentMethod: $paymentMethod
+      paymentAmount: $paymentAmount
+      leaveInFollowup: $leaveInFollowup
+    ) {
+      success
       student {
         id
         name

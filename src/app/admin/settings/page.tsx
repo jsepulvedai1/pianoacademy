@@ -41,6 +41,10 @@ export default function AdminSettingsPage() {
     instagramUrl: "",
     trialClassPrice: 15000,
     trialClassEmailTemplate: "",
+    trialClassDescription: "",
+    sedeSalasInfo: "",
+    bankTransferDetails: "",
+    termsAndConditions: "",
     whatsappNumber: "",
     whatsappAssignedTo: "",
     evolutionApiUrl: "",
@@ -72,6 +76,10 @@ export default function AdminSettingsPage() {
         instagramUrl: data.globalSettings.instagramUrl || "",
         trialClassPrice: data.globalSettings.trialClassPrice ?? 15000,
         trialClassEmailTemplate: data.globalSettings.trialClassEmailTemplate || "",
+        trialClassDescription: data.globalSettings.trialClassDescription || "Sesión individual de 30 minutos donde evaluamos tu nivel o potencial inicial, resolvemos tus dudas metodológicas y trazamos un plan de estudio personalizado en tu instrumento.",
+        sedeSalasInfo: data.globalSettings.sedeSalasInfo || "Sede La Cisterna — Gran Avenida José Miguel Carrera 8520, Oficina C (A pasos de Metro La Cisterna). Contamos con salas acústicamente acondicionadas y equipadas con instrumentos profesionales para Piano, Canto, Guitarra, Violín y Batería.",
+        bankTransferDetails: data.globalSettings.bankTransferDetails || "Banco: Banco Estado / Santander\nTipo de Cuenta: Cuenta Corriente / Vista\nNombre: Academia de Música Détaché\nEmail de confirmación: academia@detache.cl\nAsunto: Clase de Prueba + Nombre del Alumno",
+        termsAndConditions: data.globalSettings.termsAndConditions || "",
         whatsappNumber: data.globalSettings.whatsappNumber || "+56 9 6427 9239",
         whatsappAssignedTo: data.globalSettings.whatsappAssignedTo || "Recepción / Admisiones",
         evolutionApiUrl: data.globalSettings.evolutionApiUrl || "http://localhost:8080",
@@ -367,6 +375,64 @@ export default function AdminSettingsPage() {
                         onChange={(e) => setFormData({ ...formData, trialClassEmailTemplate: e.target.value })}
                         className="min-h-[220px] bg-slate-50 border-none rounded-2xl p-4 font-mono text-xs leading-relaxed"
                         placeholder="Estimado/a {alumno},\nConfirmamos tu solicitud para..."
+                      />
+                    </div>
+                  </Card>
+
+                  {/* Textos del Flujo de Reserva (Clase de Prueba, Sede/Salas, Datos de Transferencia) */}
+                  <Card className="border-none shadow-sm bg-white rounded-[2rem] p-8 space-y-6">
+                    <div>
+                      <h3 className="font-extrabold text-slate-800 text-base">Textos e Información en Inscripción de Clase de Prueba (/book)</h3>
+                      <p className="text-slate-400 text-xs italic">Edita la descripción de la Clase de Prueba (30 min), la información sobre Sede y Salas, y los datos de Transferencia Bancaria que ven los alumnos al agendar.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Texto sobre Clase de Prueba (30 minutos)</label>
+                        <Textarea
+                          value={formData.trialClassDescription}
+                          onChange={(e) => setFormData({ ...formData, trialClassDescription: e.target.value })}
+                          className="min-h-[100px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
+                          placeholder="Descripción de la clase de prueba de 30 minutos..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Información sobre Sede y Salas</label>
+                        <Textarea
+                          value={formData.sedeSalasInfo}
+                          onChange={(e) => setFormData({ ...formData, sedeSalasInfo: e.target.value })}
+                          className="min-h-[100px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
+                          placeholder="Información sobre la sede, ubicación y equipamiento de salas..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Datos de Transferencia Bancaria (Para pago de Clase de Prueba / Planes)</label>
+                        <Textarea
+                          value={formData.bankTransferDetails}
+                          onChange={(e) => setFormData({ ...formData, bankTransferDetails: e.target.value })}
+                          className="min-h-[120px] bg-slate-50 border-none rounded-2xl p-4 font-mono text-xs leading-relaxed"
+                          placeholder="Banco, Tipo de Cuenta, Número, RUT, Nombre, Correo..."
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Reglamento Interno / Términos y Condiciones */}
+                  <Card className="border-none shadow-sm bg-white rounded-[2rem] p-8 space-y-6">
+                    <div>
+                      <h3 className="font-extrabold text-slate-800 text-base">Reglamento Interno y Términos y Condiciones (/terms)</h3>
+                      <p className="text-slate-400 text-xs italic">Edita aquí el Reglamento Oficial de la Academia. Este texto se mostrará en la página pública /terms y en la casilla obligatoria de aceptación al agendar una Clase de Prueba.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Texto Completo del Reglamento Interno</label>
+                      <Textarea
+                        value={formData.termsAndConditions}
+                        onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
+                        className="min-h-[260px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
+                        placeholder="Ingresa aquí el reglamento oficial de Academia Détaché..."
                       />
                     </div>
                   </Card>

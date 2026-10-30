@@ -11,6 +11,10 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
     $instagramUrl: String
     $trialClassPrice: Float
     $trialClassEmailTemplate: String
+    $trialClassDescription: String
+    $sedeSalasInfo: String
+    $bankTransferDetails: String
+    $termsAndConditions: String
     $whatsappNumber: String
     $whatsappAssignedTo: String
     $evolutionApiUrl: String
@@ -29,6 +33,10 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
       instagramUrl: $instagramUrl
       trialClassPrice: $trialClassPrice
       trialClassEmailTemplate: $trialClassEmailTemplate
+      trialClassDescription: $trialClassDescription
+      sedeSalasInfo: $sedeSalasInfo
+      bankTransferDetails: $bankTransferDetails
+      termsAndConditions: $termsAndConditions
       whatsappNumber: $whatsappNumber
       whatsappAssignedTo: $whatsappAssignedTo
       evolutionApiUrl: $evolutionApiUrl
@@ -48,6 +56,10 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
         instagramUrl
         trialClassPrice
         trialClassEmailTemplate
+        trialClassDescription
+        sedeSalasInfo
+        bankTransferDetails
+        termsAndConditions
         whatsappNumber
         whatsappAssignedTo
         evolutionApiUrl

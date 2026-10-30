@@ -8,6 +8,7 @@ export const GET_LEADS = gql`
       telefono
       email
       edad
+      apoderadoNombre
       servicio
       fuente
       estado

@@ -1,7 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Mic, Drum } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+
+function getInstrumentSlug(name: string): string {
+  const n = (name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (n.includes("piano")) return "piano";
+  if (n.includes("guitarra")) return "guitarra";
+  if (n.includes("canto")) return "canto";
+  if (n.includes("violin")) return "violin";
+  if (n.includes("bateria")) return "bateria";
+  return n.replace(/\s+/g, "-");
+}
+
+function getInstrumentMinAgeLabel(name: string): string {
+  const n = (name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (n.includes("piano")) return "🎹 Desde los 4 años";
+  if (n.includes("canto")) return "🎤 Desde los 6 años";
+  if (n.includes("bateria")) return "🥁 Desde los 6 años";
+  if (n.includes("guitarra")) return "🎸 Desde los 8 años";
+  if (n.includes("violin")) return "🎻 Desde los 6 años";
+  return "Todas las edades";
+}
 
 interface Instrument {
   name: string;
@@ -148,8 +169,12 @@ export function InstrumentsCarousel({ items }: { items?: any[] }) {
               const ins = list[index];
               const isMiddle = pos === 1;
 
+              const slug = getInstrumentSlug(ins.name);
+              const ageBadge = getInstrumentMinAgeLabel(ins.name);
+
               return (
-                <div
+                <Link
+                  href={`/${slug}`}
                   key={ins.name}
                   className={`${isMiddle ? "flex" : "hidden sm:flex"} relative flex flex-col justify-between rounded-[2.5rem] w-[280px] h-[400px] bg-[#DFB012] text-slate-900 p-8 shadow-lg transition-all duration-500 cursor-pointer hover:bg-primary hover:text-white hover:shadow-2xl group border border-amber-500/20`}
                 >
@@ -185,15 +210,24 @@ export function InstrumentsCarousel({ items }: { items?: any[] }) {
                   </div>
 
                   {/* Base State Title */}
-                  <div className="w-full text-center mt-auto mb-2 transition-all duration-500 group-hover:opacity-0 group-hover:translate-y-4 group-hover:pointer-events-none">
+                  <div className="w-full text-center mt-auto mb-2 space-y-2 transition-all duration-500 group-hover:opacity-0 group-hover:translate-y-4 group-hover:pointer-events-none">
+                    <span className="inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-white/80 text-slate-900">
+                      {ageBadge}
+                    </span>
                     <h3 className="text-3xl font-extrabold tracking-tight">
                       {ins.name}
                     </h3>
+                    <p className="text-[11px] font-bold text-slate-800/80 flex items-center justify-center gap-1">
+                      Ver salas y profesores <ArrowRight className="h-3 w-3" />
+                    </p>
                   </div>
 
                   {/* Hover State Content */}
                   <div className="absolute inset-x-8 top-8 bottom-8 flex flex-col justify-between opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 z-10 pointer-events-none group-hover:pointer-events-auto">
                     <div className="space-y-3">
+                      <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/20 text-white">
+                        {ageBadge}
+                      </span>
                       <h3 className="text-4xl font-extrabold tracking-tight">
                         {ins.name}
                       </h3>
@@ -202,8 +236,11 @@ export function InstrumentsCarousel({ items }: { items?: any[] }) {
                       </p>
                     </div>
 
+                    <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider bg-white text-[#70125F] px-4 py-2.5 rounded-full w-fit shadow-md">
+                      Ver Salas y Profesores <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -234,63 +271,77 @@ export function InstrumentsCarousel({ items }: { items?: any[] }) {
 
       {/* Mobile View (Vertical Stacking of all Instruments) */}
       <div className="flex md:hidden flex-col items-center gap-28 w-full px-4 pt-20 pb-8">
-        {list.map((ins) => (
-          <div
-            key={ins.name}
-            className="relative flex flex-col justify-between rounded-[2.5rem] w-full max-w-[280px] h-[360px] bg-[#DFB012] text-slate-900 p-8 shadow-lg transition-all duration-500 cursor-pointer hover:bg-primary hover:text-white border border-amber-500/20 group"
-          >
-            {/* Background Image of the Instrument */}
-            <div className="absolute inset-0 z-0 opacity-15 rounded-[2.5rem] overflow-hidden transition-opacity duration-500 group-hover:opacity-0">
-              <img
-                src={ins.image}
-                alt={ins.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Watermark for hover state */}
-            <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-              {ins.iconName ? (
-                <img 
-                  src={`/svg/${ins.iconName}`} 
-                  alt="" 
-                  className="absolute right-2 bottom-2 w-36 h-36 opacity-5 pointer-events-none object-contain invert brightness-0"
+        {list.map((ins) => {
+          const slug = getInstrumentSlug(ins.name);
+          const ageBadge = getInstrumentMinAgeLabel(ins.name);
+          return (
+            <Link
+              href={`/${slug}`}
+              key={ins.name}
+              className="relative flex flex-col justify-between rounded-[2.5rem] w-full max-w-[280px] h-[360px] bg-[#DFB012] text-slate-900 p-8 shadow-lg transition-all duration-500 cursor-pointer hover:bg-primary hover:text-white border border-amber-500/20 group"
+            >
+              {/* Background Image of the Instrument */}
+              <div className="absolute inset-0 z-0 opacity-15 rounded-[2.5rem] overflow-hidden transition-opacity duration-500 group-hover:opacity-0">
+                <img
+                  src={ins.image}
+                  alt={ins.name}
+                  className="w-full h-full object-cover"
                 />
-              ) : ins.watermark}
-            </div>
+              </div>
 
-            {/* White Circle Cutout with Icon */}
-            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-44 h-44 bg-white rounded-full flex items-center justify-center z-20 transition-all duration-500 group-hover:opacity-0 group-hover:scale-75 group-hover:pointer-events-none">
-              {ins.iconName ? (
-                <img 
-                  src={`/svg/${ins.iconName}`} 
-                  alt={ins.name} 
-                  className="h-20 w-20 object-contain text-slate-900"
-                />
-              ) : ins.icon}
-            </div>
+              {/* Watermark for hover state */}
+              <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                {ins.iconName ? (
+                  <img 
+                    src={`/svg/${ins.iconName}`} 
+                    alt="" 
+                    className="absolute right-2 bottom-2 w-36 h-36 opacity-5 pointer-events-none object-contain invert brightness-0"
+                  />
+                ) : ins.watermark}
+              </div>
 
-            {/* Base State Title */}
-            <div className="w-full text-center mt-auto mb-2 transition-all duration-500 group-hover:opacity-0 group-hover:translate-y-4 group-hover:pointer-events-none">
-              <h3 className="text-2xl font-extrabold tracking-tight">
-                {ins.name}
-              </h3>
-            </div>
+              {/* White Circle Cutout with Icon */}
+              <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-44 h-44 bg-white rounded-full flex items-center justify-center z-20 transition-all duration-500 group-hover:opacity-0 group-hover:scale-75 group-hover:pointer-events-none">
+                {ins.iconName ? (
+                  <img 
+                    src={`/svg/${ins.iconName}`} 
+                    alt={ins.name} 
+                    className="h-20 w-20 object-contain text-slate-900"
+                  />
+                ) : ins.icon}
+              </div>
 
-            {/* Hover State Content */}
-            <div className="absolute inset-x-8 top-8 bottom-8 flex flex-col justify-between opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 z-10 pointer-events-none group-hover:pointer-events-auto">
-              <div className="space-y-3">
-                <h3 className="text-3xl font-extrabold tracking-tight">
+              {/* Base State Title */}
+              <div className="w-full text-center mt-auto mb-2 space-y-1.5 transition-all duration-500 group-hover:opacity-0 group-hover:translate-y-4 group-hover:pointer-events-none">
+                <span className="inline-block text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full bg-white/80 text-slate-900">
+                  {ageBadge}
+                </span>
+                <h3 className="text-2xl font-extrabold tracking-tight">
                   {ins.name}
                 </h3>
-                <p className="text-xs text-white/90 leading-relaxed font-medium pt-1">
-                  {ins.description}
+                <p className="text-[11px] font-bold text-slate-800/80 flex items-center justify-center gap-1">
+                  Ver salas y profesores <ArrowRight className="h-3 w-3" />
                 </p>
               </div>
 
-            </div>
-          </div>
-        ))}
+              {/* Hover State Content */}
+              <div className="absolute inset-x-8 top-8 bottom-8 flex flex-col justify-between opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 z-10 pointer-events-none group-hover:pointer-events-auto">
+                <div className="space-y-3">
+                  <h3 className="text-3xl font-extrabold tracking-tight">
+                    {ins.name}
+                  </h3>
+                  <p className="text-xs text-white/90 leading-relaxed font-medium pt-1">
+                    {ins.description}
+                  </p>
+                </div>
+
+                <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider bg-white text-[#70125F] px-4 py-2 rounded-full w-fit shadow-md">
+                  Ver Salas y Profesores <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
     </div>

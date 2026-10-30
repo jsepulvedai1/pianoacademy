@@ -12,6 +12,10 @@ export const GET_STUDENT_PACKS = gql`
       student {
         id
         name
+        phoneNumber
+        email
+        guardianName
+        guardianPhone
       }
       plan {
         id

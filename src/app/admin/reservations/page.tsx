@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
+import { GET_STUDENT_PACKS } from "@/graphql/queries/get-packs";
 import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
 import { UPDATE_LESSON_STATUS, CREATE_PRE_RESERVATION } from "@/graphql/mutations/lesson-mutations";
 import { toast } from "sonner";
@@ -77,8 +78,10 @@ function CountdownBadge({ expiry }: { expiry?: string }) {
 
 export default function AdminReservationsPage() {
   const { data, loading, refetch } = useQuery<any>(GET_RESERVATIONS);
+  const { data: packsData } = useQuery<any>(GET_STUDENT_PACKS);
   const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, { fetchPolicy: "network-only" });
   const [updateStatus] = useMutation(UPDATE_LESSON_STATUS);
+  const [activeTab, setActiveTab] = useState<'RESERVATIONS' | 'RENEWALS'>('RESERVATIONS');
 
   const activeHolidaysMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -90,40 +93,68 @@ export default function AdminReservationsPage() {
 
   const reservations: Reservation[] = useMemo(() => {
     if (!data?.allLessons) return [];
-    return data.allLessons.filter((l: any) => l.student || l.lead).map((l: any) => {
-      // Expiration is at 20:00 of the reservation date
-      const expiryDate = new Date(`${l.date}T20:00:00`);
-      const isPast20 = l.isPreReservation && new Date() > expiryDate;
+    // Filtramos reservas fantasma sin alumno ni prospecto con nombre válido
+    return data.allLessons
+      .filter((l: any) => (l.student && l.student.name) || (l.lead && l.lead.nombre))
+      .map((l: any) => {
+        // Expiration is at 20:00 of the reservation date
+        const expiryDate = new Date(`${l.date}T20:00:00`);
+        const isPast20 = l.isPreReservation && new Date() > expiryDate;
 
-      const estado: ReservationStatus = 
-        l.status === 'COMPLETED' ? 'COMPLETADA' : 
-        l.status === 'CANCELLED' ? 'CANCELADA' : 
-        l.isPreReservation && isPast20 ? 'VENCIDA' :
-        l.isPreReservation ? 'PRE_RESERVADA' : 'CONFIRMADA';
+        const estado: ReservationStatus = 
+          l.status === 'COMPLETED' ? 'COMPLETADA' : 
+          l.status === 'CANCELLED' ? 'CANCELADA' : 
+          l.isPreReservation && isPast20 ? 'VENCIDA' :
+          l.isPreReservation ? 'PRE_RESERVADA' : 'CONFIRMADA';
 
-      return {
-        id: l.id,
-        nombre: l.student?.name || l.lead?.nombre || "Sin Nombre",
-        telefono: l.student?.phoneNumber || l.lead?.telefono || "",
-        email: l.student?.email || l.lead?.email || "",
-        edad: l.lead?.edad,
-        apoderadoNombre: l.student?.guardianName || l.lead?.apoderadoNombre || "",
-        servicio: l.lessonType as LeadService,
-        profesorId: l.teacher?.id,
-        profesorNombre: l.teacher?.name || "Sin Profesor",
-        fecha: l.date,
-        hora: l.startTime,
-        room: l.room?.name,
-        estado,
-        pagoRegistrado: l.status === 'COMPLETED' || (l.status === 'PENDING' && !l.isPreReservation),
-        expiraEn: l.isPreReservation ? expiryDate.toISOString() : undefined,
-        creadoEn: l.date,
-        modalidad: 'PRESENCIAL',
-        notas: l.notes,
-        aceptoReglamento: true
-      } as Reservation;
-    });
+        return {
+          id: l.id,
+          nombre: l.student?.name || l.lead?.nombre || "Sin Nombre",
+          telefono: l.student?.phoneNumber || l.student?.guardianPhone || l.lead?.telefono || "",
+          email: l.student?.email || l.lead?.email || "",
+          edad: l.lead?.edad,
+          apoderadoNombre: l.student?.guardianName || l.lead?.apoderadoNombre || "",
+          servicio: (l.lead?.servicio || l.lessonType || 'CLASE_PRUEBA') as LeadService,
+          profesorId: l.teacher?.id,
+          profesorNombre: l.teacher?.name || "Sin Profesor",
+          fecha: l.date,
+          hora: l.startTime,
+          sala: l.room?.name,
+          estado,
+          pagoRegistrado: l.status === 'COMPLETED' || (l.status === 'PENDING' && !l.isPreReservation),
+          expiraEn: l.isPreReservation ? expiryDate.toISOString() : undefined,
+          creadoEn: l.date,
+          modalidad: 'PRESENCIAL',
+          notas: l.notes,
+          aceptoReglamento: true
+        } as Reservation;
+      });
   }, [data]);
+
+  // Seguimiento de Planes y Packs por renovar (0 o 1 clase restante, o vencimiento próximo)
+  const packsForFollowup = useMemo(() => {
+    const allPacks = packsData?.allStudentPacks || [];
+    const now = new Date();
+    return allPacks
+      .filter((p: any) => p.student?.name)
+      .map((p: any) => {
+        const expDate = p.expirationDate ? new Date(p.expirationDate) : null;
+        const daysToExpire = expDate ? Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        const isFinished = (p.remainingClasses ?? 0) <= 0;
+        const isLastClass = p.remainingClasses === 1;
+        const isExpiringSoon = daysToExpire !== null && daysToExpire <= 7;
+        return {
+          ...p,
+          daysToExpire,
+          isFinished,
+          isLastClass,
+          isExpiringSoon,
+          needsFollowup: isFinished || isLastClass || isExpiringSoon
+        };
+      })
+      .filter((p: any) => p.needsFollowup)
+      .sort((a: any, b: any) => (a.remainingClasses ?? 0) - (b.remainingClasses ?? 0));
+  }, [packsData]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | 'ALL'>('ALL');
@@ -266,16 +297,137 @@ export default function AdminReservationsPage() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
-            <CalendarCheck className="h-3 w-3" /> Gestión de Agenda
+            <CalendarCheck className="h-3 w-3" /> Gestión de Agenda y Seguimiento
           </div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">Reservas</h1>
-          <p className="text-slate-500 italic text-sm">Pre-reservas con vencimiento 20:00 y confirmación con pago.</p>
+          <h1 className="text-3xl font-bold font-serif tracking-tight">Reservas y Seguimiento de Planes</h1>
+          <p className="text-slate-500 italic text-sm">
+            Seguimiento de Clases de Prueba (pre-reservas con vencimiento 20:00 hrs) y recordatorios de renovación de Planes/Packs.
+          </p>
         </div>
-        <Button onClick={() => setIsNewOpen(true)} size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-12 px-8 font-bold uppercase tracking-[0.1em] group rounded-2xl">
-          <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" /> Nueva Pre-Reserva
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm flex gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('RESERVATIONS')}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                activeTab === 'RESERVATIONS' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              📅 Pre-Reservas / CP ({stats.total})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('RENEWALS')}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                activeTab === 'RENEWALS' ? 'bg-[#70125F] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              🔔 Seguimiento Planes / Packs ({packsForFollowup.length})
+            </button>
+          </div>
+          <Button onClick={() => setIsNewOpen(true)} size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-12 px-6 font-bold uppercase tracking-[0.1em] group rounded-2xl cursor-pointer">
+            <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" /> Nueva Pre-Reserva
+          </Button>
+        </div>
       </header>
 
+      {activeTab === 'RENEWALS' ? (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="bg-[#70125F] text-white rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center text-white shrink-0">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Seguimiento de Renovación de Planes y Packs</p>
+                <p className="text-white/80 text-xs mt-1">
+                  Aquí aparecen automáticamente los alumnos que ya terminaron su plan (0 clases restantes), están en su última clase (1 clase restante) o su pack vence dentro de los próximos 7 días, para enviarles recordatorio de pago por WhatsApp.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {packsForFollowup.map((pack: any) => {
+              const studentName = pack.student?.name || 'Alumno';
+              const guardianName = pack.student?.guardianName;
+              const phone = pack.student?.phoneNumber || pack.student?.guardianPhone || '';
+              const cleanPhone = normalizePhoneNumber(phone);
+              const planName = pack.plan?.name || 'Plan Mensual';
+              const priceFormatted = pack.plan?.price ? `$${Number(pack.plan.price).toLocaleString('es-CL')}` : '';
+              const waText = pack.isFinished
+                ? `¡Hola ${guardianName || studentName.split(' ')[0]}! 🎶 Te escribimos de Academia Détaché para comentarte que el plan *${planName}* de *${studentName}* ya completó todas sus clases (0 restantes). Para mantener su cupo y horario reservado, puedes gestionar la renovación de su nuevo pack ${priceFormatted ? `(${priceFormatted}) ` : ''}por este medio. ¡Muchas gracias! 🎹`
+                : `¡Hola ${guardianName || studentName.split(' ')[0]}! 🎶 Te escribimos de Academia Détaché para recordarte que al plan *${planName}* de *${studentName}* le queda *${pack.remainingClasses} clase(s)* disponible(s)${pack.expirationDate ? ` (vence el ${pack.expirationDate})` : ''}. Te invitamos a renovar su pack con anticipación para asegurar su horario habitual. ¡Nos vemos en clases! 🎹`;
+
+              return (
+                <div key={pack.id} className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm flex flex-col justify-between gap-4">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <Badge className={`text-[9px] font-bold uppercase tracking-widest border-0 ${
+                        pack.isFinished
+                          ? 'bg-rose-100 text-rose-700'
+                          : pack.isLastClass
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {pack.isFinished
+                          ? '⚠️ Plan Terminado (0 clases)'
+                          : pack.isLastClass
+                            ? '⏳ Última Clase (1 restante)'
+                            : `📅 Vence pronto (${pack.daysToExpire} días)`}
+                      </Badge>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        Vence: {pack.expirationDate || '—'}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-slate-900">{studentName}</h3>
+                    {guardianName && (
+                      <p className="text-xs text-slate-500 mt-0.5">Apoderado: <strong>{guardianName}</strong></p>
+                    )}
+                    <p className="text-xs font-bold text-[#70125F] uppercase tracking-wider mt-2">
+                      {planName} {priceFormatted && `• ${priceFormatted}`}
+                    </p>
+
+                    <div className="mt-4 p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Clases Restantes:</span>
+                      <span className="font-bold text-slate-900 font-mono">
+                        {pack.remainingClasses} / {pack.totalClasses}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                    {cleanPhone ? (
+                      <a
+                        href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-sm transition-colors"
+                      >
+                        <MessageCircle className="h-4 w-4" /> Enviar Recordatorio de Pago WA
+                      </a>
+                    ) : (
+                      <div className="text-[11px] text-slate-400 italic text-center py-2">
+                        Sin teléfono registrado en la ficha del alumno
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {packsForFollowup.length === 0 && (
+              <div className="col-span-full py-16 text-center text-slate-400 bg-white rounded-3xl border border-slate-100">
+                <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-400 mb-2" />
+                <p className="font-bold text-slate-700">¡Todos los planes están al día!</p>
+                <p className="text-xs text-slate-400 mt-1">No hay alumnos con 0-1 clases restantes ni packs próximos a vencer.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -298,8 +450,10 @@ export default function AdminReservationsPage() {
             <Timer className="h-6 w-6" />
           </div>
           <div>
-            <p className="font-bold text-sm">Regla de negocio: Vencimiento a las 20:00 hrs</p>
-            <p className="text-slate-400 text-xs mt-1 italic">Toda pre-reserva que no reciba pago antes de las 20:00 del día se clasifica automáticamente como Vencida.</p>
+            <p className="font-bold text-sm">¿Dónde van las pre-reservas cuando vence el plazo de las 20:00 hrs?</p>
+            <p className="text-slate-300 text-xs mt-1 leading-relaxed">
+              Toda pre-reserva sin pago antes de las 20:00 hrs pasa automáticamente al filtro <strong>&ldquo;Vencida&rdquo;</strong> en esta misma vista para que recepción pueda contactarla o presionar <strong>&ldquo;Liberar Cupos Vencidos&rdquo;</strong> y dejar libre el horario del profesor.
+            </p>
           </div>
         </div>
         {stats.vencidas > 0 && (
@@ -401,6 +555,8 @@ export default function AdminReservationsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* ── DETAIL DRAWER ── */}
       {isDetailOpen && selectedRes && (

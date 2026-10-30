@@ -70,9 +70,12 @@ const DAY_MAP_EN_TO_ES: Record<string, string> = {
 export default function AdminLessonsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [teacherFilter, setTeacherFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<'TABLE' | 'CALENDAR'>('CALENDAR');
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAttendanceReportOpen, setIsAttendanceReportOpen] = useState(false);
+  const [reportStudentId, setReportStudentId] = useState("");
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   // ── GraphQL Hooks ───────────────────────────────────────────
@@ -162,9 +165,10 @@ export default function AdminLessonsPage() {
         studentName.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === "ALL" || lesson.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesTeacher = teacherFilter === "ALL" || String(lesson.teacher?.id) === String(teacherFilter);
+      return matchesSearch && matchesStatus && matchesTeacher;
     });
-  }, [displayLessons, searchTerm, statusFilter]);
+  }, [displayLessons, searchTerm, statusFilter, teacherFilter]);
 
   const handleStatusChange = (status: string) => {
     if (!selectedLesson) return;
@@ -328,22 +332,47 @@ export default function AdminLessonsPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-          <div className="relative w-full sm:w-96 group">
+        <div className="lg:col-span-3 flex flex-col sm:flex-row flex-wrap gap-3 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <div className="relative w-full sm:w-72 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <input type="text" placeholder="Buscar por profesor o alumno..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
-          <select className="flex-1 sm:flex-none h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-600 outline-none cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="ALL">Todos los Estados</option>
-            <option value="PENDING">Pendientes</option>
-            <option value="COMPLETED">Asiste (Descuenta)</option>
-            <option value="ABSENT">Inasistencia (Descuenta)</option>
-            <option value="EXCUSED">Avisa (No descuenta)</option>
-            <option value="CANCELLED">Canceladas</option>
-          </select>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <select
+              className="flex-1 sm:flex-none h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-700 outline-none cursor-pointer"
+              value={teacherFilter}
+              onChange={(e) => setTeacherFilter(e.target.value)}
+            >
+              <option value="ALL">👨‍🏫 Todos los Profesores</option>
+              {currentTeachers.map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <select className="flex-1 sm:flex-none h-11 px-4 bg-slate-50 border-none rounded-xl text-xs font-bold uppercase tracking-widest text-slate-600 outline-none cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="ALL">Todos los Estados</option>
+              <option value="PENDING">Pendientes</option>
+              <option value="COMPLETED">Asiste (Descuenta)</option>
+              <option value="ABSENT">Inasistencia (Descuenta)</option>
+              <option value="EXCUSED">Avisa (No descuenta)</option>
+              <option value="CANCELLED">Canceladas</option>
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!reportStudentId && currentStudents.length > 0) {
+                  setReportStudentId(String(currentStudents[0].id));
+                }
+                setIsAttendanceReportOpen(true);
+              }}
+              className="h-11 px-4 rounded-xl border-purple-200 bg-purple-50/60 hover:bg-purple-100 text-[#70125F] font-bold uppercase text-[10px] tracking-widest cursor-pointer"
+            >
+              <BookOpen className="mr-1.5 h-3.5 w-3.5" /> Historial Asistencia Alumno
+            </Button>
+          </div>
         </div>
         <div className="flex gap-4">
-          <Button onClick={() => setIsNewClassOpen(true)} className="flex-1 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-full font-bold uppercase tracking-[0.1em] rounded-2xl group">
+          <Button onClick={() => setIsNewClassOpen(true)} className="flex-1 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-full font-bold uppercase tracking-[0.1em] rounded-2xl group cursor-pointer">
             <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" /> Nueva Clase
           </Button>
         </div>
@@ -1114,6 +1143,166 @@ export default function AdminLessonsPage() {
                     {isCreating ? "Agendando..." : "Confirmar Clase"}
                   </Button>
                 </footer>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
+
+      {/* ── MODAL: HISTORIAL Y DETALLE DE ASISTENCIA POR ALUMNO ── */}
+      {isAttendanceReportOpen && (() => {
+        const selectedStudentObj = currentStudents.find((s: any) => String(s.id) === String(reportStudentId));
+        const studentLessons = displayLessons
+          .filter((l: any) => String(l.student?.id) === String(reportStudentId))
+          .sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')));
+
+        const attendedCount = studentLessons.filter((l: any) => l.status === 'COMPLETED').length;
+        const excusedCount = studentLessons.filter((l: any) => l.status === 'EXCUSED').length;
+        const absentCount = studentLessons.filter((l: any) => l.status === 'ABSENT').length;
+        const pendingCount = studentLessons.filter((l: any) => l.status === 'PENDING' || l.status === 'CONFIRMED').length;
+
+        const activeStudentPacks = currentPacks.filter((p: any) => String(p.student?.id) === String(reportStudentId) && p.isActive);
+        const totalRemaining = activeStudentPacks.reduce((acc: number, p: any) => acc + (p.remainingClasses || 0), 0);
+
+        const statusHumanLabel = (st: string) => {
+          if (st === 'COMPLETED') return '✅ Asistió (Descontada)';
+          if (st === 'EXCUSED') return '🔵 Avisó con anticipación (No descontada)';
+          if (st === 'ABSENT') return '❌ Inasistencia sin aviso (Descontada)';
+          if (st === 'CANCELLED') return '⚪ Cancelada';
+          return '⏳ Agendada / Pendiente';
+        };
+
+        const reportLines = studentLessons.map((l: any) => {
+          const timeStr = String(l.startTime || '').slice(0, 5);
+          const teacherStr = l.teacher?.name ? ` (${l.teacher.name})` : '';
+          const noteStr = l.notes ? ` — Nota: "${l.notes}"` : '';
+          return `• ${l.date} ${timeStr} hrs${teacherStr}: ${statusHumanLabel(l.status)}${noteStr}`;
+        });
+
+        const waSummaryText = selectedStudentObj
+          ? `¡Hola! 🎶 Te compartimos el detalle de asistencia e historial de clases de *${selectedStudentObj.name}* en Academia Détaché:\n\n📊 *Resumen Actual:*\n• Clases asistidas: ${attendedCount}\n• Clases avisadas (no descuentan): ${excusedCount}\n• Inasistencias sin aviso: ${absentCount}\n• Clases agendadas pendientes: ${pendingCount}\n• Créditos restantes en plan activo: ${totalRemaining}\n\n📅 *Detalle por Fecha:*\n${reportLines.length > 0 ? reportLines.join('\n') : 'Sin registros aún.'}\n\nCualquier duda quedamos atentos. ¡Saludos de Academia Détaché! 🎹`
+          : '';
+
+        const targetPhone = selectedStudentObj?.phoneNumber || selectedStudentObj?.guardianPhone || '';
+        const cleanPhone = normalizePhoneNumber(targetPhone);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+            <Card className="w-full max-w-2xl bg-white border-none shadow-2xl overflow-hidden rounded-[2.5rem] max-h-[90vh] flex flex-col">
+              <header className="p-7 bg-[#70125F] text-white relative shrink-0">
+                <button
+                  onClick={() => setIsAttendanceReportOpen(false)}
+                  className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mb-1">
+                  Control de Planes y Asistencia
+                </p>
+                <h3 className="text-2xl font-bold font-serif">
+                  Historial y Detalle de Asistencia por Alumno
+                </h3>
+                <p className="text-white/80 text-xs mt-1">
+                  Revisa qué días ha asistido, avisado o faltado el alumno y envíale el detalle completo por WhatsApp.
+                </p>
+              </header>
+
+              <CardContent className="p-7 space-y-6 overflow-y-auto flex-1">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Seleccionar Alumno
+                  </label>
+                  <select
+                    value={reportStudentId}
+                    onChange={(e) => setReportStudentId(e.target.value)}
+                    className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#70125F]"
+                  >
+                    <option value="">Selecciona un alumno...</option>
+                    {currentStudents.map((s: any) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedStudentObj && (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">Asistidas</p>
+                        <p className="text-2xl font-bold font-serif text-emerald-800 mt-1">{attendedCount}</p>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-100 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-blue-700">Avisadas</p>
+                        <p className="text-2xl font-bold font-serif text-blue-800 mt-1">{excusedCount}</p>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-100 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-rose-700">Inasistencias</p>
+                        <p className="text-2xl font-bold font-serif text-rose-800 mt-1">{absentCount}</p>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-100 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-[#70125F]">Restantes Plan</p>
+                        <p className="text-2xl font-bold font-serif text-[#70125F] mt-1">{totalRemaining}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                      {studentLessons.length === 0 ? (
+                        <p className="text-xs italic text-slate-400 text-center py-8">
+                          Este alumno aún no registra clases en la agenda.
+                        </p>
+                      ) : (
+                        studentLessons.map((l: any) => (
+                          <div
+                            key={l.id}
+                            className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                          >
+                            <div>
+                              <p className="text-xs font-bold text-slate-900">
+                                📅 {l.date} • ⏰ {String(l.startTime || '').slice(0, 5)} hrs
+                              </p>
+                              <p className="text-[11px] text-slate-500">
+                                Profesor: <strong>{l.teacher?.name || '—'}</strong> • Sala: {l.room?.name || '—'}
+                              </p>
+                              {l.notes && (
+                                <p className="text-[11px] text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg mt-1 italic">
+                                  📝 Motivo / Nota: &ldquo;{l.notes}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                            <div className="shrink-0">{getStatusBadge(l.status)}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3 pt-3 border-t border-slate-100">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(waSummaryText);
+                          toast.success("Detalle de asistencia copiado al portapapeles 📋");
+                        }}
+                        className="flex-1 h-12 rounded-2xl border-slate-200 font-bold uppercase text-[10px] tracking-widest cursor-pointer"
+                      >
+                        <Copy className="mr-2 h-4 w-4" /> Copiar Detalle
+                      </Button>
+
+                      {cleanPhone && (
+                        <a
+                          href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waSummaryText)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
+                        >
+                          <MessageCircle className="h-4 w-4" /> Enviar Detalle por WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

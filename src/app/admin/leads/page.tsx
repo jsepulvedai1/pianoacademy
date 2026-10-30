@@ -64,13 +64,60 @@ import { normalizePhoneNumber } from "@/lib/utils";
 import { DndContext, useDraggable, useDroppable, DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 
 const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: React.ElementType; dot: string }[] = [
-  { status: 'NUEVO',               color: 'text-sky-700',     bg: 'bg-sky-50',      icon: Star,         dot: 'bg-sky-400'    },
-  { status: 'CONTACTADO',          color: 'text-violet-700',  bg: 'bg-violet-50',   icon: Phone,        dot: 'bg-violet-400' },
   { status: 'PRE_RESERVA',         color: 'text-orange-700',  bg: 'bg-orange-50',   icon: Hourglass,    dot: 'bg-orange-400' },
-  { status: 'RESERVA_CONFIRMADA',  color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2, dot: 'bg-emerald-400'}
+  { status: 'CONTACTADO',          color: 'text-violet-700',  bg: 'bg-violet-50',   icon: Phone,        dot: 'bg-violet-400' },
+  { status: 'RESERVA_CONFIRMADA',  color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2, dot: 'bg-emerald-400'},
+  { status: 'NUEVO',               color: 'text-sky-700',     bg: 'bg-sky-50',      icon: Star,         dot: 'bg-sky-400'    }
 ];
 
-const KANBAN_COLUMNS: LeadStatus[] = ['NUEVO', 'CONTACTADO', 'PRE_RESERVA', 'RESERVA_CONFIRMADA'];
+const KANBAN_COLUMNS: LeadStatus[] = ['PRE_RESERVA', 'CONTACTADO', 'RESERVA_CONFIRMADA', 'NUEVO'];
+
+function getMethodologyInfo(edad?: number | null, servicio?: string) {
+  const svc = (servicio || "").toUpperCase();
+  let minAge = 4;
+  let ruleText = "🎹 Piano: 4+ | 🎤 Canto: 6+ | 🥁 Batería: 6+ | 🎸 Guitarra: 8+";
+  if (svc.includes("GUITARRA") || svc.includes("CONTRABAJO")) {
+    minAge = 8;
+    ruleText = "🎸 Guitarra / Bajo: desde los 8 años";
+  } else if (svc.includes("CANTO")) {
+    minAge = 6;
+    ruleText = "🎤 Canto: desde los 6 años";
+  } else if (svc.includes("BATERIA")) {
+    minAge = 6;
+    ruleText = "🥁 Batería: desde los 6 años";
+  } else if (svc.includes("VIOLIN")) {
+    minAge = 6;
+    ruleText = "🎻 Violín: desde los 6 años";
+  } else if (svc.includes("PIANO")) {
+    minAge = 4;
+    ruleText = "🎹 Piano: desde los 4 años";
+  }
+
+  if (!edad) {
+    return {
+      label: "Edad pendiente de confirmar",
+      ruleText,
+      isValid: true,
+    };
+  }
+  if (edad < minAge) {
+    return {
+      label: `⚠️ Menor a edad mínima (${minAge} años)`,
+      ruleText,
+      isValid: false,
+    };
+  }
+  if (edad <= 7) {
+    return { label: "Metodología Infantil Inicial (4-7 años)", ruleText, isValid: true };
+  }
+  if (edad <= 12) {
+    return { label: "Metodología Infantil-Juvenil (8-12 años)", ruleText, isValid: true };
+  }
+  if (edad <= 17) {
+    return { label: "Metodología Juvenil (13-17 años)", ruleText, isValid: true };
+  }
+  return { label: "Metodología Adultos (18+ años)", ruleText, isValid: true };
+}
 
 const SOURCE_ICONS: Record<LeadSource, React.ElementType> = {
   WEB: Globe,
@@ -173,10 +220,17 @@ export default function AdminLeadsPage() {
     teacherId: "",
     date: new Date().toISOString().split("T")[0],
     startTime: "16:00",
-    endTime: "16:45",
+    endTime: "16:30",
     roomId: "",
     lessonType: "INDIVIDUAL"
   });
+
+  // Concretar Venta (Pasar a Alumno) Modal State
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [convertMode, setConvertMode] = useState<'PAYMENT' | 'FOLLOWUP'>('PAYMENT');
+  const [convertPlanId, setConvertPlanId] = useState<string>('');
+  const [convertPaymentMethod, setConvertPaymentMethod] = useState<'TRANSFER' | 'CARD' | 'CASH'>('TRANSFER');
+  const [convertAmount, setConvertAmount] = useState<string>('');
 
   const sendPaymentLinkMessage = (plan: any) => {
     if (!selectedLead) return;
@@ -241,10 +295,16 @@ export default function AdminLeadsPage() {
 
   const [convertMutation, { loading: isConverting }] = useMutation(CONVERT_LEAD_TO_STUDENT, {
     onCompleted: () => {
-      toast.success("¡Alumno creado! Ya puedes asignarle un Pack.");
+      toast.success(
+        convertMode === 'PAYMENT'
+          ? "¡Venta concretada! Alumno creado con su pago, plan e historial de notas."
+          : "¡Alumno creado en Seguimiento de Pago! Su historial de notas fue traspasado a su ficha."
+      );
+      setIsConvertModalOpen(false);
       setIsDetailOpen(false);
       refetch();
-    }
+    },
+    onError: (err: any) => toast.error(err.message || "Error al convertir prospecto a alumno")
   });
 
   const [loadChat, { data: chatQueryData, error: chatQueryError }] = useLazyQuery<any>(GET_CHAT_MESSAGES, {
@@ -496,21 +556,68 @@ export default function AdminLeadsPage() {
   const applyTemplate = (key: string) => {
     if (!selectedLead) return;
     setActiveTemplate(key);
-    const svc = serviceLabel[selectedLead.servicio as LeadService] || "Clase";
+    const svc = serviceLabel[selectedLead.servicio as LeadService] || "Clase de Prueba";
+    const cpLesson = selectedLead.lessons?.[0];
+    const cpDate = cpLesson?.date || 'la fecha acordada';
+    const cpTime = cpLesson?.startTime ? `${String(cpLesson.startTime).slice(0, 5)} hrs` : 'el horario acordado';
+    const cpTeacher = cpLesson?.teacher?.name || 'tu profesor especialista';
+    const firstName = (selectedLead.nombre || "Alumno").split(' ')[0];
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://academia.detache.cl";
+    const params = new URLSearchParams();
+    params.set("plan", "trial");
+    if (selectedLead.nombre) params.set("name", selectedLead.nombre);
+    if (selectedLead.telefono) params.set("phone", selectedLead.telefono);
+    if (selectedLead.email) params.set("email", selectedLead.email);
+    const trialPayUrl = `${origin}/checkout?${params.toString()}`;
+
     const templates: Record<string, string> = {
-      RESPUESTA_INICIAL: WA_TEMPLATES.RESPUESTA_INICIAL(selectedLead.nombre.split(' ')[0], svc),
-      INFO_PACKS: WA_TEMPLATES.INFO_PACKS(selectedLead.nombre.split(' ')[0]),
-      PRE_RESERVA: WA_TEMPLATES.PRE_RESERVA(selectedLead.nombre.split(' ')[0], 'la fecha acordada', 'el horario acordado', 'la profesora'),
-      RECORDATORIO_PAGO: WA_TEMPLATES.RECORDATORIO_PAGO(selectedLead.nombre.split(' ')[0], '$60.000'),
-      SEGUIMIENTO: WA_TEMPLATES.SEGUIMIENTO(selectedLead.nombre.split(' ')[0]),
-      LIBERACION_CUPO: WA_TEMPLATES.LIBERACION_CUPO(selectedLead.nombre.split(' ')[0])
+      RESPUESTA_INICIAL: WA_TEMPLATES.RESPUESTA_INICIAL(firstName, svc),
+      PRE_RESERVA: WA_TEMPLATES.PRE_RESERVA(firstName, cpDate, cpTime, cpTeacher),
+      LINK_PAGO_CP: `¡Hola ${firstName}! 🎶 Hemos pre-reservado tu *Clase de Prueba (30 min)* con ${cpTeacher} para el *${cpDate}* a las *${cpTime}*.\n\nRecuerda que para que tu hora quede agendada debes realizar el pago anticipado ($${Number(trialClassPrice).toLocaleString("es-CL")} CLP) antes de las 20:00 hrs aquí:\n👉 ${trialPayUrl}\n\nO enviarnos el comprobante de transferencia por este medio. ¡Te esperamos en Academia Détaché! 🎹`,
+      CONFIRMACION_CP: `¡Hola ${firstName}! ✅ Confirmamos el pago y agendamiento de tu *Clase de Prueba (30 min)* en Academia Détaché:\n\n📅 Fecha: ${cpDate}\n⏰ Hora: ${cpTime}\n🎓 Profesor: ${cpTeacher}\n📍 Dirección: Gran Av. José Miguel Carrera 8520, Of. C, La Cisterna.\n\n¡Nos vemos en clases! 🎻`,
+      INFO_PACKS: WA_TEMPLATES.INFO_PACKS(firstName),
+      RECORDATORIO_PAGO: WA_TEMPLATES.RECORDATORIO_PAGO(firstName, `$${Number(trialClassPrice).toLocaleString("es-CL")}`),
+      SEGUIMIENTO: WA_TEMPLATES.SEGUIMIENTO(firstName),
+      LIBERACION_CUPO: WA_TEMPLATES.LIBERACION_CUPO(firstName)
     };
     setCustomMessage(templates[key] || '');
   };
 
-  const handleConvertToStudent = async () => {
+  const openConvertModal = () => {
     if (!selectedLead) return;
-    convertMutation({ variables: { leadId: selectedLead.id } });
+    const defaultPlan = plans[0];
+    setConvertMode('PAYMENT');
+    setConvertPlanId(defaultPlan ? String(defaultPlan.id) : '');
+    setConvertAmount(defaultPlan ? String(defaultPlan.price) : '');
+    setConvertPaymentMethod('TRANSFER');
+    setIsConvertModalOpen(true);
+  };
+
+  const handleConfirmConvertToStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    if (convertMode === 'PAYMENT') {
+      if (!convertPlanId || !convertAmount || Number(convertAmount) <= 0) {
+        toast.error("Selecciona un plan e ingresa un monto válido para registrar el pago.");
+        return;
+      }
+      convertMutation({
+        variables: {
+          leadId: selectedLead.id,
+          planId: parseInt(convertPlanId, 10),
+          paymentMethod: convertPaymentMethod,
+          paymentAmount: parseFloat(convertAmount),
+          leaveInFollowup: false
+        }
+      });
+    } else {
+      convertMutation({
+        variables: {
+          leadId: selectedLead.id,
+          leaveInFollowup: true
+        }
+      });
+    }
   };
 
   const handleCreateLead = () => {
@@ -649,12 +756,19 @@ export default function AdminLeadsPage() {
                               <p className="font-bold text-slate-900 text-sm leading-tight">{lead.nombre}</p>
                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
                                 {serviceLabel[lead.servicio as LeadService] || lead.servicio?.replace('_', ' ') || 'Clase de Prueba'}
+                                {lead.edad ? ` • ${lead.edad} años` : ''}
                               </p>
                             </div>
                             <div className="flex items-center gap-1 text-slate-300">
                               <SrcIcon className="h-3.5 w-3.5" />
                             </div>
                           </div>
+                          {lead.lessons && lead.lessons.length > 0 && (
+                            <div className="mb-2.5 px-2.5 py-1.5 rounded-xl bg-amber-50/80 border border-amber-200/60 text-[10px] text-amber-900 font-semibold flex items-center justify-between">
+                              <span>📅 CP: {lead.lessons[0].date}</span>
+                              <span>⏰ {String(lead.lessons[0].startTime || '').slice(0, 5)} hrs</span>
+                            </div>
+                          )}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-slate-400">
                               <Phone className="h-3 w-3" />
@@ -899,15 +1013,90 @@ export default function AdminLeadsPage() {
                       )}
                     </div>
 
+                    {/* Edad del Alumno, Apoderado y Metodología (Regla de Edades) */}
+                    {(() => {
+                      const meth = getMethodologyInfo(selectedLead.edad, selectedLead.servicio);
+                      return (
+                        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                              Edad, Apoderado y Metodología
+                            </span>
+                            <Badge className={meth.isValid ? "bg-[#70125F]/10 text-[#70125F] border-0 text-[9px] font-bold" : "bg-rose-100 text-rose-700 border-0 text-[9px] font-bold"}>
+                              {meth.label}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="bg-slate-50 rounded-xl p-3">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase block">Edad Alumno</span>
+                              <span className="font-bold text-slate-900">
+                                {selectedLead.edad ? `${selectedLead.edad} años` : "No registrada"}
+                              </span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase block">Apoderado / Tutor</span>
+                              <span className="font-bold text-slate-900">
+                                {selectedLead.apoderadoNombre || "Titular / Adulto"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-[10px] text-slate-500 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100">
+                            <span className="font-bold text-slate-700">Regla de Edades:</span> 🎹 Piano: 4+ años • 🎤 Canto: 6+ años • 🥁 Batería: 6+ años • 🎸 Guitarra: 8+ años
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Fecha y Hora de CP (Clase de Prueba) */}
+                    <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-700 flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5" /> Fecha y Hora de Clase de Prueba (CP)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(selectedLead.id, 'RESERVA_CONFIRMADA')}
+                          className="text-[9px] font-bold uppercase tracking-wider text-primary hover:underline cursor-pointer"
+                        >
+                          {selectedLead.lessons?.length > 0 ? "Modificar / Confirmar CP" : "+ Agendar CP"}
+                        </button>
+                      </div>
+
+                      {selectedLead.lessons && selectedLead.lessons.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedLead.lessons.map((cp: any) => (
+                            <div key={cp.id} className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/70 text-xs space-y-1.5">
+                              <div className="flex items-center justify-between font-bold text-slate-900">
+                                <span>📅 {cp.date}</span>
+                                <span className="text-emerald-700 font-mono">
+                                  ⏰ {String(cp.startTime || '').slice(0, 5)} - {String(cp.endTime || '').slice(0, 5)} hrs
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[11px] text-slate-600">
+                                <span>🎓 Profesor: <strong>{cp.teacher?.name || "Por asignar"}</strong></span>
+                                <Badge className={cp.isPreReservation ? "bg-orange-100 text-orange-800 border-0 text-[9px]" : "bg-emerald-100 text-emerald-800 border-0 text-[9px]"}>
+                                  {cp.isPreReservation ? "Pre-Reserva (Pendiente Pago)" : "CP Confirmada"}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">
+                          Sin hora de Clase de Prueba agendada aún. Haz clic en &ldquo;+ Agendar CP&rdquo; para asignar fecha y profesor.
+                        </p>
+                      )}
+                    </div>
+
                     {/* Change Status */}
                     <div className="space-y-4">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Acciones de Pipeline</p>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {PIPELINE_COLUMNS.map(col => (
                           <button
                             key={col.status}
                             onClick={() => handleStatusChange(selectedLead.id, col.status)}
-                            className={`px-3 py-2.5 rounded-xl text-[8px] font-bold uppercase tracking-widest transition-all border ${
+                            className={`px-3 py-2.5 rounded-xl text-[8px] font-bold uppercase tracking-widest transition-all border cursor-pointer ${
                               selectedLead.estado === col.status
                                 ? `${col.bg} ${col.color} border-current ring-1 ring-offset-0 ring-current`
                                 : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 shadow-sm'
@@ -918,31 +1107,34 @@ export default function AdminLeadsPage() {
                         ))}
                       </div>
                       
-                      {selectedLead.estado === 'RESERVA_CONFIRMADA' && (
-                        <Button 
-                          onClick={handleConvertToStudent}
-                          disabled={isConverting}
-                          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest h-12 rounded-2xl shadow-xl shadow-slate-200"
-                        >
-                          {isConverting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registrando...</> : <><GraduationCap className="mr-2 h-4 w-4" /> Concretar Venta (Pasar a Alumno)</>}
-                        </Button>
-                      )}
+                      <Button 
+                        onClick={openConvertModal}
+                        disabled={isConverting}
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest h-12 rounded-2xl shadow-xl shadow-slate-200 cursor-pointer"
+                      >
+                        {isConverting ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</>
+                        ) : (
+                          <><GraduationCap className="mr-2 h-4 w-4" /> Concretar Venta (Pasar a Alumno)</>
+                        )}
+                      </Button>
                     </div>
 
                     {/* WhatsApp Fast Panel */}
                     <div className="space-y-4">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        <MessageCircle className="h-3 w-3 text-emerald-500" /> Respuestas Rápidas (WA)
+                        <MessageCircle className="h-3 w-3 text-emerald-500" /> Plantillas Rápidas de Pago, CP y Seguimiento (WA)
                       </p>
 
                       <div className="flex flex-wrap gap-2">
                         {[
-                          { key: 'RESPUESTA_INICIAL', label: 'Respuesta inicial' },
-                          { key: 'INFO_PACKS', label: 'Info Packs' },
-                          { key: 'PRE_RESERVA', label: 'Pre-Reserva' },
-                          { key: 'RECORDATORIO_PAGO', label: 'Recordatorio pago' },
-                          { key: 'SEGUIMIENTO', label: 'Seguimiento' },
-                          { key: 'LIBERACION_CUPO', label: 'Liberación cupo' },
+                          { key: 'LINK_PAGO_CP', label: '💳 Cobro / Link Pago CP' },
+                          { key: 'RECORDATORIO_PAGO', label: '⏰ Recordatorio Pago (20:00h)' },
+                          { key: 'CONFIRMACION_CP', label: '✅ Confirmación Clase CP' },
+                          { key: 'PRE_RESERVA', label: '📋 Aviso Pre-Reserva' },
+                          { key: 'INFO_PACKS', label: '🎹 Info Planes y Packs' },
+                          { key: 'SEGUIMIENTO', label: '💬 Seguimiento' },
+                          { key: 'LIBERACION_CUPO', label: '🔓 Liberación Cupo' },
                         ].map(t => (
                           <button
                             key={t.key}
@@ -1001,9 +1193,14 @@ export default function AdminLeadsPage() {
                     {/* Notes Section moved down */}
                     <div className="space-y-4 pt-4 border-t border-slate-100">
                       <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Auditoría & Notas ({selectedLead.notas.length})</p>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Auditoría & Notas ({selectedLead.notas.length})</p>
+                          <p className="text-[9px] text-emerald-700 font-semibold mt-0.5">
+                            ✓ Se conserva en el historial de la Ficha del Alumno para Administradores y Ventas
+                          </p>
+                        </div>
                         {!isAddingNote && (
-                          <button onClick={() => setIsAddingNote(true)} className="text-[9px] font-bold uppercase text-primary tracking-widest">Añadir Nota</button>
+                          <button onClick={() => setIsAddingNote(true)} className="text-[9px] font-bold uppercase text-primary tracking-widest cursor-pointer">+ Añadir Nota</button>
                         )}
                       </div>
                       
@@ -1011,7 +1208,7 @@ export default function AdminLeadsPage() {
                         <div className="space-y-2 animate-in slide-in-from-top-2 duration-300 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                            <textarea
                             rows={3}
-                            placeholder="Añada información importante aquí..."
+                            placeholder="Añada información importante para Administración y Ventas..."
                             autoFocus
                             className="w-full text-xs text-slate-700 bg-slate-50 rounded-xl border-none p-4 resize-none focus:ring-0 outline-none"
                             value={newNote}
@@ -1027,12 +1224,12 @@ export default function AdminLeadsPage() {
                       )}
 
                       <div className="space-y-3">
-                         {[...selectedLead.notas].reverse().slice(0, 3).map(n => (
+                         {[...selectedLead.notas].reverse().map(n => (
                            <div key={n.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                               <p className="text-xs text-slate-600 leading-relaxed">{n.texto}</p>
                               <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-                                 <span className="text-[8px] font-bold uppercase tracking-widest text-slate-300">{n.autor}</span>
-                                 <span className="text-[8px] text-slate-300 italic">{formatDate(n.fecha)}</span>
+                                 <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{n.autor}</span>
+                                 <span className="text-[8px] text-slate-400 italic">{formatDate(n.fecha)}</span>
                               </div>
                            </div>
                          ))}
@@ -1369,6 +1566,156 @@ export default function AdminLeadsPage() {
                     className="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-600/20 disabled:opacity-40 cursor-pointer"
                   >
                     {isConfirmingReservation ? "Confirmando..." : "Confirmar y Agendar Clase 🎹"}
+                  </Button>
+                </div>
+              </CardContent>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* ── MODAL: CONCRETAR VENTA / PASAR A ALUMNO ── */}
+      {isConvertModalOpen && selectedLead && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg bg-white border-none shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 rounded-[2.5rem]">
+            <div className="bg-emerald-700 p-8 text-white relative">
+              <button
+                onClick={() => setIsConvertModalOpen(false)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex items-center gap-2 text-emerald-200 text-[10px] font-bold uppercase tracking-widest mb-1">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Concretar Venta y Pasar a Alumno
+              </div>
+              <h3 className="text-2xl font-bold font-serif">{selectedLead.nombre}</h3>
+              <p className="text-white/80 italic text-xs mt-1">
+                Elige si deseas registrar el pago de un plan inmediatamente o traspasar al alumno dejándolo en seguimiento de pago. Todas las notas de auditoría se traspasarán al historial del alumno.
+              </p>
+            </div>
+
+            <form onSubmit={handleConfirmConvertToStudent}>
+              <CardContent className="p-8 space-y-6">
+                {/* Selector de Opción */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConvertMode('PAYMENT')}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                      convertMode === 'PAYMENT'
+                        ? 'border-emerald-600 bg-emerald-50/70 shadow-sm'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      💳 Registrar Pago Ahora
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      Asigna un plan/pack activo y registra el pago en finanzas.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setConvertMode('FOLLOWUP')}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                      convertMode === 'FOLLOWUP'
+                        ? 'border-amber-500 bg-amber-50/70 shadow-sm'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      📋 Dejar en Seguimiento
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      Crea la ficha de alumno y agenda recordatorio de cobro sin pago inmediato.
+                    </p>
+                  </button>
+                </div>
+
+                {convertMode === 'PAYMENT' ? (
+                  <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        Seleccionar Plan / Pack *
+                      </label>
+                      <select
+                        value={convertPlanId}
+                        onChange={e => {
+                          const pid = e.target.value;
+                          setConvertPlanId(pid);
+                          const found = plans.find((p: any) => String(p.id) === pid);
+                          if (found) setConvertAmount(String(found.price));
+                        }}
+                        className="w-full h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      >
+                        <option value="">Selecciona un plan...</option>
+                        {plans.map((p: any) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.classesCount} clases) — ${Number(p.price).toLocaleString('es-CL')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                          Medio de Pago *
+                        </label>
+                        <select
+                          value={convertPaymentMethod}
+                          onChange={e => setConvertPaymentMethod(e.target.value as 'TRANSFER' | 'CARD' | 'CASH')}
+                          className="w-full h-12 bg-white border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-800 outline-none"
+                        >
+                          <option value="TRANSFER">Transferencia</option>
+                          <option value="CARD">Tarjeta / Webpay / MP</option>
+                          <option value="CASH">Efectivo</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                          Monto Pagado (CLP) *
+                        </label>
+                        <input
+                          type="number"
+                          value={convertAmount}
+                          onChange={e => setConvertAmount(e.target.value)}
+                          className="w-full h-12 bg-white border border-slate-200 rounded-xl px-3 text-sm font-bold text-slate-900 outline-none"
+                          placeholder="Ej. 85000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+                    <p className="font-bold">📌 Seguimiento de Pago Activado</p>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Se creará el perfil del estudiante conservando su edad, apoderado, instrumento y todas las notas de auditoría, además de generar una tarea automática de seguimiento para concretar el pago de su plan.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsConvertModalOpen(false)}
+                    className="flex-1 h-12 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest cursor-pointer"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isConverting}
+                    className="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-600/20 cursor-pointer"
+                  >
+                    {isConverting
+                      ? "Procesando..."
+                      : convertMode === 'PAYMENT'
+                        ? "Registrar Pago y Crear Alumno"
+                        : "Pasar a Alumno en Seguimiento"}
                   </Button>
                 </div>
               </CardContent>

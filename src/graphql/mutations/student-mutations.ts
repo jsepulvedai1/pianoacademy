@@ -122,7 +122,14 @@ export const CREATE_PAYMENT_PREFERENCE = gql`
     $name: String!,
     $email: String!,
     $phone: String!,
-    $backUrl: String!
+    $backUrl: String!,
+    $edad: Int,
+    $apoderadoNombre: String,
+    $servicio: String,
+    $profesorNombre: String,
+    $fecha: String,
+    $hora: String,
+    $notas: String
   ) {
     createPaymentPreference(
       planId: $planId,
@@ -130,7 +137,14 @@ export const CREATE_PAYMENT_PREFERENCE = gql`
       name: $name,
       email: $email,
       phone: $phone,
-      backUrl: $backUrl
+      backUrl: $backUrl,
+      edad: $edad,
+      apoderadoNombre: $apoderadoNombre,
+      servicio: $servicio,
+      profesorNombre: $profesorNombre,
+      fecha: $fecha,
+      hora: $hora,
+      notas: $notas
     ) {
       success
       preferenceId
