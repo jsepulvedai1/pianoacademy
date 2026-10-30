@@ -210,12 +210,14 @@ function BookPageContent() {
   });
 
   const globalSettings = globalSettingsData?.globalSettings;
-  const trialPrice = globalSettings?.trialClassPrice ?? 15000;
+  const trialPrice = globalSettings?.trialClassPrice ?? 16000;
+  const activePayAmount = trialPrice;
+
   const trialBadge = globalSettings?.trialClassBadge || "Clase de Prueba • 30 Minutos";
-  const trialBadgeRequirement = (globalSettings?.trialClassBadgeRequirement || "Requiere Pago Anticipado (${price} CLP)").replace(
-    "${price}",
-    `$${Number(trialPrice).toLocaleString("es-CL")}`
-  );
+  const rawBadgeReq = globalSettings?.trialClassBadgeRequirement || "Requiere Pago Anticipado (${price} CLP)";
+  const trialBadgeRequirement = rawBadgeReq
+    .replace("${deposit}", `$${Number(trialPrice).toLocaleString("es-CL")}`)
+    .replace("${price}", `$${Number(trialPrice).toLocaleString("es-CL")}`);
   const trialTitle = globalSettings?.trialClassTitle || "¿En qué consiste la Clase de Prueba?";
   const trialDescription =
     globalSettings?.trialClassDescription ||
@@ -238,7 +240,7 @@ function BookPageContent() {
   const trialBookingNotice = (
     globalSettings?.trialClassBookingNotice ||
     "IMPORTANTE: Tu clase de prueba aún NO está agendada definitivamente. Ninguna hora queda confirmada sin pago previo (${price} CLP) antes de las 20:00 hrs."
-  ).replace("${price}", `$${Number(trialPrice).toLocaleString("es-CL")}`);
+  ).replace("${price}", `$${Number(activePayAmount).toLocaleString("es-CL")}`);
   const sedeSalasInfo =
     globalSettings?.sedeSalasInfo ||
     "Sede La Cisterna — Gran Avenida José Miguel Carrera 8520, Oficina C (A pasos de Metro La Cisterna). Contamos con salas acústicamente acondicionadas y equipadas con instrumentos profesionales para Piano, Canto, Guitarra, Violín y Batería.";
@@ -451,6 +453,7 @@ function BookPageContent() {
             variables: {
               planId: null,
               isTrialClass: true,
+              payDeposit: false,
               name: studentFullName,
               email: formData.email,
               phone: normalizePhoneNumber(formData.telefono),
@@ -461,6 +464,7 @@ function BookPageContent() {
               profesorNombre: effectiveAssignedTeacherName,
               fecha: selectedDateStr,
               hora: selectedSlot?.start,
+              notas: `[Clase de Prueba 30m • ${currentInstrument.name}] Modalidad: Pago Total $${Number(trialPrice).toLocaleString("es-CL")}`,
             },
           });
         } else {
@@ -564,7 +568,7 @@ function BookPageContent() {
 
     const combinedNotes = `[Clase de Prueba 30m • ${currentInstrument.name}] Edad: ${parsedAge} años (${methodologyLabel}) | ${
       patientType === "MINOR" || (parsedAge && parsedAge < 18) ? `Apoderado: ${formData.tutorNombre}` : "Alumno Adulto"
-    } | Medio de Pago elegido: ${paymentMethod === "ONLINE" ? "Link de Pago Online" : "Transferencia Bancaria"} | Nivel: ${
+    } | Modalidad: Pago Total $${Number(trialPrice).toLocaleString("es-CL")} | Medio: ${paymentMethod === "ONLINE" ? "Mercado Pago Online" : "Transferencia"} | Nivel: ${
       formData.nivel
     } | Motivo: ${formData.motivo || "Evaluación inicial"}`;
 
@@ -590,6 +594,7 @@ function BookPageContent() {
       variables: {
         planId: null,
         isTrialClass: true,
+        payDeposit: false,
         name: studentFullName,
         email: formData.email,
         phone: normalizePhoneNumber(formData.telefono),
@@ -600,6 +605,7 @@ function BookPageContent() {
         profesorNombre: effectiveAssignedTeacherName,
         fecha: selectedDateStr,
         hora: selectedSlot?.start,
+        notas: `[Clase de Prueba 30m • ${currentInstrument.name}] Modalidad: Pago Total $${Number(trialPrice).toLocaleString("es-CL")}`,
       },
     });
   };
@@ -708,14 +714,21 @@ function BookPageContent() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-4 border border-[#70125F]/15 shadow-sm text-center shrink-0 w-full sm:w-auto">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
-                    {trialPriceLabel}
-                  </span>
-                  <span className="text-2xl font-black font-mono text-[#70125F]">
-                    ${Number(trialPrice).toLocaleString("es-CL")}
-                  </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">{trialPriceFooter}</span>
+                <div className="bg-white rounded-2xl p-5 border border-[#70125F]/15 shadow-sm text-center shrink-0 w-full sm:w-auto space-y-2">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
+                      {trialPriceLabel}
+                    </span>
+                    <span className="text-3xl font-black font-mono text-slate-900">
+                      ${Number(trialPrice).toLocaleString("es-CL")}
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-700 block mt-1">
+                      Pago Total • Sin pagos pendientes
+                    </span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5">
+                      {trialPriceFooter}
+                    </span>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -1317,62 +1330,68 @@ function BookPageContent() {
                         {trialPaymentRequiredNotice}
                       </p>
                       <p>
-                        <strong>Ninguna clase de prueba queda agendada ni reservada sin haber sido pagada con antelación.</strong> Selecciona tu medio de pago a continuación:
+                        <strong>Ninguna clase de prueba queda agendada ni reservada sin haber sido pagada con antelación.</strong> El pago de la clase de prueba corresponde a la totalidad (<strong>${Number(activePayAmount).toLocaleString("es-CL")} CLP</strong>).
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("ONLINE")}
-                      className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer space-y-2 ${
-                        paymentMethod === "ONLINE"
-                          ? "border-emerald-600 bg-emerald-50/50 shadow-md"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900">
-                          <CreditCard className="h-5 w-5 text-emerald-600" />
-                          Link de Pago Online (Webpay / Mercado Pago)
+                  {/* Selector de Método de Pago */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#70125F]">
+                      Elige el Medio de Pago *
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("ONLINE")}
+                        className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer space-y-2 ${
+                          paymentMethod === "ONLINE"
+                            ? "border-emerald-600 bg-emerald-50/50 shadow-md"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900">
+                            <CreditCard className="h-5 w-5 text-emerald-600" />
+                            Link de Pago Online (Webpay / Mercado Pago)
+                          </div>
+                          <Badge className="bg-emerald-600 text-white text-[9px] uppercase">Confirmación Inmediata</Badge>
                         </div>
-                        <Badge className="bg-emerald-600 text-white text-[9px] uppercase">Confirmación Inmediata</Badge>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        Paga con tarjeta de débito o crédito (${Number(trialPrice).toLocaleString("es-CL")} CLP) y deja tu clase 100% confirmada de inmediato.
-                      </p>
-                    </button>
+                        <p className="text-xs text-slate-600">
+                          Paga con tarjeta de débito o crédito (${Number(activePayAmount).toLocaleString("es-CL")} CLP) y asegura tu reserva de inmediato.
+                        </p>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("TRANSFER")}
-                      className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer space-y-2 ${
-                        paymentMethod === "TRANSFER"
-                          ? "border-[#70125F] bg-[#70125F]/5 shadow-md"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900">
-                          <Landmark className="h-5 w-5 text-[#70125F]" />
-                          Transferencia Bancaria
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("TRANSFER")}
+                        className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer space-y-2 ${
+                          paymentMethod === "TRANSFER"
+                            ? "border-[#70125F] bg-[#70125F]/5 shadow-md"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900">
+                            <Landmark className="h-5 w-5 text-[#70125F]" />
+                            Transferencia Bancaria
+                          </div>
+                          <Badge variant="outline" className="border-amber-400 text-amber-800 bg-amber-50 text-[9px] uppercase">
+                            Plazo hasta las 20:00 hrs
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="border-amber-400 text-amber-800 bg-amber-50 text-[9px] uppercase">
-                          Plazo hasta las 20:00 hrs
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        Realiza la transferencia por ${Number(trialPrice).toLocaleString("es-CL")} CLP y envía el comprobante por WhatsApp antes de las 20:00 hrs para activar tu reserva.
-                      </p>
-                    </button>
+                        <p className="text-xs text-slate-600">
+                          Realiza la transferencia por ${Number(activePayAmount).toLocaleString("es-CL")} CLP y envía el comprobante por WhatsApp antes de las 20:00 hrs para activar tu reserva.
+                        </p>
+                      </button>
+                    </div>
                   </div>
 
                   {paymentMethod === "TRANSFER" && (
                     <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-[#DCA060]">
-                          Datos Oficiales para Transferencia Bancaria (${Number(trialPrice).toLocaleString("es-CL")} CLP)
+                          Datos Oficiales para Transferencia (${Number(activePayAmount).toLocaleString("es-CL")} CLP - Pago Total)
                         </span>
                         <Button
                           type="button"
@@ -1429,8 +1448,8 @@ function BookPageContent() {
                       <strong>{selectedSlot?.start} a {selectedSlot?.end} hrs</strong>
                     </p>
                   </div>
-                  <Badge className="bg-[#70125F] text-white font-bold text-xs px-3 py-1">
-                    Valor a Pagar: ${Number(trialPrice).toLocaleString("es-CL")} CLP
+                  <Badge className="bg-[#70125F] text-white font-bold text-xs px-3 py-1.5 shrink-0">
+                    A Pagar: ${Number(activePayAmount).toLocaleString("es-CL")} CLP (Pago Total)
                   </Badge>
                 </div>
               </Card>
@@ -1455,11 +1474,11 @@ function BookPageContent() {
                     </span>
                   ) : paymentMethod === "ONLINE" ? (
                     <span className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" /> Ir a Pagar Clase de Prueba (${Number(trialPrice).toLocaleString("es-CL")})
+                      <CreditCard className="h-4 w-4" /> Ir a Pagar ${Number(activePayAmount).toLocaleString("es-CL")} CLP (Pago Total)
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      <Landmark className="h-4 w-4" /> Registrar Pre-Reserva y Ver Instrucciones de Pago
+                      <Landmark className="h-4 w-4" /> Registrar Pre-Reserva (${Number(activePayAmount).toLocaleString("es-CL")}) y Ver Instrucciones
                     </span>
                   )}
                 </Button>
@@ -1511,11 +1530,13 @@ function BookPageContent() {
                     {selectedDateStr} ({selectedSlot?.start} a {selectedSlot?.end} hrs)
                   </span>
                 </div>
-                <div className="flex justify-between pt-1">
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
                   <span className="text-slate-400 font-bold uppercase text-[10px]">Monto a Pagar:</span>
-                  <span className="font-mono font-black text-base text-[#70125F]">
-                    ${Number(trialPrice).toLocaleString("es-CL")} CLP
-                  </span>
+                  <div className="text-right">
+                    <span className="font-mono font-black text-base text-[#70125F]">
+                      ${Number(activePayAmount).toLocaleString("es-CL")} CLP (Pago Total)
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1523,7 +1544,7 @@ function BookPageContent() {
               <div className="p-5 rounded-2xl bg-slate-900 text-white text-left space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-[#DCA060]">
-                    Datos para Transferencia Bancaria
+                    Datos para Transferencia Bancaria (${Number(activePayAmount).toLocaleString("es-CL")} CLP)
                   </span>
                   <Button
                     type="button"
@@ -1550,7 +1571,7 @@ function BookPageContent() {
                   disabled={isCreatingPayment}
                   className="w-full bg-[#70125F] hover:bg-[#590e4b] text-white rounded-2xl h-12 font-bold text-xs uppercase tracking-wider gap-2 shadow-lg cursor-pointer"
                 >
-                  <CreditCard className="h-4 w-4" /> Pagar Ahora con Link de Pago Online (${Number(trialPrice).toLocaleString("es-CL")})
+                  <CreditCard className="h-4 w-4" /> Pagar Ahora con Link de Pago Online (${Number(activePayAmount).toLocaleString("es-CL")})
                 </Button>
 
                 <a

@@ -73,6 +73,7 @@ export type LeadStatus =
   | 'SOLICITUD'
   | 'PRE_RESERVA'
   | 'RESERVA_CONFIRMADA'
+  | 'RESERVA_VENCIDA'
   | 'CONTACTADO'
   | 'CONCRETADO'
   | 'NUEVO';
@@ -423,6 +424,7 @@ export const statusLabel: Record<LeadStatus, string> = {
   SOLICITUD: 'Solicitud Recibida',
   PRE_RESERVA: 'Pre-Reserva (Con Adelanto)',
   RESERVA_CONFIRMADA: 'Reserva Confirmada (Total)',
+  RESERVA_VENCIDA: 'Reserva Vencida',
   CONTACTADO: 'Contactado / En Seguimiento',
   CONCRETADO: 'Venta Concretada / Alumno',
   NUEVO: 'Nuevo Lead'

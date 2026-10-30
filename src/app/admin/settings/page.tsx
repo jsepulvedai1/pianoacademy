@@ -347,27 +347,29 @@ export default function AdminSettingsPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-slate-800 text-base">Monto Link de Pago Clase Inicial</h3>
+                          <h3 className="font-extrabold text-slate-800 text-base">Valor de Clase de Prueba (Pago Total)</h3>
                           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
                             Pasarela Webpay / Mercado Pago
                           </Badge>
                         </div>
                         <p className="text-slate-400 text-xs italic mt-1">
-                          Valor que se cobrará al generar links de pago para la Clase Inicial desde el CRM y checkout.
+                          Configura el valor de la clase de prueba diagnóstica. Actualmente el agendamiento requiere el pago de la totalidad (100%).
                         </p>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vista previa</span>
-                        <span className="font-mono font-bold text-xl text-[#70125F]">
-                          ${Number(formData.trialClassPrice || 0).toLocaleString("es-CL")} CLP
-                        </span>
+                      <div className="text-right flex items-center gap-4">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#70125F] block">Valor Total</span>
+                          <span className="font-mono font-bold text-2xl text-[#70125F]">
+                            ${Number(formData.trialClassPrice || 0).toLocaleString("es-CL")}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F] flex items-center gap-1.5">
-                          <CreditCard className="h-3.5 w-3.5" /> Monto de la Clase Inicial ($ CLP) *
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-700 flex items-center gap-1.5">
+                          <CreditCard className="h-3.5 w-3.5 text-slate-500" /> Valor Total Oficial ($ CLP) *
                         </label>
                         <Input
                           type="number"
@@ -377,14 +379,23 @@ export default function AdminSettingsPage() {
                           value={formData.trialClassPrice === 0 ? "0" : (formData.trialClassPrice ?? "")}
                           onChange={(e) => {
                             const val = e.target.value;
-                            setFormData({ ...formData, trialClassPrice: val === "" ? ("" as any) : Number(val) });
+                            const num = val === "" ? ("" as any) : Number(val);
+                            setFormData({
+                              ...formData,
+                              trialClassPrice: num,
+                              trialClassDepositAmount: num
+                            });
                           }}
                           className="h-12 bg-slate-50 border-none rounded-xl font-mono text-base font-bold text-slate-800"
-                          placeholder="15000"
+                          placeholder="18000"
                         />
                       </div>
-                      <div className="p-4 bg-[#70125F]/5 rounded-2xl border border-[#70125F]/10 text-xs text-slate-600 leading-relaxed">
-                        💡 Este monto se usará al hacer clic en <strong>"Enviar Link de Pago: Clase Inicial"</strong> en la gestión de prospectos y en el flujo de reservas web.
+
+                      <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
+                        <span className="font-bold text-emerald-800 block mb-0.5">Cobro 100% de la Clase de Prueba:</span>
+                        <span className="text-xs text-emerald-700 block">
+                          Todo agendamiento web cobra la totalidad (${Number(formData.trialClassPrice || 0).toLocaleString("es-CL")} CLP). No se aplican abonos parciales.
+                        </span>
                       </div>
                     </div>
                   </Card>
@@ -468,16 +479,21 @@ export default function AdminSettingsPage() {
                             </div>
                           </div>
 
-                          <div className="bg-white rounded-2xl p-4 border border-[#70125F]/15 shadow-sm text-center shrink-0 w-full sm:w-auto">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
-                              {formData.trialClassPriceLabel || "Valor Clase de Prueba"}
-                            </span>
-                            <span className="text-2xl font-black font-mono text-[#70125F]">
-                              ${Number(formData.trialClassPrice || 15000).toLocaleString("es-CL")}
-                            </span>
-                            <span className="text-[10px] text-slate-500 block mt-0.5">
-                              {formData.trialClassPriceFooter || "Pago online o transferencia"}
-                            </span>
+                          <div className="bg-white rounded-2xl p-5 border border-[#70125F]/15 shadow-sm text-center shrink-0 w-full sm:w-auto space-y-2">
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
+                                {formData.trialClassPriceLabel || "Valor Clase de Prueba"}
+                              </span>
+                              <span className="text-3xl font-black font-mono text-slate-900">
+                                ${Number(formData.trialClassPrice || 16000).toLocaleString("es-CL")}
+                              </span>
+                              <span className="text-[10px] font-semibold text-emerald-700 block mt-1">
+                                Pago Total • Sin abonos parciales
+                              </span>
+                              <span className="text-[9px] text-slate-400 block mt-0.5">
+                                {formData.trialClassPriceFooter || "Pago online o transferencia"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </Card>

@@ -67,10 +67,40 @@ const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: R
   { status: 'SOLICITUD',           color: 'text-amber-800',   bg: 'bg-amber-50',    icon: Hourglass,    dot: 'bg-amber-500' },
   { status: 'PRE_RESERVA',         color: 'text-orange-700',  bg: 'bg-orange-50',   icon: CreditCard,   dot: 'bg-orange-400' },
   { status: 'RESERVA_CONFIRMADA',  color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2, dot: 'bg-emerald-400'},
+  { status: 'RESERVA_VENCIDA',     color: 'text-rose-700',    bg: 'bg-rose-50',     icon: XCircle,      dot: 'bg-rose-500' },
   { status: 'CONTACTADO',          color: 'text-violet-700',  bg: 'bg-violet-50',   icon: Phone,        dot: 'bg-violet-400' },
 ];
 
-const KANBAN_COLUMNS: LeadStatus[] = ['SOLICITUD', 'PRE_RESERVA', 'RESERVA_CONFIRMADA'];
+const KANBAN_COLUMNS: LeadStatus[] = ['SOLICITUD', 'PRE_RESERVA', 'RESERVA_CONFIRMADA', 'RESERVA_VENCIDA'];
+
+function getLeadExpiration(lead: any) {
+  if (lead?.estado === 'RESERVA_VENCIDA') {
+    return { isExpired: true, isPast20: true, label: 'Reserva Vencida', badgeClass: 'bg-rose-100 text-rose-700 border-rose-200' };
+  }
+  const preRes = (lead?.lessons || []).find((l: any) => l.isPreReservation) || (lead?.estado === 'PRE_RESERVA' ? lead?.lessons?.[0] : null);
+  if (!preRes || !preRes.date) {
+    if (lead?.preReservaExpira) {
+      const isPast = new Date() > new Date(lead.preReservaExpira);
+      return {
+        isExpired: isPast,
+        isPast20: isPast,
+        label: isPast ? 'Venció 20:00' : 'Vence 20:00',
+        badgeClass: isPast ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-orange-50 text-orange-700 border-orange-200'
+      };
+    }
+    return { isExpired: false, isPast20: false, label: null, badgeClass: '' };
+  }
+
+  const expiryDate = new Date(`${preRes.date}T20:00:00`);
+  const isPast20 = new Date() > expiryDate;
+  return {
+    isExpired: isPast20,
+    isPast20,
+    expiryDate,
+    label: isPast20 ? 'Venció 20:00' : 'Vence 20:00',
+    badgeClass: isPast20 ? 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse' : 'bg-orange-50 text-orange-700 border-orange-200'
+  };
+}
 
 function getMethodologyInfo(edad?: number | null, servicio?: string) {
   const svc = (servicio || "").toUpperCase();
@@ -198,7 +228,8 @@ export default function AdminLeadsPage() {
   const { data: plansData } = useQuery<any>(GET_PLANS);
   const plans = plansData?.allPlans || [];
   const { data: globalSettingsData } = useQuery<any>(GET_GLOBAL_SETTINGS);
-  const trialClassPrice = globalSettingsData?.globalSettings?.trialClassPrice ?? 15000;
+  const trialClassPrice = globalSettingsData?.globalSettings?.trialClassPrice ?? 16000;
+  const trialClassDepositAmount = globalSettingsData?.globalSettings?.trialClassDepositAmount ?? 8000;
   const { data: teachersData } = useQuery<any>(GET_TEACHERS);
   const teachers = teachersData?.allTeachers || [];
   const { data: roomsData } = useQuery<any>(GET_ROOMS);
@@ -407,8 +438,30 @@ export default function AdminLeadsPage() {
     solicitudes: leads.filter((l: any) => l.estado === 'SOLICITUD' || l.estado === 'NUEVO').length,
     preReservas: leads.filter((l: any) => l.estado === 'PRE_RESERVA').length,
     confirmados: leads.filter((l: any) => l.estado === 'RESERVA_CONFIRMADA').length,
+    vencidas: leads.filter((l: any) => l.estado === 'RESERVA_VENCIDA' || (l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20)).length,
     contactados: leads.filter((l: any) => l.estado === 'CONTACTADO').length,
   }), [leads]);
+
+  const handleLiberarTodasVencidas = async () => {
+    const vencidas = leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20);
+    if (vencidas.length === 0) {
+      toast.info("No hay pre-reservas vencidas tras las 20:00 hrs pendientes de liberación.");
+      return;
+    }
+    if (!confirm(`¿Deseas marcar como 'Reserva Vencida' y liberar los cupos de ${vencidas.length} prospecto(s) con pre-reserva vencida tras las 20:00 hrs?`)) return;
+
+    let count = 0;
+    for (const l of vencidas) {
+      try {
+        await updateStatusMutation({ variables: { leadId: l.id, status: 'RESERVA_VENCIDA' } });
+        count++;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    toast.success(`${count} pre-reserva(s) marcadas como vencidas y cupos liberados correctamente ✅`);
+    refetch();
+  };
 
   const [createLeadNoteMutation, { loading: isSavingNote }] = useMutation(CREATE_LEAD_NOTE, {
     refetchQueries: [{ query: GET_LEADS }],
@@ -578,7 +631,8 @@ export default function AdminLeadsPage() {
     const templates: Record<string, string> = {
       RESPUESTA_INICIAL: WA_TEMPLATES.RESPUESTA_INICIAL(firstName, svc),
       PRE_RESERVA: WA_TEMPLATES.PRE_RESERVA(firstName, cpDate, cpTime, cpTeacher),
-      LINK_PAGO_CP: `¡Hola ${firstName}! 🎶 Hemos pre-reservado tu *Clase de Prueba (30 min)* con ${cpTeacher} para el *${cpDate}* a las *${cpTime}*.\n\nRecuerda que para que tu hora quede agendada debes realizar el pago anticipado ($${Number(trialClassPrice).toLocaleString("es-CL")} CLP) antes de las 20:00 hrs aquí:\n👉 ${trialPayUrl}\n\nO enviarnos el comprobante de transferencia por este medio. ¡Te esperamos en Academia Détaché! 🎹`,
+      LINK_PAGO_CP: `¡Hola ${firstName}! 🎶 Hemos pre-reservado tu *Clase de Prueba (30 min)* con ${cpTeacher} para el *${cpDate}* a las *${cpTime}*.\n\nPuedes pagar el valor total (*$${Number(trialClassPrice).toLocaleString("es-CL")} CLP*) antes de las 20:00 hrs aquí:\n👉 ${trialPayUrl}\n\nO enviarnos el comprobante de transferencia por este medio. ¡Te esperamos en Academia Détaché! 🎹`,
+      LINK_PAGO_ADELANTO: `¡Hola ${firstName}! 🎶 Hemos pre-reservado tu *Clase de Prueba (30 min)* con ${cpTeacher} para el *${cpDate}* a las *${cpTime}*.\n\nPuedes pagar el valor total (*$${Number(trialClassPrice).toLocaleString("es-CL")} CLP*) antes de las 20:00 hrs aquí:\n👉 ${trialPayUrl}\n\nO enviarnos el comprobante de transferencia por este medio. ¡Te esperamos en Academia Détaché! 🎹`,
       CONFIRMACION_CP: `¡Hola ${firstName}! ✅ Confirmamos el pago y agendamiento de tu *Clase de Prueba (30 min)* en Academia Détaché:\n\n📅 Fecha: ${cpDate}\n⏰ Hora: ${cpTime}\n🎓 Profesor: ${cpTeacher}\n📍 Dirección: Gran Av. José Miguel Carrera 8520, Of. C, La Cisterna.\n\n¡Nos vemos en clases! 🎻`,
       INFO_PACKS: WA_TEMPLATES.INFO_PACKS(firstName),
       RECORDATORIO_PAGO: WA_TEMPLATES.RECORDATORIO_PAGO(firstName, `$${Number(trialClassPrice).toLocaleString("es-CL")}`),
@@ -678,16 +732,17 @@ export default function AdminLeadsPage() {
       </header>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Prospectos', value: stats.total, color: 'text-slate-900', bg: 'bg-white' },
           { label: 'Solicitudes Recibidas', value: stats.solicitudes, color: 'text-amber-800', bg: 'bg-amber-50' },
-          { label: 'Pre-Reservas (Adelanto)', value: stats.preReservas, color: 'text-orange-700', bg: 'bg-orange-50' },
-          { label: 'Reservas Confirmadas (Total)', value: stats.confirmados, color: 'text-emerald-700', bg: 'bg-emerald-50' }
+          { label: 'Pre-Reservas (Pendientes)', value: stats.preReservas, color: 'text-orange-700', bg: 'bg-orange-50' },
+          { label: 'Reservas Confirmadas (Pagadas)', value: stats.confirmados, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+          { label: 'Reservas Vencidas', value: stats.vencidas, color: 'text-rose-700', bg: 'bg-rose-50' }
         ].map(stat => (
           <div key={stat.label} className={`${stat.bg} border border-slate-100/80 rounded-3xl p-6 shadow-sm`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{stat.label}</p>
-            <p className={`text-3xl font-bold font-serif ${stat.color}`}>{stat.value}</p>
+            <p className="text-3xl font-bold font-serif ${stat.color}">{stat.value}</p>
           </div>
         ))}
       </div>
@@ -716,6 +771,17 @@ export default function AdminLeadsPage() {
             );
           })}
         </select>
+
+        {leads.some((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20) && (
+          <Button
+            variant="outline"
+            onClick={handleLiberarTodasVencidas}
+            className="border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 text-[10px] font-bold uppercase tracking-wider rounded-xl h-11"
+          >
+            <AlertCircle className="h-3.5 w-3.5 mr-1.5" /> Liberar {leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20).length} Vencidas (20:00)
+          </Button>
+        )}
+
         <div className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-400">
           {filtered.length} {filtered.length === 1 ? 'prospecto' : 'prospectos'}
         </div>
@@ -778,11 +844,16 @@ export default function AdminLeadsPage() {
                               <Phone className="h-3 w-3" />
                               <span className="text-[11px] font-mono">+{lead.telefono?.slice(0, 2)} {lead.telefono?.slice(2)}</span>
                             </div>
-                            {lead.preReservaExpira && (lead.estado === 'SOLICITUD' || lead.estado === 'PRE_RESERVA') && (
-                              <Badge className="bg-orange-50 text-orange-700 text-[8px] font-bold uppercase tracking-widest border-0 px-2 py-1 animate-pulse">
-                                ⏰ Vence 20:00
-                              </Badge>
-                            )}
+                            {(() => {
+                              const exp = getLeadExpiration(lead);
+                              if (!exp.label) return null;
+                              return (
+                                <Badge className={`text-[8px] font-bold uppercase tracking-widest border px-2 py-0.5 ${exp.badgeClass}`}>
+                                  {exp.isExpired ? <AlertCircle className="h-2.5 w-2.5 mr-1 inline" /> : <Clock className="h-2.5 w-2.5 mr-1 inline" />}
+                                  {exp.label}
+                                </Badge>
+                              );
+                            })()}
                           </div>
 
                           {lead.notas && lead.notas.length > 0 && (
@@ -881,9 +952,20 @@ export default function AdminLeadsPage() {
                         </div>
                       </td>
                       <td className="px-8 py-5">
-                        <Badge className={`font-bold uppercase text-[9px] tracking-widest px-3 py-1 border-0 ${config.bg} ${config.color}`}>
-                          {statusLabel[lead.estado as LeadStatus]}
-                        </Badge>
+                        <div className="flex flex-col gap-1 items-start">
+                          <Badge className={`font-bold uppercase text-[9px] tracking-widest px-3 py-1 border-0 ${config.bg} ${config.color}`}>
+                            {statusLabel[lead.estado as LeadStatus] || lead.estado}
+                          </Badge>
+                          {(() => {
+                            const exp = getLeadExpiration(lead);
+                            if (!exp.label || lead.estado === 'RESERVA_VENCIDA') return null;
+                            return (
+                              <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${exp.badgeClass}`}>
+                                {exp.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
                       <td className="px-8 py-5 text-xs text-slate-400 italic">{formatDate(lead.fechaIngreso)}</td>
                       <td className="px-8 py-5 text-right">
@@ -1068,22 +1150,52 @@ export default function AdminLeadsPage() {
 
                       {selectedLead.lessons && selectedLead.lessons.length > 0 ? (
                         <div className="space-y-2">
-                          {selectedLead.lessons.map((cp: any) => (
-                            <div key={cp.id} className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/70 text-xs space-y-1.5">
-                              <div className="flex items-center justify-between font-bold text-slate-900">
-                                <span>📅 {cp.date}</span>
-                                <span className="text-emerald-700 font-mono">
-                                  ⏰ {String(cp.startTime || '').slice(0, 5)} - {String(cp.endTime || '').slice(0, 5)} hrs
-                                </span>
+                          {selectedLead.lessons.map((cp: any) => {
+                            const isPast20 = cp.isPreReservation && new Date() > new Date(`${cp.date}T20:00:00`);
+                            return (
+                              <div key={cp.id} className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/70 text-xs space-y-2">
+                                <div className="flex items-center justify-between font-bold text-slate-900">
+                                  <span>📅 {cp.date}</span>
+                                  <span className="text-emerald-700 font-mono">
+                                    ⏰ {String(cp.startTime || '').slice(0, 5)} - {String(cp.endTime || '').slice(0, 5)} hrs
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-slate-600">
+                                  <span>🎓 Profesor: <strong>{cp.teacher?.name || "Por asignar"}</strong></span>
+                                  <Badge className={
+                                    selectedLead.estado === 'RESERVA_VENCIDA'
+                                      ? "bg-rose-100 text-rose-800 border-0 text-[9px] font-bold"
+                                      : cp.isPreReservation
+                                        ? (isPast20 ? "bg-rose-100 text-rose-800 border-0 text-[9px] font-bold" : "bg-orange-100 text-orange-800 border-0 text-[9px]")
+                                        : "bg-emerald-100 text-emerald-800 border-0 text-[9px]"
+                                  }>
+                                    {selectedLead.estado === 'RESERVA_VENCIDA'
+                                      ? "Reserva Vencida"
+                                      : cp.isPreReservation
+                                        ? (isPast20 ? "Pre-Reserva (Vencida 20:00)" : "Pre-Reserva (Pendiente Pago)")
+                                        : "CP Confirmada"}
+                                  </Badge>
+                                </div>
+                                {cp.isPreReservation && selectedLead.estado !== 'RESERVA_VENCIDA' && (
+                                  <div className="pt-2 border-t border-amber-200/50 flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500">
+                                      {isPast20 ? "⚠️ Plazo vencido tras las 20:00 hrs" : "Vence a las 20:00 del día fijado"}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleStatusChange(selectedLead.id, 'RESERVA_VENCIDA');
+                                        applyTemplate('LIBERACION_CUPO');
+                                      }}
+                                      className="text-[9px] font-bold uppercase tracking-wider text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      Liberar Cupo / Vencida
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex items-center justify-between text-[11px] text-slate-600">
-                                <span>🎓 Profesor: <strong>{cp.teacher?.name || "Por asignar"}</strong></span>
-                                <Badge className={cp.isPreReservation ? "bg-orange-100 text-orange-800 border-0 text-[9px]" : "bg-emerald-100 text-emerald-800 border-0 text-[9px]"}>
-                                  {cp.isPreReservation ? "Pre-Reserva (Pendiente Pago)" : "CP Confirmada"}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-xs text-slate-400 italic">
@@ -1095,7 +1207,7 @@ export default function AdminLeadsPage() {
                     {/* Change Status */}
                     <div className="space-y-4">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Acciones de Pipeline</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                         {PIPELINE_COLUMNS.map(col => (
                           <button
                             key={col.status}
@@ -1132,7 +1244,7 @@ export default function AdminLeadsPage() {
 
                       <div className="flex flex-wrap gap-2">
                         {[
-                          { key: 'LINK_PAGO_CP', label: '💳 Cobro / Link Pago CP' },
+                          { key: 'LINK_PAGO_CP', label: `💳 Link Pago Total ($${Number(trialClassPrice).toLocaleString('es-CL')})` },
                           { key: 'RECORDATORIO_PAGO', label: '⏰ Recordatorio Pago (20:00h)' },
                           { key: 'CONFIRMACION_CP', label: '✅ Confirmación Clase CP' },
                           { key: 'PRE_RESERVA', label: '📋 Aviso Pre-Reserva' },

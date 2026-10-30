@@ -22,13 +22,13 @@ function CheckoutContent() {
   const { data: settingsData, loading: loadingSettings } = useQuery<any>(GET_GLOBAL_SETTINGS);
 
   const isTrial = planId === "trial";
-  const trialPrice = settingsData?.globalSettings?.trialClassPrice ?? 15000;
+  const trialPrice = settingsData?.globalSettings?.trialClassPrice ?? 16000;
 
   const plans = plansData?.allPlans || [];
   const plan = isTrial 
     ? {
         id: "trial",
-        name: "Clase Inicial",
+        name: "Clase de Prueba (Pago Total)",
         classesCount: 1,
         duration: 1,
         price: trialPrice,
@@ -92,6 +92,7 @@ function CheckoutContent() {
       variables: {
         planId: isTrial ? null : parseInt(plan.id),
         isTrialClass: isTrial,
+        payDeposit: false,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,

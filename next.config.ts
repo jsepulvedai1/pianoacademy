@@ -4,6 +4,20 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   trailingSlash: true,
+  async redirects() {
+    return [
+      {
+        source: '/admin/reservations',
+        destination: '/admin/leads',
+        permanent: false,
+      },
+      {
+        source: '/admin/reservations/',
+        destination: '/admin/leads/',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000';
     return [

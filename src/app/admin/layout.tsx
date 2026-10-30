@@ -30,7 +30,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/tasks", label: "Bitácora", icon: ClipboardList },
     { href: "/admin/leads", label: "Leads / CRM", icon: TrendingUp },
-    { href: "/admin/reservations", label: "Reservas", icon: CalendarCheck },
     { href: "/admin/packs", label: "Packs", icon: Package },
     { href: "/admin/payments", label: "Pagos", icon: CreditCard },
     { href: "/admin/teachers", label: "Profesores", icon: Users },
