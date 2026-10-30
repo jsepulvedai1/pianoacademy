@@ -202,6 +202,26 @@ export default function AdminTeachersPage() {
   const openModal = (teacher: any = null) => {
     if (teacher) {
       setEditingTeacher(teacher);
+
+      const teacherSpecNames = (teacher.specialties || []).map((s: any) =>
+        (s.name || "").toLowerCase().trim()
+      );
+
+      const selectedInstIds = instruments
+        .filter((inst: any) => {
+          const instName = (inst.name || "").toLowerCase().trim();
+          const matchesName =
+            teacherSpecNames.includes(instName) ||
+            teacherSpecNames.some(
+              (sn: string) => sn.includes(instName) || instName.includes(sn)
+            );
+          const matchesId = (teacher.specialties || []).some(
+            (s: any) => String(s.id) === String(inst.id)
+          );
+          return matchesName || matchesId;
+        })
+        .map((inst: any) => parseInt(inst.id));
+
       setFormData({
         name: teacher.name,
         description: teacher.description || "",
@@ -211,7 +231,7 @@ export default function AdminTeachersPage() {
         address: teacher.address || "",
         email: teacher.email || "",
         birthDate: teacher.birthDate || "",
-        specialtyIds: teacher.specialties?.map((s: any) => parseInt(s.id)) || []
+        specialtyIds: selectedInstIds
       });
     } else {
       setEditingTeacher(null);
