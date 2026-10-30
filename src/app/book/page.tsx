@@ -7,7 +7,6 @@ import { useMutation, useQuery } from "@apollo/client/react/index.js";
 import { CREATE_PRE_RESERVATION } from "@/graphql/mutations/lesson-mutations";
 import { CREATE_PAYMENT_PREFERENCE } from "@/graphql/mutations/student-mutations";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
-import { GET_ROOMS } from "@/graphql/queries/get-rooms";
 import { GET_RESERVATIONS } from "@/graphql/queries/get-reservations";
 import { GET_GLOBAL_SETTINGS } from "@/graphql/queries/get-global-settings";
 import { GET_ACTIVE_HOLIDAYS } from "@/graphql/queries/get-holidays";
@@ -204,7 +203,6 @@ function BookPageContent() {
 
   // GraphQL Queries
   const { data: teachersData, loading: loadingTeachers } = useQuery(GET_TEACHERS);
-  const { data: roomsData } = useQuery<any>(GET_ROOMS);
   const { data: reservationsData } = useQuery(GET_RESERVATIONS);
   const { data: globalSettingsData } = useQuery<any>(GET_GLOBAL_SETTINGS);
   const { data: holidaysData } = useQuery<any>(GET_ACTIVE_HOLIDAYS, {
@@ -230,10 +228,6 @@ function BookPageContent() {
     const all = (teachersData as any)?.allTeachers || [];
     return all.filter((t: any) => t.status !== "INACTIVE");
   }, [teachersData]);
-
-  const rooms = useMemo(() => {
-    return (roomsData?.allRooms || []).filter((r: any) => r.status !== "MAINTENANCE");
-  }, [roomsData]);
 
   const lessons = (reservationsData as any)?.allLessons || [];
   const activeHolidays = holidaysData?.activeHolidays || [];
@@ -609,7 +603,7 @@ function BookPageContent() {
           {[
             { n: 1, label: "Instrumento" },
             { n: 2, label: "Profesor" },
-            { n: 3, label: "Sede y Sala" },
+            { n: 3, label: "Sede" },
             { n: 4, label: "Fecha y Horario" },
             { n: 5, label: "Ficha y Pago" },
             { n: 6, label: "Confirmación" },
@@ -863,20 +857,20 @@ function BookPageContent() {
                 onClick={() => changeStep(3)}
                 className="bg-[#70125F] hover:bg-[#8e1779] text-white rounded-2xl h-12 px-8 font-bold uppercase tracking-wider text-xs shadow-lg shadow-[#70125F]/20 cursor-pointer gap-2 disabled:opacity-50"
               >
-                Continuar a Sede y Salas <ChevronRight className="h-4 w-4" />
+                Continuar a Sede <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* PASO 3: SEDE Y SALAS */}
+        {/* PASO 3: SEDE PRESENCIAL */}
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#70125F]">Paso 3 de 5</span>
-              <h2 className="text-2xl font-bold font-serif text-slate-900">Información sobre Sede y Salas</h2>
+              <h2 className="text-2xl font-bold font-serif text-slate-900">Información sobre la Sede</h2>
               <p className="text-slate-500 text-xs italic">
-                Conoce nuestra sede presencial y las salas equipadas donde se realizará tu clase de prueba.
+                Conoce nuestra sede presencial donde se realizará tu clase de prueba.
               </p>
             </div>
 
@@ -903,40 +897,10 @@ function BookPageContent() {
                     {sedeSalasInfo}
                   </p>
                 </div>
-
-                {rooms.length > 0 && (
-                  <div className="space-y-2 pt-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#70125F]">
-                      Salas Disponibles en Sede
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {rooms.map((room: any) => (
-                        <div
-                          key={room.id}
-                          className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-xs text-slate-700 space-y-1"
-                        >
-                          <p className="font-bold text-slate-900">🚪 {room.name}</p>
-                          <p className="text-[11px] text-slate-500">
-                            Capacidad: {room.capacity} {room.capacity === 1 ? "alumno" : "alumnos"}
-                          </p>
-                          {room.instruments?.length > 0 && (
-                            <div className="flex flex-wrap gap-1 pt-1">
-                              {room.instruments.map((inst: any) => (
-                                <Badge key={inst.id} variant="outline" className="text-[9px] py-0 px-1.5">
-                                  {inst.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="pt-6 mt-6 border-t border-[#70125F]/10 flex items-center justify-between text-xs font-bold text-[#70125F]">
-                <span className="text-sm">● Sede y Salas Presenciales Confirmadas</span>
+                <span className="text-sm">● Sede Presencial Confirmada</span>
                 <div className="h-7 w-7 rounded-full bg-[#70125F] text-white flex items-center justify-center font-bold text-xs shadow">
                   ✓
                 </div>

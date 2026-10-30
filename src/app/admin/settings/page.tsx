@@ -383,7 +383,7 @@ export default function AdminSettingsPage() {
                   <Card className="border-none shadow-sm bg-white rounded-[2rem] p-8 space-y-6">
                     <div>
                       <h3 className="font-extrabold text-slate-800 text-base">Textos e Información en Inscripción de Clase de Prueba (/book)</h3>
-                      <p className="text-slate-400 text-xs italic">Edita la descripción de la Clase de Prueba (30 min), la información sobre Sede y Salas, y los datos de Transferencia Bancaria que ven los alumnos al agendar.</p>
+                      <p className="text-slate-400 text-xs italic">Edita la descripción de la Clase de Prueba (30 min), la información sobre la Sede, y los datos de Transferencia Bancaria que ven los alumnos al agendar.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -398,12 +398,12 @@ export default function AdminSettingsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Información sobre Sede y Salas</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Información sobre la Sede</label>
                         <Textarea
                           value={formData.sedeSalasInfo}
                           onChange={(e) => setFormData({ ...formData, sedeSalasInfo: e.target.value })}
                           className="min-h-[100px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
-                          placeholder="Información sobre la sede, ubicación y equipamiento de salas..."
+                          placeholder="Información sobre la sede, ubicación y detalles..."
                         />
                       </div>
 
