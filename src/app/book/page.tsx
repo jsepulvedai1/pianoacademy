@@ -211,9 +211,34 @@ function BookPageContent() {
 
   const globalSettings = globalSettingsData?.globalSettings;
   const trialPrice = globalSettings?.trialClassPrice ?? 15000;
+  const trialBadge = globalSettings?.trialClassBadge || "Clase de Prueba • 30 Minutos";
+  const trialBadgeRequirement = (globalSettings?.trialClassBadgeRequirement || "Requiere Pago Anticipado (${price} CLP)").replace(
+    "${price}",
+    `$${Number(trialPrice).toLocaleString("es-CL")}`
+  );
+  const trialTitle = globalSettings?.trialClassTitle || "¿En qué consiste la Clase de Prueba?";
   const trialDescription =
     globalSettings?.trialClassDescription ||
     "Sesión individual de 30 minutos donde evaluamos tu nivel o potencial inicial, resolvemos tus dudas metodológicas y trazamos un plan de estudio personalizado en tu instrumento.";
+  const trialFeaturesRaw =
+    globalSettings?.trialClassFeatures ||
+    "30 minutos de duración\nProfesor especialista según instrumento\nReserva con mínimo 24 hrs de anticipación";
+  const trialFeatures = useMemo(() => {
+    return trialFeaturesRaw
+      .split("\n")
+      .map((line: string) => line.trim())
+      .filter((line: string) => line.length > 0);
+  }, [trialFeaturesRaw]);
+  const trialPriceLabel = globalSettings?.trialClassPriceLabel || "Valor Clase de Prueba";
+  const trialPriceFooter = globalSettings?.trialClassPriceFooter || "Pago online o transferencia";
+  const trialPaymentRequiredNotice = (
+    globalSettings?.trialClassPaymentRequiredNotice ||
+    "Requisito Indispensable: Pago Anticipado de Clase de Prueba (${price} CLP)"
+  ).replace("${price}", `$${Number(trialPrice).toLocaleString("es-CL")}`);
+  const trialBookingNotice = (
+    globalSettings?.trialClassBookingNotice ||
+    "IMPORTANTE: Tu clase de prueba aún NO está agendada definitivamente. Ninguna hora queda confirmada sin pago previo (${price} CLP) antes de las 20:00 hrs."
+  ).replace("${price}", `$${Number(trialPrice).toLocaleString("es-CL")}`);
   const sedeSalasInfo =
     globalSettings?.sedeSalasInfo ||
     "Sede La Cisterna — Gran Avenida José Miguel Carrera 8520, Oficina C (A pasos de Metro La Cisterna). Contamos con salas acústicamente acondicionadas y equipadas con instrumentos profesionales para Piano, Canto, Guitarra, Violín y Batería.";
@@ -661,35 +686,36 @@ function BookPageContent() {
                 <div className="space-y-2 max-w-2xl">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className="bg-[#70125F] text-white text-[10px] uppercase font-bold">
-                      Clase de Prueba • 30 Minutos
+                      {trialBadge}
                     </Badge>
                     <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-900 text-[10px] font-bold">
-                      Requiere Pago Anticipado (${Number(trialPrice).toLocaleString("es-CL")} CLP)
+                      {trialBadgeRequirement}
                     </Badge>
                   </div>
                   <h3 className="font-bold text-xl text-slate-900 font-serif">
-                    ¿En qué consiste la Clase de Prueba?
+                    {trialTitle}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
                     {trialDescription}
                   </p>
                   <div className="flex flex-wrap items-center gap-3 pt-2 text-[11px] text-[#70125F] font-bold">
-                    <span>✓ 30 minutos de duración</span>
-                    <span className="text-slate-300">•</span>
-                    <span>✓ Profesor especialista según instrumento</span>
-                    <span className="text-slate-300">•</span>
-                    <span>✓ Reserva con mínimo 24 hrs de anticipación</span>
+                    {trialFeatures.map((feat: string, idx: number) => (
+                      <span key={idx} className="flex items-center gap-1.5">
+                        {idx > 0 && <span className="text-slate-300 mr-1.5 hidden sm:inline">•</span>}
+                        <span>✓ {feat.replace(/^[✓•\-\*]\s*/, "")}</span>
+                      </span>
+                    ))}
                   </div>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-[#70125F]/15 shadow-sm text-center shrink-0 w-full sm:w-auto">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
-                    Valor Clase de Prueba
+                    {trialPriceLabel}
                   </span>
                   <span className="text-2xl font-black font-mono text-[#70125F]">
                     ${Number(trialPrice).toLocaleString("es-CL")}
                   </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Pago online o transferencia</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">{trialPriceFooter}</span>
                 </div>
               </div>
             </Card>
@@ -1288,7 +1314,7 @@ function BookPageContent() {
                     <AlertTriangle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
                     <div className="space-y-1 text-xs text-amber-900">
                       <p className="font-extrabold uppercase tracking-wider">
-                        Requisito Indispensable: Pago Anticipado de Clase de Prueba (${Number(trialPrice).toLocaleString("es-CL")} CLP)
+                        {trialPaymentRequiredNotice}
                       </p>
                       <p>
                         <strong>Ninguna clase de prueba queda agendada ni reservada sin haber sido pagada con antelación.</strong> Selecciona tu medio de pago a continuación:
@@ -1458,7 +1484,7 @@ function BookPageContent() {
                   ⚠️ Falta tu Pago para Confirmar la Clase
                 </h2>
                 <p className="text-amber-900 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs sm:text-sm font-semibold leading-relaxed">
-                  IMPORTANTE: Tu clase de prueba aún NO está agendada definitivamente. Ninguna hora queda confirmada sin pago previo (${Number(trialPrice).toLocaleString("es-CL")} CLP) antes de las 20:00 hrs.
+                  {trialBookingNotice}
                 </p>
               </div>
 

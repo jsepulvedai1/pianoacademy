@@ -10,8 +10,19 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
     $facebookUrl: String
     $instagramUrl: String
     $trialClassPrice: Float
-    $trialClassEmailTemplate: String
+    $trialClassDepositAmount: Float
+    $trialClassDepositLabel: String
+    $trialClassBalanceFooter: String
+    $trialClassBadge: String
+    $trialClassBadgeRequirement: String
+    $trialClassTitle: String
     $trialClassDescription: String
+    $trialClassFeatures: String
+    $trialClassPriceLabel: String
+    $trialClassPriceFooter: String
+    $trialClassBookingNotice: String
+    $trialClassPaymentRequiredNotice: String
+    $trialClassEmailTemplate: String
     $sedeSalasInfo: String
     $bankTransferDetails: String
     $termsAndConditions: String
@@ -32,8 +43,19 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
       facebookUrl: $facebookUrl
       instagramUrl: $instagramUrl
       trialClassPrice: $trialClassPrice
-      trialClassEmailTemplate: $trialClassEmailTemplate
+      trialClassDepositAmount: $trialClassDepositAmount
+      trialClassDepositLabel: $trialClassDepositLabel
+      trialClassBalanceFooter: $trialClassBalanceFooter
+      trialClassBadge: $trialClassBadge
+      trialClassBadgeRequirement: $trialClassBadgeRequirement
+      trialClassTitle: $trialClassTitle
       trialClassDescription: $trialClassDescription
+      trialClassFeatures: $trialClassFeatures
+      trialClassPriceLabel: $trialClassPriceLabel
+      trialClassPriceFooter: $trialClassPriceFooter
+      trialClassBookingNotice: $trialClassBookingNotice
+      trialClassPaymentRequiredNotice: $trialClassPaymentRequiredNotice
+      trialClassEmailTemplate: $trialClassEmailTemplate
       sedeSalasInfo: $sedeSalasInfo
       bankTransferDetails: $bankTransferDetails
       termsAndConditions: $termsAndConditions
@@ -55,8 +77,19 @@ export const UPDATE_GLOBAL_SETTINGS = gql`
         facebookUrl
         instagramUrl
         trialClassPrice
-        trialClassEmailTemplate
+        trialClassDepositAmount
+        trialClassDepositLabel
+        trialClassBalanceFooter
+        trialClassBadge
+        trialClassBadgeRequirement
+        trialClassTitle
         trialClassDescription
+        trialClassFeatures
+        trialClassPriceLabel
+        trialClassPriceFooter
+        trialClassBookingNotice
+        trialClassPaymentRequiredNotice
+        trialClassEmailTemplate
         sedeSalasInfo
         bankTransferDetails
         termsAndConditions

@@ -20,7 +20,7 @@ import {
   Settings, Phone, Mail, MapPin, Clock, Instagram, Facebook, 
   ShieldAlert, ShieldCheck, UserCheck, Key, Lock, Loader2, Save,
   MessageSquare, Send, Bot, Sparkles, Smartphone, CheckCircle2,
-  Radio, HelpCircle, QrCode, RefreshCw, AlertCircle, CreditCard
+  Radio, HelpCircle, QrCode, RefreshCw, AlertCircle, CreditCard, Ticket
 } from "lucide-react";
 import { toast } from "sonner";
 import AnnouncementsTab from "./announcements-tab";
@@ -39,9 +39,20 @@ export default function AdminSettingsPage() {
     openingHoursSaturdays: "",
     facebookUrl: "",
     instagramUrl: "",
-    trialClassPrice: 15000,
-    trialClassEmailTemplate: "",
+    trialClassPrice: 16000,
+    trialClassDepositAmount: 8000,
+    trialClassDepositLabel: "Adelanto para Pre-Reserva",
+    trialClassBalanceFooter: "Saldo restante a pagar el día de la clase en recepción",
+    trialClassBadge: "Clase de Prueba • 30 Minutos",
+    trialClassBadgeRequirement: "Requiere Pago Anticipado (${price} CLP)",
+    trialClassTitle: "¿En qué consiste la Clase de Prueba?",
     trialClassDescription: "",
+    trialClassFeatures: "30 minutos de duración\nProfesor especialista según instrumento\nReserva con mínimo 24 hrs de anticipación",
+    trialClassPriceLabel: "Valor Clase de Prueba",
+    trialClassPriceFooter: "Pago online o transferencia",
+    trialClassPaymentRequiredNotice: "Requisito Indispensable: Pago Anticipado de Clase de Prueba (${price} CLP)",
+    trialClassBookingNotice: "IMPORTANTE: Tu clase de prueba aún NO está agendada definitivamente. Ninguna hora queda confirmada sin pago previo (${price} CLP) antes de las 20:00 hrs.",
+    trialClassEmailTemplate: "",
     sedeSalasInfo: "",
     bankTransferDetails: "",
     termsAndConditions: "",
@@ -74,9 +85,20 @@ export default function AdminSettingsPage() {
         openingHoursSaturdays: data.globalSettings.openingHoursSaturdays || "",
         facebookUrl: data.globalSettings.facebookUrl || "",
         instagramUrl: data.globalSettings.instagramUrl || "",
-        trialClassPrice: data.globalSettings.trialClassPrice ?? 15000,
-        trialClassEmailTemplate: data.globalSettings.trialClassEmailTemplate || "",
+        trialClassPrice: data.globalSettings.trialClassPrice ?? 16000,
+        trialClassDepositAmount: data.globalSettings.trialClassDepositAmount ?? 8000,
+        trialClassDepositLabel: data.globalSettings.trialClassDepositLabel || "Adelanto para Pre-Reserva",
+        trialClassBalanceFooter: data.globalSettings.trialClassBalanceFooter || "Saldo restante a pagar el día de la clase en recepción",
+        trialClassBadge: data.globalSettings.trialClassBadge || "Clase de Prueba • 30 Minutos",
+        trialClassBadgeRequirement: data.globalSettings.trialClassBadgeRequirement || "Requiere Pago Anticipado (${price} CLP)",
+        trialClassTitle: data.globalSettings.trialClassTitle || "¿En qué consiste la Clase de Prueba?",
         trialClassDescription: data.globalSettings.trialClassDescription || "Sesión individual de 30 minutos donde evaluamos tu nivel o potencial inicial, resolvemos tus dudas metodológicas y trazamos un plan de estudio personalizado en tu instrumento.",
+        trialClassFeatures: data.globalSettings.trialClassFeatures || "30 minutos de duración\nProfesor especialista según instrumento\nReserva con mínimo 24 hrs de anticipación",
+        trialClassPriceLabel: data.globalSettings.trialClassPriceLabel || "Valor Clase de Prueba",
+        trialClassPriceFooter: data.globalSettings.trialClassPriceFooter || "Pago online o transferencia",
+        trialClassPaymentRequiredNotice: data.globalSettings.trialClassPaymentRequiredNotice || "Requisito Indispensable: Pago Anticipado de Clase de Prueba (${price} CLP)",
+        trialClassBookingNotice: data.globalSettings.trialClassBookingNotice || "IMPORTANTE: Tu clase de prueba aún NO está agendada definitivamente. Ninguna hora queda confirmada sin pago previo (${price} CLP) antes de las 20:00 hrs.",
+        trialClassEmailTemplate: data.globalSettings.trialClassEmailTemplate || "",
         sedeSalasInfo: data.globalSettings.sedeSalasInfo || "Sede La Cisterna — Gran Avenida José Miguel Carrera 8520, Oficina C (A pasos de Metro La Cisterna). Contamos con salas acústicamente acondicionadas y equipadas con instrumentos profesionales para Piano, Canto, Guitarra, Violín y Batería.",
         bankTransferDetails: data.globalSettings.bankTransferDetails || "Banco: Banco Estado / Santander\nTipo de Cuenta: Cuenta Corriente / Vista\nNombre: Academia de Música Détaché\nEmail de confirmación: academia@detache.cl\nAsunto: Clase de Prueba + Nombre del Alumno",
         termsAndConditions: data.globalSettings.termsAndConditions || "",
@@ -114,13 +136,19 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     const rawVal = formData.trialClassPrice as any;
     const parsedPrice = rawVal === "" || rawVal === null || isNaN(Number(rawVal))
-      ? 15000
+      ? 16000
       : Number(rawVal);
+
+    const rawDeposit = formData.trialClassDepositAmount as any;
+    const parsedDeposit = rawDeposit === "" || rawDeposit === null || isNaN(Number(rawDeposit))
+      ? 8000
+      : Number(rawDeposit);
 
     updateSettings({
       variables: {
         ...formData,
-        trialClassPrice: parsedPrice
+        trialClassPrice: parsedPrice,
+        trialClassDepositAmount: parsedDeposit,
       }
     });
   };
@@ -379,30 +407,220 @@ export default function AdminSettingsPage() {
                     </div>
                   </Card>
 
-                  {/* Textos del Flujo de Reserva (Clase de Prueba, Sede/Salas, Datos de Transferencia) */}
+                  {/* Textos del Flujo de Reserva y Ticket de Clase de Prueba */}
                   <Card className="border-none shadow-sm bg-white rounded-[2rem] p-8 space-y-6">
-                    <div>
-                      <h3 className="font-extrabold text-slate-800 text-base">Textos e Información en Inscripción de Clase de Prueba (/book)</h3>
-                      <p className="text-slate-400 text-xs italic">Edita la descripción de la Clase de Prueba (30 min), la información sobre la Sede, y los datos de Transferencia Bancaria que ven los alumnos al agendar.</p>
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Ticket className="h-5 w-5 text-[#70125F]" />
+                          <h3 className="font-extrabold text-slate-800 text-base">Editor del Ticket de Clase de Prueba (/book)</h3>
+                        </div>
+                        <p className="text-slate-400 text-xs italic mt-0.5">
+                          Edita todos los textos, títulos, viñetas y valores del ticket principal y avisos que ven los alumnos al agendar.
+                        </p>
+                      </div>
+                      <Badge className="bg-[#70125F]/10 text-[#70125F] border-none text-[10px] font-bold">
+                        Paso 1 del Booking
+                      </Badge>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Texto sobre Clase de Prueba (30 minutos)</label>
-                        <Textarea
-                          value={formData.trialClassDescription}
-                          onChange={(e) => setFormData({ ...formData, trialClassDescription: e.target.value })}
-                          className="min-h-[100px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
-                          placeholder="Descripción de la clase de prueba de 30 minutos..."
+                    {/* VISTA PREVIA EN VIVO */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          Vista Previa en Vivo (Cómo se ve en /book)
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          ● Actualización en tiempo real
+                        </span>
+                      </div>
+                      <Card className="rounded-3xl border-2 border-[#70125F]/20 bg-[#70125F]/5 p-6 sm:p-8 shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                          <div className="space-y-2 max-w-2xl">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge className="bg-[#70125F] text-white text-[10px] uppercase font-bold">
+                                {formData.trialClassBadge || "Clase de Prueba • 30 Minutos"}
+                              </Badge>
+                              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-900 text-[10px] font-bold">
+                                {(formData.trialClassBadgeRequirement || "Requiere Pago Anticipado (${price} CLP)").replace(
+                                  "${price}",
+                                  `$${Number(formData.trialClassPrice || 15000).toLocaleString("es-CL")}`
+                                )}
+                              </Badge>
+                            </div>
+                            <h3 className="font-bold text-xl text-slate-900 font-serif">
+                              {formData.trialClassTitle || "¿En qué consiste la Clase de Prueba?"}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                              {formData.trialClassDescription || "Sesión individual de 30 minutos donde evaluamos tu nivel o potencial inicial, resolvemos tus dudas metodológicas y trazamos un plan de estudio personalizado en tu instrumento."}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 pt-2 text-[11px] text-[#70125F] font-bold">
+                              {(formData.trialClassFeatures || "30 minutos de duración\nProfesor especialista según instrumento\nReserva con mínimo 24 hrs de anticipación")
+                                .split("\n")
+                                .map((line: string) => line.trim())
+                                .filter((line: string) => line.length > 0)
+                                .map((feat: string, idx: number) => (
+                                  <span key={idx} className="flex items-center gap-1.5">
+                                    {idx > 0 && <span className="text-slate-300 mr-1.5 hidden sm:inline">•</span>}
+                                    <span>✓ {feat.replace(/^[✓•\-\*]\s*/, "")}</span>
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-2xl p-4 border border-[#70125F]/15 shadow-sm text-center shrink-0 w-full sm:w-auto">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
+                              {formData.trialClassPriceLabel || "Valor Clase de Prueba"}
+                            </span>
+                            <span className="text-2xl font-black font-mono text-[#70125F]">
+                              ${Number(formData.trialClassPrice || 15000).toLocaleString("es-CL")}
+                            </span>
+                            <span className="text-[10px] text-slate-500 block mt-0.5">
+                              {formData.trialClassPriceFooter || "Pago online o transferencia"}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {/* CAMPOS DE CONFIGURACIÓN DEL TICKET */}
+                    <div className="border-t border-slate-100 pt-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                            Badge Principal del Ticket
+                          </label>
+                          <Input
+                            value={formData.trialClassBadge}
+                            onChange={(e) => setFormData({ ...formData, trialClassBadge: e.target.value })}
+                            className="h-10 bg-slate-50 border-none rounded-xl text-xs font-semibold"
+                            placeholder="Clase de Prueba • 30 Minutos"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                            Badge de Condición / Pago (Usa <code className="lowercase font-mono bg-slate-100 px-1 py-0.5 rounded text-[10px]">$&#123;price&#125;</code>)
+                          </label>
+                          <Input
+                            value={formData.trialClassBadgeRequirement}
+                            onChange={(e) => setFormData({ ...formData, trialClassBadgeRequirement: e.target.value })}
+                            className="h-10 bg-slate-50 border-none rounded-xl text-xs font-semibold"
+                            placeholder="Requiere Pago Anticipado (${price} CLP)"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                          Título Principal del Ticket
+                        </label>
+                        <Input
+                          value={formData.trialClassTitle}
+                          onChange={(e) => setFormData({ ...formData, trialClassTitle: e.target.value })}
+                          className="h-10 bg-slate-50 border-none rounded-xl text-xs font-bold"
+                          placeholder="¿En qué consiste la Clase de Prueba?"
                         />
                       </div>
 
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                          Texto Descriptivo del Ticket
+                        </label>
+                        <Textarea
+                          value={formData.trialClassDescription}
+                          onChange={(e) => setFormData({ ...formData, trialClassDescription: e.target.value })}
+                          className="min-h-[90px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
+                          placeholder="Descripción detallada de la clase de prueba..."
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                          Viñetas y Puntos Incluidos (Escribe un punto por línea)
+                        </label>
+                        <Textarea
+                          value={formData.trialClassFeatures}
+                          onChange={(e) => setFormData({ ...formData, trialClassFeatures: e.target.value })}
+                          className="min-h-[85px] bg-slate-50 border-none rounded-2xl p-4 text-xs font-medium leading-relaxed"
+                          placeholder="30 minutos de duración&#10;Profesor especialista según instrumento&#10;Reserva con mínimo 24 hrs de anticipación"
+                        />
+                        <p className="text-[11px] text-slate-400 italic">
+                          💡 Cada línea se convertirá en una viñeta con el símbolo ✓ en el ticket.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                            Etiqueta Superior del Recuadro de Precio
+                          </label>
+                          <Input
+                            value={formData.trialClassPriceLabel}
+                            onChange={(e) => setFormData({ ...formData, trialClassPriceLabel: e.target.value })}
+                            className="h-10 bg-slate-50 border-none rounded-xl text-xs font-semibold"
+                            placeholder="Valor Clase de Prueba"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                            Subtexto / Pie del Recuadro de Precio
+                          </label>
+                          <Input
+                            value={formData.trialClassPriceFooter}
+                            onChange={(e) => setFormData({ ...formData, trialClassPriceFooter: e.target.value })}
+                            className="h-10 bg-slate-50 border-none rounded-xl text-xs font-semibold"
+                            placeholder="Pago online o transferencia"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AVISOS EN EL FLUJO DE PAGO Y CONFIRMACIÓN */}
+                    <div className="border-t border-slate-100 pt-6 space-y-4">
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                          Avisos en los Pasos de Pago y Pre-Reserva
+                        </h4>
+                        <p className="text-slate-400 text-xs italic">
+                          Personaliza las advertencias sobre el pago previo de la clase en los Pasos 5 y 6.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                          Aviso de Pago Obligatorio (Paso 5 - Datos y Pago)
+                        </label>
+                        <Input
+                          value={formData.trialClassPaymentRequiredNotice}
+                          onChange={(e) => setFormData({ ...formData, trialClassPaymentRequiredNotice: e.target.value })}
+                          className="h-10 bg-slate-50 border-none rounded-xl text-xs font-semibold"
+                          placeholder="Requisito Indispensable: Pago Anticipado de Clase de Prueba (${price} CLP)"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">
+                          Aviso Importante en Ticket de Pre-Reserva (Paso 6 - Voucher Pendiente de Pago)
+                        </label>
+                        <Textarea
+                          value={formData.trialClassBookingNotice}
+                          onChange={(e) => setFormData({ ...formData, trialClassBookingNotice: e.target.value })}
+                          className="min-h-[70px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
+                          placeholder="IMPORTANTE: Tu clase de prueba aún NO está agendada definitivamente. Ninguna hora queda confirmada sin pago previo (${price} CLP) antes de las 20:00 hrs."
+                        />
+                      </div>
+                    </div>
+
+                    {/* SEDE Y TRANSFERENCIA */}
+                    <div className="border-t border-slate-100 pt-6 space-y-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-[#70125F]">Información sobre la Sede</label>
                         <Textarea
                           value={formData.sedeSalasInfo}
                           onChange={(e) => setFormData({ ...formData, sedeSalasInfo: e.target.value })}
-                          className="min-h-[100px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
+                          className="min-h-[90px] bg-slate-50 border-none rounded-2xl p-4 text-xs leading-relaxed"
                           placeholder="Información sobre la sede, ubicación y detalles..."
                         />
                       </div>
@@ -412,7 +630,7 @@ export default function AdminSettingsPage() {
                         <Textarea
                           value={formData.bankTransferDetails}
                           onChange={(e) => setFormData({ ...formData, bankTransferDetails: e.target.value })}
-                          className="min-h-[120px] bg-slate-50 border-none rounded-2xl p-4 font-mono text-xs leading-relaxed"
+                          className="min-h-[110px] bg-slate-50 border-none rounded-2xl p-4 font-mono text-xs leading-relaxed"
                           placeholder="Banco, Tipo de Cuenta, Número, RUT, Nombre, Correo..."
                         />
                       </div>

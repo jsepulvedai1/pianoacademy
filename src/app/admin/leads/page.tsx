@@ -64,13 +64,13 @@ import { normalizePhoneNumber } from "@/lib/utils";
 import { DndContext, useDraggable, useDroppable, DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 
 const PIPELINE_COLUMNS: { status: LeadStatus; color: string; bg: string; icon: React.ElementType; dot: string }[] = [
-  { status: 'PRE_RESERVA',         color: 'text-orange-700',  bg: 'bg-orange-50',   icon: Hourglass,    dot: 'bg-orange-400' },
-  { status: 'CONTACTADO',          color: 'text-violet-700',  bg: 'bg-violet-50',   icon: Phone,        dot: 'bg-violet-400' },
+  { status: 'SOLICITUD',           color: 'text-amber-800',   bg: 'bg-amber-50',    icon: Hourglass,    dot: 'bg-amber-500' },
+  { status: 'PRE_RESERVA',         color: 'text-orange-700',  bg: 'bg-orange-50',   icon: CreditCard,   dot: 'bg-orange-400' },
   { status: 'RESERVA_CONFIRMADA',  color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2, dot: 'bg-emerald-400'},
-  { status: 'NUEVO',               color: 'text-sky-700',     bg: 'bg-sky-50',      icon: Star,         dot: 'bg-sky-400'    }
+  { status: 'CONTACTADO',          color: 'text-violet-700',  bg: 'bg-violet-50',   icon: Phone,        dot: 'bg-violet-400' },
 ];
 
-const KANBAN_COLUMNS: LeadStatus[] = ['PRE_RESERVA', 'CONTACTADO', 'RESERVA_CONFIRMADA', 'NUEVO'];
+const KANBAN_COLUMNS: LeadStatus[] = ['SOLICITUD', 'PRE_RESERVA', 'RESERVA_CONFIRMADA'];
 
 function getMethodologyInfo(edad?: number | null, servicio?: string) {
   const svc = (servicio || "").toUpperCase();
@@ -392,17 +392,22 @@ export default function AdminLeadsPage() {
   const leadsByStatus = useMemo(() => {
     const map: Record<LeadStatus, any[]> = {} as any;
     PIPELINE_COLUMNS.forEach(col => {
-      map[col.status] = filtered.filter((l: any) => l.estado === col.status);
+      map[col.status] = filtered.filter((l: any) => {
+        if (col.status === 'SOLICITUD') {
+          return l.estado === 'SOLICITUD' || l.estado === 'NUEVO';
+        }
+        return l.estado === col.status;
+      });
     });
     return map;
   }, [filtered]);
 
   const stats = useMemo(() => ({
     total: leads.length,
-    nuevos: leads.filter((l: any) => l.estado === 'NUEVO').length,
-    contactados: leads.filter((l: any) => l.estado === 'CONTACTADO').length,
+    solicitudes: leads.filter((l: any) => l.estado === 'SOLICITUD' || l.estado === 'NUEVO').length,
     preReservas: leads.filter((l: any) => l.estado === 'PRE_RESERVA').length,
-    confirmados: leads.filter((l: any) => l.estado === 'RESERVA_CONFIRMADA').length
+    confirmados: leads.filter((l: any) => l.estado === 'RESERVA_CONFIRMADA').length,
+    contactados: leads.filter((l: any) => l.estado === 'CONTACTADO').length,
   }), [leads]);
 
   const [createLeadNoteMutation, { loading: isSavingNote }] = useMutation(CREATE_LEAD_NOTE, {
@@ -641,7 +646,7 @@ export default function AdminLeadsPage() {
   };
 
   const getColConfig = (status: LeadStatus) =>
-    PIPELINE_COLUMNS.find(c => c.status === status)!;
+    PIPELINE_COLUMNS.find(c => c.status === status) || PIPELINE_COLUMNS[0];
 
   // ─── RENDER ──────────────────────────────────────────────
   return (
@@ -673,13 +678,12 @@ export default function AdminLeadsPage() {
       </header>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Leads', value: stats.total, color: 'text-slate-900', bg: 'bg-white' },
-          { label: 'Nuevos Leads', value: stats.nuevos, color: 'text-sky-700', bg: 'bg-sky-50' },
-          { label: 'Contactados', value: stats.contactados, color: 'text-violet-700', bg: 'bg-violet-50' },
-          { label: 'Pre-Reservas', value: stats.preReservas, color: 'text-orange-700', bg: 'bg-orange-50' },
-          { label: 'Res. Confirmadas', value: stats.confirmados, color: 'text-emerald-700', bg: 'bg-emerald-50' }
+          { label: 'Total Prospectos', value: stats.total, color: 'text-slate-900', bg: 'bg-white' },
+          { label: 'Solicitudes Recibidas', value: stats.solicitudes, color: 'text-amber-800', bg: 'bg-amber-50' },
+          { label: 'Pre-Reservas (Adelanto)', value: stats.preReservas, color: 'text-orange-700', bg: 'bg-orange-50' },
+          { label: 'Reservas Confirmadas (Total)', value: stats.confirmados, color: 'text-emerald-700', bg: 'bg-emerald-50' }
         ].map(stat => (
           <div key={stat.label} className={`${stat.bg} border border-slate-100/80 rounded-3xl p-6 shadow-sm`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{stat.label}</p>
@@ -774,7 +778,7 @@ export default function AdminLeadsPage() {
                               <Phone className="h-3 w-3" />
                               <span className="text-[11px] font-mono">+{lead.telefono?.slice(0, 2)} {lead.telefono?.slice(2)}</span>
                             </div>
-                            {lead.preReservaExpira && lead.estado === 'PRE_RESERVA' && (
+                            {lead.preReservaExpira && (lead.estado === 'SOLICITUD' || lead.estado === 'PRE_RESERVA') && (
                               <Badge className="bg-orange-50 text-orange-700 text-[8px] font-bold uppercase tracking-widest border-0 px-2 py-1 animate-pulse">
                                 ⏰ Vence 20:00
                               </Badge>

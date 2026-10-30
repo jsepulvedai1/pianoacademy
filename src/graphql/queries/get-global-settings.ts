@@ -12,8 +12,19 @@ export const GET_GLOBAL_SETTINGS = gql`
       facebookUrl
       instagramUrl
       trialClassPrice
-      trialClassEmailTemplate
+      trialClassDepositAmount
+      trialClassDepositLabel
+      trialClassBalanceFooter
+      trialClassBadge
+      trialClassBadgeRequirement
+      trialClassTitle
       trialClassDescription
+      trialClassFeatures
+      trialClassPriceLabel
+      trialClassPriceFooter
+      trialClassBookingNotice
+      trialClassPaymentRequiredNotice
+      trialClassEmailTemplate
       sedeSalasInfo
       bankTransferDetails
       termsAndConditions

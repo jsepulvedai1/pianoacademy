@@ -70,10 +70,12 @@ export const CLASS_TYPES: ClassType[] = [
 ];
 
 export type LeadStatus =
-  | 'NUEVO'
-  | 'CONTACTADO'
+  | 'SOLICITUD'
   | 'PRE_RESERVA'
-  | 'RESERVA_CONFIRMADA';
+  | 'RESERVA_CONFIRMADA'
+  | 'CONTACTADO'
+  | 'CONCRETADO'
+  | 'NUEVO';
 
 export type LeadSource = 'WEB' | 'WHATSAPP' | 'INSTAGRAM' | 'REFERIDO' | 'GOOGLE' | 'OTRO';
 export type LeadService = 'PIANO_NINOS' | 'PIANO_ADULTOS' | 'CANTO' | 'VIOLIN' | 'GUITARRA' | 'BATERIA' | 'CONTRABAJO' | 'CLASE_GRUPAL' | 'CLASE_PRUEBA';
@@ -418,8 +420,10 @@ export const sourceLabel: Record<LeadSource, string> = {
 };
 
 export const statusLabel: Record<LeadStatus, string> = {
-  NUEVO: 'Nuevo Lead',
-  CONTACTADO: 'Contactado',
-  PRE_RESERVA: 'Pre-Reserva',
-  RESERVA_CONFIRMADA: 'Reserva Confirmada'
+  SOLICITUD: 'Solicitud Recibida',
+  PRE_RESERVA: 'Pre-Reserva (Con Adelanto)',
+  RESERVA_CONFIRMADA: 'Reserva Confirmada (Total)',
+  CONTACTADO: 'Contactado / En Seguimiento',
+  CONCRETADO: 'Venta Concretada / Alumno',
+  NUEVO: 'Nuevo Lead'
 };
