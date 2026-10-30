@@ -94,10 +94,11 @@ export default function AdminDashboard() {
     
     const currentMonth = new Date().getMonth();
     const monthlyRevenue = (data.totalPayments || [])
+      .filter(Boolean)
       .filter((p: any) => new Date(p.paymentDate).getMonth() === currentMonth)
-      .reduce((sum: number, p: any) => sum + p.amount, 0);
+      .reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
 
-    const closedLeads = (data.totalLeads || []).filter((l: any) => l.estado === 'CONCRETADO' || l.estado === 'RESERVA_CONFIRMADA').length;
+    const closedLeads = (data.totalLeads || []).filter(Boolean).filter((l: any) => l.estado === 'CONCRETADO' || l.estado === 'RESERVA_CONFIRMADA').length;
     const conversionRate = totalLeads > 0 ? Math.round((closedLeads / totalLeads) * 100) : 0;
 
     return {
@@ -113,17 +114,17 @@ export default function AdminDashboard() {
   const recentActivity = useMemo(() => {
     if (!data) return [];
     
-    const payments = (data.totalPayments || []).slice(-10).map((p: any) => ({
+    const payments = (data.totalPayments || []).filter(Boolean).slice(-10).map((p: any) => ({
       id: p.id,
       type: 'PAYMENT',
       text: `Pago de ${p.student?.name || 'Alumno'}`,
-      amount: p.amount,
+      amount: parseFloat(p.amount) || 0,
       date: p.paymentDate,
       status: 'PAID',
       raw: p
     }));
     
-    const lessons = (data.totalLessons || []).slice(-10).map((l: any) => ({
+    const lessons = (data.totalLessons || []).filter(Boolean).slice(-10).map((l: any) => ({
       id: l.id,
       type: 'LESSON',
       text: `${l.student?.name} con ${l.teacher?.name}`,

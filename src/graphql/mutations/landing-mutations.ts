@@ -11,6 +11,14 @@ export const UPDATE_LANDING_PAGE = gql`
     $imageUrl: String
     $galleryImages: String
     $cta: String
+    $whyLearnTitle: String
+    $whyLearnSubtitle: String
+    $showHero: Boolean
+    $showGallery: Boolean
+    $showTeachers: Boolean
+    $showMethodology: Boolean
+    $showWhyLearn: Boolean
+    $showCta: Boolean
   ) {
     updateLandingPage(
       slug: $slug
@@ -22,6 +30,14 @@ export const UPDATE_LANDING_PAGE = gql`
       imageUrl: $imageUrl
       galleryImages: $galleryImages
       cta: $cta
+      whyLearnTitle: $whyLearnTitle
+      whyLearnSubtitle: $whyLearnSubtitle
+      showHero: $showHero
+      showGallery: $showGallery
+      showTeachers: $showTeachers
+      showMethodology: $showMethodology
+      showWhyLearn: $showWhyLearn
+      showCta: $showCta
     ) {
       success
       landingPage {
@@ -35,6 +51,14 @@ export const UPDATE_LANDING_PAGE = gql`
         imageUrl
         galleryImages
         cta
+        whyLearnTitle
+        whyLearnSubtitle
+        showHero
+        showGallery
+        showTeachers
+        showMethodology
+        showWhyLearn
+        showCta
       }
     }
   }

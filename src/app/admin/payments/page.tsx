@@ -24,10 +24,13 @@ const statusConfig: Record<PaymentStatus, { label: string; color: string; bg: st
   VENCIDO:  { label: 'Vencido', color: 'text-rose-700',    bg: 'bg-rose-50',    icon: XCircle }
 };
 
-const methodConfig: Record<PaymentMethod, { label: string; icon: React.ElementType }> = {
+const methodConfig: Record<string, { label: string; icon: React.ElementType }> = {
   EFECTIVO:     { label: 'Efectivo',     icon: Banknote },
+  CASH:         { label: 'Efectivo',     icon: Banknote },
   TRANSFERENCIA:{ label: 'Transferencia',icon: Building2 },
+  TRANSFER:     { label: 'Transferencia',icon: Building2 },
   TARJETA:      { label: 'Tarjeta',      icon: CreditCard },
+  CARD:         { label: 'Tarjeta',      icon: CreditCard },
   OTRO:         { label: 'Otro',         icon: Wallet }
 };
 
@@ -54,12 +57,12 @@ export default function AdminPaymentsPage() {
     planId: '',
     amount: '',
     description: '',
-    method: 'TRANSFERENCIA' as PaymentMethod
+    method: 'TRANSFER'
   });
 
-  const payments = data?.allPayments || [];
-  const students = data?.allStudents || [];
-  const plans = data?.allPlans || [];
+  const payments = (data?.allPayments || []).filter(Boolean);
+  const students = (data?.allStudents || []).filter(Boolean);
+  const plans = (data?.allPlans || []).filter(Boolean);
 
   const filtered = useMemo(() => payments.filter((p: any) => {
     const studentName = p.student?.name || "";
@@ -70,7 +73,7 @@ export default function AdminPaymentsPage() {
   }), [payments, search]);
 
   const stats = useMemo(() => ({
-    totalRecaudado: payments.reduce((s: number, p: any) => s + (p.amount || 0), 0),
+    totalRecaudado: payments.reduce((s: number, p: any) => s + (parseFloat(p.amount) || 0), 0),
     count: payments.length
   }), [payments]);
 
@@ -90,7 +93,7 @@ export default function AdminPaymentsPage() {
     });
   };
 
-  const formatCLP = (n: number) => `$${n.toLocaleString('es-CL')}`;
+  const formatCLP = (n: number | string) => `$${Number(n || 0).toLocaleString('es-CL')}`;
 
   return (
     <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -251,8 +254,10 @@ export default function AdminPaymentsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Medio de Pago</label>
-                  <select className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold outline-none" value={newPayment.method} onChange={e => setNewPayment({ ...newPayment, method: e.target.value as PaymentMethod })}>
-                    {(['TRANSFERENCIA', 'EFECTIVO', 'TARJETA', 'OTRO'] as PaymentMethod[]).map(m => <option key={m} value={m}>{methodConfig[m].label}</option>)}
+                  <select className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold outline-none" value={newPayment.method} onChange={e => setNewPayment({ ...newPayment, method: e.target.value })}>
+                    <option value="TRANSFER">Transferencia</option>
+                    <option value="CASH">Efectivo</option>
+                    <option value="CARD">Tarjeta</option>
                   </select>
                 </div>
                 <div className="col-span-2 space-y-2">

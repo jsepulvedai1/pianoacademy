@@ -76,7 +76,16 @@ export interface LandingPage {
   solution: string;
   benefits: string[];
   imageUrl: string | null;
+  galleryImages?: { url: string; caption: string }[] | null;
   cta: string;
+  whyLearnTitle?: string;
+  whyLearnSubtitle?: string;
+  showHero?: boolean;
+  showGallery?: boolean;
+  showTeachers?: boolean;
+  showMethodology?: boolean;
+  showWhyLearn?: boolean;
+  showCta?: boolean;
 }
 
 export interface GetAllLandingPagesData {

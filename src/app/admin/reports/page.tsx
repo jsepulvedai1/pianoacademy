@@ -45,10 +45,10 @@ export default function AdminReportsPage() {
   const [period, setPeriod] = useState<'ALL' | 'MONTH' | 'WEEK'>('ALL');
   const { data, loading, refetch } = useQuery<any>(GET_REPORTS_DATA);
 
-  const rawLeads = data?.allLeads || [];
-  const rawPayments = data?.allPayments || [];
-  const rawLessons = data?.allLessons || [];
-  const rawStudents = data?.allStudents || [];
+  const rawLeads = (data?.allLeads || []).filter(Boolean);
+  const rawPayments = (data?.allPayments || []).filter(Boolean);
+  const rawLessons = (data?.allLessons || []).filter(Boolean);
+  const rawStudents = (data?.allStudents || []).filter(Boolean);
 
   const now = new Date();
 

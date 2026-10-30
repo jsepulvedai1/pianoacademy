@@ -13,6 +13,14 @@ export const GET_ALL_LANDING_PAGES = gql`
       imageUrl
       galleryImages
       cta
+      whyLearnTitle
+      whyLearnSubtitle
+      showHero
+      showGallery
+      showTeachers
+      showMethodology
+      showWhyLearn
+      showCta
     }
   }
 `;
@@ -30,6 +38,14 @@ export const GET_LANDING_PAGE_BY_SLUG = gql`
       imageUrl
       galleryImages
       cta
+      whyLearnTitle
+      whyLearnSubtitle
+      showHero
+      showGallery
+      showTeachers
+      showMethodology
+      showWhyLearn
+      showCta
     }
   }
 `;

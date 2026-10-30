@@ -45,6 +45,14 @@ function makeClient() {
   return new ApolloClient({
     cache: new InMemoryCache(),
     link: link,
+    defaultOptions: {
+      watchQuery: {
+        errorPolicy: "all",
+      },
+      query: {
+        errorPolicy: "all",
+      },
+    },
   });
 }
 

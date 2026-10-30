@@ -58,15 +58,15 @@ export default function AdminPacksPage() {
   const students = studentsData?.allStudents || [];
   const teachers = teachersData?.allTeachers || [];
   const instruments = instrumentsData?.allInstruments || [];
-  const packs = useMemo(() => (packsData?.allStudentPacks || []).map((p: any) => ({
+  const packs = useMemo(() => (packsData?.allStudentPacks || []).filter(Boolean).map((p: any) => ({
     id: p.id,
-    nombre: p.plan.name,
-    totalClases: p.totalClasses,
-    clasesUsadas: Math.max(0, p.totalClasses - p.remainingClasses),
-    clasesRestantes: p.remainingClasses,
-    precio: parseFloat(p.plan.price),
-    alumnoId: p.student.id,
-    alumnoNombre: p.student.name,
+    nombre: p.plan?.name || "Sin plan",
+    totalClases: p.totalClasses || 0,
+    clasesUsadas: Math.max(0, (p.totalClasses || 0) - (p.remainingClasses || 0)),
+    clasesRestantes: p.remainingClasses || 0,
+    precio: parseFloat(p.plan?.price || "0"),
+    alumnoId: p.student?.id || "",
+    alumnoNombre: p.student?.name || "Alumno sin asignar",
     profesorNombre: "Por asignar", // Se podría enriquecer en el modelo
     instrumento: "General",
     estado: p.isActive ? (p.remainingClasses > 0 ? 'ACTIVO' : 'COMPLETADO') : 'COMPLETADO',

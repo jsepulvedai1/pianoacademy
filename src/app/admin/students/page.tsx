@@ -207,12 +207,12 @@ export default function AdminStudentsPage() {
     setChatInput(text);
   };
 
-  const students = data?.allStudents || [];
-  const allPacks = data?.allStudentPacks || [];
-  const allPayments = data?.allPayments || [];
-  const allLessons = lessonsData?.allLessons || [];
-  const instruments = instrumentsData?.allInstruments || [];
-  const teachers = teachersData?.allTeachers || [];
+  const students = (data?.allStudents || []).filter(Boolean);
+  const allPacks = (data?.allStudentPacks || []).filter(Boolean);
+  const allPayments = (data?.allPayments || []).filter(Boolean);
+  const allLessons = (lessonsData?.allLessons || []).filter(Boolean);
+  const instruments = (instrumentsData?.allInstruments || []).filter(Boolean);
+  const teachers = (teachersData?.allTeachers || []).filter(Boolean);
 
   const filteredStudents = useMemo(() => {
     return students.filter((s: any) => {
@@ -295,7 +295,7 @@ export default function AdminStudentsPage() {
     });
   };
 
-  const formatCLP = (n: number) => `$${n.toLocaleString('es-CL')}`;
+  const formatCLP = (n: number | string) => `$${Number(n || 0).toLocaleString('es-CL')}`;
 
   return (
     <div className="p-8 lg:p-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
