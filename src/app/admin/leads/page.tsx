@@ -461,32 +461,56 @@ export default function AdminLeadsPage() {
       if (!l) return false;
       const matchSearch = (l.nombre || "").toLowerCase().includes(search.toLowerCase()) ||
         (l.telefono || "").includes(search);
-      const matchStatus = statusFilter === 'ALL' || l.estado === statusFilter;
+      const effectiveStatus = getLeadEffectiveStatus(l);
+      const matchStatus = statusFilter === 'ALL' || effectiveStatus === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [leads, search, statusFilter]);
 
   const leadsByStatus = useMemo(() => {
-    const map: Record<LeadStatus, any[]> = {} as any;
-    PIPELINE_COLUMNS.forEach(col => {
-      map[col.status] = filtered.filter((l: any) => {
-        if (col.status === 'SOLICITUD') {
-          return l.estado === 'SOLICITUD' || l.estado === 'NUEVO';
-        }
-        return l.estado === col.status;
-      });
+    const map: Record<LeadStatus, any[]> = {
+      SOLICITUD: [],
+      PRE_RESERVA: [],
+      RESERVA_CONFIRMADA: [],
+      RESERVA_VENCIDA: [],
+      CONTACTADO: [],
+      CONCRETADO: [],
+      NUEVO: [],
+    };
+    filtered.forEach((l: any) => {
+      const effectiveStatus = getLeadEffectiveStatus(l);
+      if (map[effectiveStatus]) {
+        map[effectiveStatus].push(l);
+      }
     });
     return map;
   }, [filtered]);
 
-  const stats = useMemo(() => ({
-    total: leads.length,
-    solicitudes: leads.filter((l: any) => l.estado === 'SOLICITUD' || l.estado === 'NUEVO').length,
-    preReservas: leads.filter((l: any) => l.estado === 'PRE_RESERVA').length,
-    confirmados: leads.filter((l: any) => l.estado === 'RESERVA_CONFIRMADA').length,
-    vencidas: leads.filter((l: any) => l.estado === 'RESERVA_VENCIDA' || (l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20)).length,
-    contactados: leads.filter((l: any) => l.estado === 'CONTACTADO').length,
-  }), [leads]);
+  const stats = useMemo(() => {
+    const effectiveLeads = (leads || []).map((l: any) => ({
+      ...l,
+      effectiveStatus: getLeadEffectiveStatus(l)
+    }));
+    return {
+      total: effectiveLeads.length,
+      solicitudes: effectiveLeads.filter((l: any) => l.effectiveStatus === 'SOLICITUD').length,
+      preReservas: effectiveLeads.filter((l: any) => l.effectiveStatus === 'PRE_RESERVA').length,
+      confirmados: effectiveLeads.filter((l: any) => l.effectiveStatus === 'RESERVA_CONFIRMADA').length,
+      vencidas: effectiveLeads.filter((l: any) => l.effectiveStatus === 'RESERVA_VENCIDA').length,
+      contactados: effectiveLeads.filter((l: any) => l.effectiveStatus === 'CONTACTADO').length,
+    };
+  }, [leads]);
+
+  // Sincronizar automáticamente en base de datos si alguna pre-reserva expiró
+  useEffect(() => {
+    if (!leads || leads.length === 0) return;
+    const expiredToSync = leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isExpired);
+    if (expiredToSync.length > 0) {
+      expiredToSync.forEach((l: any) => {
+        updateStatusMutation({ variables: { leadId: l.id, status: 'RESERVA_VENCIDA' } });
+      });
+    }
+  }, [leads]);
 
   const handleLiberarTodasVencidas = async () => {
     const vencidas = leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20);
@@ -809,7 +833,7 @@ export default function AdminLeadsPage() {
         >
           <option value="ALL">Todos los estados ({(leads || []).length})</option>
           {PIPELINE_COLUMNS.map(c => {
-            const count = (leads || []).filter((l: any) => l.estado === c.status).length;
+            const count = (leads || []).filter((l: any) => getLeadEffectiveStatus(l) === c.status).length;
             return (
               <option key={c.status} value={c.status}>
                 {statusLabel[c.status]} ({count})
@@ -818,13 +842,13 @@ export default function AdminLeadsPage() {
           })}
         </select>
 
-        {leads.some((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20) && (
+        {leads.some((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isExpired) && (
           <Button
             variant="outline"
             onClick={handleLiberarTodasVencidas}
             className="border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 text-[10px] font-bold uppercase tracking-wider rounded-xl h-11"
           >
-            <AlertCircle className="h-3.5 w-3.5 mr-1.5" /> Liberar {leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20).length} Vencidas (20:00)
+            <AlertCircle className="h-3.5 w-3.5 mr-1.5" /> Liberar {leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isExpired).length} Vencidas (20:00)
           </Button>
         )}
 
@@ -976,7 +1000,8 @@ export default function AdminLeadsPage() {
                 {loading ? (
                    <tr><td colSpan={6} className="py-20 text-center text-slate-300 italic">Cargando base de datos...</td></tr>
                 ) : filtered.map((lead: any) => {
-                  const config = getColConfig(lead.estado as LeadStatus);
+                  const effectiveStatus = getLeadEffectiveStatus(lead);
+                  const config = getColConfig(effectiveStatus);
                   const SrcIcon = SOURCE_ICONS[lead.fuente as LeadSource] || Tag;
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => { setSelectedLead(lead); setIsDetailOpen(true); }}>
@@ -1000,11 +1025,11 @@ export default function AdminLeadsPage() {
                       <td className="px-8 py-5">
                         <div className="flex flex-col gap-1 items-start">
                           <Badge className={`font-bold uppercase text-[9px] tracking-widest px-3 py-1 border-0 ${config.bg} ${config.color}`}>
-                            {statusLabel[lead.estado as LeadStatus] || lead.estado}
+                            {statusLabel[effectiveStatus] || effectiveStatus}
                           </Badge>
                           {(() => {
                             const exp = getLeadExpiration(lead);
-                            if (!exp.label || lead.estado === 'RESERVA_VENCIDA') return null;
+                            if (!exp.label || effectiveStatus === 'RESERVA_VENCIDA') return null;
                             return (
                               <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${exp.badgeClass}`}>
                                 {exp.label}
