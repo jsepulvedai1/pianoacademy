@@ -113,7 +113,13 @@ export default function AdminInstrumentsPage() {
                    </div>
                 </div>
                 <h3 className="text-xl font-bold font-serif text-slate-900 mb-1">{inst.name}</h3>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Cátedra Activa</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Cátedra Activa</p>
+                <a
+                  href={`/admin/landings/${inst.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ")[0]}`}
+                  className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#70125F] bg-[#70125F]/10 hover:bg-[#70125F] hover:text-white px-3 py-2 rounded-xl transition-colors"
+                >
+                  <Edit2 className="h-3 w-3" /> Editar Página Web
+                </a>
              </div>
            ))}
         </div>

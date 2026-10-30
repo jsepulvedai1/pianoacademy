@@ -23,7 +23,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const DEFAULT_INSTRUMENT_PAGES: Record<
+export const DEFAULT_INSTRUMENT_PAGES: Record<
   string,
   {
     instrumentKey: string;
@@ -227,7 +227,15 @@ export default function ServiceLandingPage({ params }: { params: Promise<{ servi
   const solution = cmsData?.solution || fallback.solution;
   const benefits = safeArray(cmsData?.benefits).length > 0 ? safeArray(cmsData?.benefits) : fallback.benefits;
   const heroImage = cmsData?.imageUrl || fallback.heroImage;
-  const gallery = fallback.galleryImages;
+  const gallery = useMemo(() => {
+    const rawGallery = safeArray(cmsData?.galleryImages);
+    if (rawGallery.length > 0) {
+      return rawGallery.map((item: any) =>
+        typeof item === "string" ? { url: item, caption: title } : { url: item.url || "/images/piano-hero.png", caption: item.caption || title }
+      );
+    }
+    return fallback.galleryImages;
+  }, [cmsData?.galleryImages, fallback.galleryImages, title]);
 
   const [carouselIdx, setCarouselIdx] = useState(0);
 

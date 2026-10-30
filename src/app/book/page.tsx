@@ -300,14 +300,20 @@ function BookPageContent() {
     if (!teacher) return false;
 
     const hasAvail = teacher.availabilities && teacher.availabilities.length > 0;
-    if (!hasAvail) return true; // Default Mon-Sat if no availability rows configured yet
+    if (!hasAvail) return false; // Solo mostrar días donde el profesor tenga disponibilidad configurada
     return teacher.availabilities.some((av: any) => {
       const daySpanish = DAY_MAP_EN_TO_ES[av.day.toUpperCase()] || av.day;
       return daySpanish.toLowerCase() === dayName.toLowerCase();
     });
   };
 
-  // Slot calculations: 30-minute slots for the selected teacher
+  // Reset selectedDateStr & selectedSlot when changing teacher
+  useEffect(() => {
+    setSelectedDateStr("");
+    setSelectedSlot(null);
+  }, [selectedTeacherId]);
+
+  // Slot calculations: 30-minute slots strictly from the selected teacher's availability
   const availableSlots = useMemo(() => {
     if (!selectedDateStr || !selectedTeacherId) return [];
 
@@ -326,14 +332,10 @@ function BookPageContent() {
         return daySpanish.toLowerCase() === dayName.toLowerCase();
       }) || [];
 
-    let generated: { start: string; end: string }[] = [];
-    if (activeAvailabilities.length > 0) {
-      activeAvailabilities.forEach((av: any) => {
-        generated.push(...generateSlots(av.startTime, av.endTime, 30));
-      });
-    } else {
-      generated = generateSlots("10:00", "20:00", 30);
-    }
+    const generated: { start: string; end: string }[] = [];
+    activeAvailabilities.forEach((av: any) => {
+      generated.push(...generateSlots(av.startTime, av.endTime, 30));
+    });
 
     const occupiedLessons = lessons.filter((l: any) => {
       if (l.date !== selectedDateStr) return false;
@@ -586,7 +588,7 @@ function BookPageContent() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/50 text-slate-800 font-sans">
       {/* ── Top Header Banner ── */}
-      <header className="bg-slate-900 text-white py-12 px-4 sm:px-8 border-b border-slate-800 relative overflow-hidden">
+      <header className="bg-slate-900 text-white pt-28 pb-12 sm:pt-36 sm:pb-14 md:pt-40 md:pb-16 px-4 sm:px-8 border-b border-slate-800 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-[#70125F]/40 via-transparent to-[#DCA060]/20 pointer-events-none" />
         <div className="max-w-5xl mx-auto relative z-10 space-y-3">
           <div className="flex items-center gap-2 text-[#DCA060] font-bold text-xs uppercase tracking-[0.25em]">
@@ -603,14 +605,14 @@ function BookPageContent() {
 
       {/* ── Stepper Navigation ── */}
       <div id="booking-wizard" className="max-w-5xl mx-auto w-full px-4 sm:px-8 pt-8 pb-4">
-        <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-100 flex items-center justify-between overflow-x-auto gap-2">
+        <div className="bg-white rounded-3xl p-3 sm:p-5 shadow-sm border border-slate-100 flex items-center justify-between overflow-x-auto gap-2 scrollbar-none">
           {[
-            { n: 1, label: "Instrumento y CP" },
-            { n: 2, label: "Profesor Especialista" },
-            { n: 3, label: "Sede y Salas" },
-            { n: 4, label: "Fecha y Horario (30m)" },
-            { n: 5, label: "Ficha, Reglamento y Pago" },
-            { n: 6, label: "Estado de Pago" },
+            { n: 1, label: "Instrumento" },
+            { n: 2, label: "Profesor" },
+            { n: 3, label: "Sede y Sala" },
+            { n: 4, label: "Fecha y Horario" },
+            { n: 5, label: "Ficha y Pago" },
+            { n: 6, label: "Confirmación" },
           ].map((s) => {
             const isCompleted = step > s.n;
             const isCurrent = step === s.n;
@@ -620,7 +622,7 @@ function BookPageContent() {
                 onClick={() => {
                   if (s.n < step && step !== 6) changeStep(s.n);
                 }}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all select-none whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-2xl transition-all select-none whitespace-nowrap shrink-0 ${
                   isCurrent
                     ? "bg-[#70125F] text-white font-bold shadow-md shadow-[#70125F]/20"
                     : isCompleted
@@ -629,7 +631,7 @@ function BookPageContent() {
                 }`}
               >
                 <div
-                  className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-black ${
+                  className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
                     isCurrent
                       ? "bg-white text-[#70125F]"
                       : isCompleted

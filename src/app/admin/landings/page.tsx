@@ -150,6 +150,50 @@ export default function AdminLandingsPage() {
 
       </div>
 
+      {/* Instrument Pages Section */}
+      <div className="space-y-4 pt-2">
+        <div>
+          <h2 className="text-xl font-bold font-serif text-slate-900">
+            Páginas por Instrumento (&ldquo;Aprende con Nosotros&rdquo;)
+          </h2>
+          <p className="text-xs text-slate-500 italic mt-0.5">
+            Personaliza el título, textos, beneficios, imagen principal y el carrusel de fotos de las salas de cada instrumento.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {[
+            { slug: "piano", name: "Piano", emoji: "🎹", age: "Desde 4 años" },
+            { slug: "canto", name: "Canto", emoji: "🎤", age: "Desde 6 años" },
+            { slug: "guitarra", name: "Guitarra", emoji: "🎸", age: "Desde 8 años" },
+            { slug: "bateria", name: "Batería", emoji: "🥁", age: "Desde 6 años" },
+            { slug: "violin", name: "Violín", emoji: "🎻", age: "Desde 6 años" },
+          ].map((inst) => (
+            <Link key={inst.slug} href={`/admin/landings/${inst.slug}`}>
+              <Card className="rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#70125F]/30 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white group h-full">
+                <CardContent className="p-6 flex flex-col justify-between h-full space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-3xl">{inst.emoji}</span>
+                      <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-slate-200 text-slate-400">
+                        /{inst.slug}
+                      </Badge>
+                    </div>
+                    <h3 className="text-lg font-bold font-serif text-slate-900 group-hover:text-[#70125F] transition-colors">
+                      {inst.name}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-1">{inst.age}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-[#70125F] text-xs font-bold pt-3 border-t border-slate-50">
+                    Editar Página <ArrowRight className="h-3 w-3" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Info Footer */}
       <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 flex items-start gap-4">
         <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">

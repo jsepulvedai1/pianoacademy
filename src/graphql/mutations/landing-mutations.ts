@@ -9,6 +9,7 @@ export const UPDATE_LANDING_PAGE = gql`
     $solution: String
     $benefits: [String]
     $imageUrl: String
+    $galleryImages: String
     $cta: String
   ) {
     updateLandingPage(
@@ -19,6 +20,7 @@ export const UPDATE_LANDING_PAGE = gql`
       solution: $solution
       benefits: $benefits
       imageUrl: $imageUrl
+      galleryImages: $galleryImages
       cta: $cta
     ) {
       success
@@ -31,6 +33,7 @@ export const UPDATE_LANDING_PAGE = gql`
         solution
         benefits
         imageUrl
+        galleryImages
         cta
       }
     }

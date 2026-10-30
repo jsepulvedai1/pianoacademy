@@ -11,6 +11,7 @@ export const GET_ALL_LANDING_PAGES = gql`
       solution
       benefits
       imageUrl
+      galleryImages
       cta
     }
   }
@@ -27,6 +28,7 @@ export const GET_LANDING_PAGE_BY_SLUG = gql`
       solution
       benefits
       imageUrl
+      galleryImages
       cta
     }
   }
