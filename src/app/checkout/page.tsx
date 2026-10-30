@@ -92,7 +92,6 @@ function CheckoutContent() {
       variables: {
         planId: isTrial ? null : parseInt(plan.id),
         isTrialClass: isTrial,
-        payDeposit: false,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,

@@ -119,7 +119,6 @@ export const CREATE_PAYMENT_PREFERENCE = gql`
   mutation CreatePaymentPreference(
     $planId: Int,
     $isTrialClass: Boolean,
-    $payDeposit: Boolean,
     $name: String!,
     $email: String!,
     $phone: String!,
@@ -135,7 +134,6 @@ export const CREATE_PAYMENT_PREFERENCE = gql`
     createPaymentPreference(
       planId: $planId,
       isTrialClass: $isTrialClass,
-      payDeposit: $payDeposit,
       name: $name,
       email: $email,
       phone: $phone,

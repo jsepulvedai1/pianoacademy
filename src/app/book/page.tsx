@@ -453,7 +453,6 @@ function BookPageContent() {
             variables: {
               planId: null,
               isTrialClass: true,
-              payDeposit: false,
               name: studentFullName,
               email: formData.email,
               phone: normalizePhoneNumber(formData.telefono),
@@ -594,7 +593,6 @@ function BookPageContent() {
       variables: {
         planId: null,
         isTrialClass: true,
-        payDeposit: false,
         name: studentFullName,
         email: formData.email,
         phone: normalizePhoneNumber(formData.telefono),
