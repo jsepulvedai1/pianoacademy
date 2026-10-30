@@ -77,29 +77,75 @@ function getLeadExpiration(lead: any) {
   if (lead?.estado === 'RESERVA_VENCIDA') {
     return { isExpired: true, isPast20: true, label: 'Reserva Vencida', badgeClass: 'bg-rose-100 text-rose-700 border-rose-200' };
   }
-  const preRes = (lead?.lessons || []).find((l: any) => l.isPreReservation) || (lead?.estado === 'PRE_RESERVA' ? lead?.lessons?.[0] : null);
-  if (!preRes || !preRes.date) {
-    if (lead?.preReservaExpira) {
-      const isPast = new Date() > new Date(lead.preReservaExpira);
-      return {
-        isExpired: isPast,
-        isPast20: isPast,
-        label: isPast ? 'Venció 20:00' : 'Vence 20:00',
-        badgeClass: isPast ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-orange-50 text-orange-700 border-orange-200'
-      };
-    }
+
+  // Only pre-reservations expire at 20:00
+  if (lead?.estado !== 'PRE_RESERVA' && !lead?.lessons?.some((l: any) => l.isPreReservation)) {
     return { isExpired: false, isPast20: false, label: null, badgeClass: '' };
   }
 
-  const expiryDate = new Date(`${preRes.date}T20:00:00`);
-  const isPast20 = new Date() > expiryDate;
-  return {
-    isExpired: isPast20,
-    isPast20,
-    expiryDate,
-    label: isPast20 ? 'Venció 20:00' : 'Vence 20:00',
-    badgeClass: isPast20 ? 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse' : 'bg-orange-50 text-orange-700 border-orange-200'
-  };
+  const now = new Date();
+
+  // 1. Explicit preReservaExpira field
+  if (lead?.preReservaExpira) {
+    const expDate = new Date(lead.preReservaExpira);
+    const isPast = now > expDate;
+    return {
+      isExpired: isPast,
+      isPast20: isPast,
+      expiryDate: expDate,
+      label: isPast ? 'Vencida (20:00)' : 'Vence 20:00',
+      badgeClass: isPast ? 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse' : 'bg-orange-50 text-orange-700 border-orange-200'
+    };
+  }
+
+  // 2. If scheduled class date is in the past, it's immediately expired
+  const preRes = (lead?.lessons || []).find((l: any) => l.isPreReservation) || (lead?.estado === 'PRE_RESERVA' ? lead?.lessons?.[0] : null);
+  if (preRes?.date) {
+    const lessonEnd = new Date(`${preRes.date}T23:59:59`);
+    if (now > lessonEnd) {
+      return {
+        isExpired: true,
+        isPast20: true,
+        expiryDate: lessonEnd,
+        label: 'Clase Pasada (Vencida)',
+        badgeClass: 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse'
+      };
+    }
+  }
+
+  // 3. Pre-reservations expire at 20:00 hrs of the day they were created (fechaIngreso)
+  if (lead?.fechaIngreso) {
+    const ingresoDate = new Date(lead.fechaIngreso);
+    const year = ingresoDate.getFullYear();
+    const month = String(ingresoDate.getMonth() + 1).padStart(2, '0');
+    const day = String(ingresoDate.getDate()).padStart(2, '0');
+    const expiryDate = new Date(`${year}-${month}-${day}T20:00:00`);
+
+    const isPast20 = now.getTime() > expiryDate.getTime();
+    return {
+      isExpired: isPast20,
+      isPast20,
+      expiryDate,
+      label: isPast20 ? 'Vencida (20:00)' : 'Vence 20:00',
+      badgeClass: isPast20 ? 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse' : 'bg-orange-50 text-orange-700 border-orange-200'
+    };
+  }
+
+  return { isExpired: false, isPast20: false, label: null, badgeClass: '' };
+}
+
+function getLeadEffectiveStatus(lead: any): LeadStatus {
+  if (lead?.estado === 'RESERVA_VENCIDA') return 'RESERVA_VENCIDA';
+  if (lead?.estado === 'RESERVA_CONFIRMADA' || lead?.estado === 'CONCRETADO') return lead.estado;
+  if (lead?.estado === 'PRE_RESERVA') {
+    const exp = getLeadExpiration(lead);
+    if (exp.isExpired) {
+      return 'RESERVA_VENCIDA';
+    }
+    return 'PRE_RESERVA';
+  }
+  if (lead?.estado === 'SOLICITUD' || lead?.estado === 'NUEVO') return 'SOLICITUD';
+  return lead?.estado || 'SOLICITUD';
 }
 
 function getMethodologyInfo(edad?: number | null, servicio?: string) {
@@ -170,7 +216,7 @@ function DroppableColumn({ id, children }: { id: string, children: React.ReactNo
 function DraggableCard({ lead, children }: { lead: any, children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
-    data: { currentStatus: lead.estado }
+    data: { currentStatus: getLeadEffectiveStatus(lead) }
   });
   
   const style = transform ? {
