@@ -198,5 +198,44 @@ export async function uploadTeacherPhoto(
   return { photoUrl, url };
 }
 
+/**
+ * Returns today's calendar date (YYYY-MM-DD) in Chile (America/Santiago).
+ */
+export function getChileTodayIso(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+export interface StudentPackLike {
+  isActive?: boolean | null;
+  isExpired?: boolean | null;
+  expirationDate?: string | null;
+  remainingClasses?: number | null;
+}
+
+/**
+ * Checks whether a student pack is expired by its expirationDate (independent per-pack duration).
+ */
+export function isPackExpired(pack: StudentPackLike | null | undefined, todayIso = getChileTodayIso()): boolean {
+  if (!pack) return false;
+  if (pack.isExpired === true) return true;
+  if (pack.expirationDate && String(pack.expirationDate) < todayIso) return true;
+  return !pack.isActive && (pack.remainingClasses || 0) > 0;
+}
+
+/**
+ * Checks whether a student pack is active, not expired, and has remaining classes.
+ */
+export function isPackValid(pack: StudentPackLike | null | undefined, todayIso = getChileTodayIso()): boolean {
+  if (!pack) return false;
+  if (!pack.isActive || pack.isExpired === true) return false;
+  if (pack.expirationDate && String(pack.expirationDate) < todayIso) return false;
+  return (pack.remainingClasses || 0) > 0;
+}
+
 
 

@@ -19,6 +19,7 @@ import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
 import { GET_STUDENT_PACKS } from "@/graphql/queries/get-packs";
 import { toast } from "sonner";
+import { getChileTodayIso, isPackExpired } from "@/lib/utils";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
   ACTIVO:     { label: 'Activo',     color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle2 },
@@ -58,25 +59,34 @@ export default function AdminPacksPage() {
     return map;
   }, [students]);
 
+  const todayIso = getChileTodayIso();
+
   const packs = useMemo(() => (packsData?.allStudentPacks || []).filter(Boolean).map((p: any) => {
     const st = studentById.get(String(p.student?.id));
     const profNames = (st?.assignedTeachers || []).map((t: any) => t.name).filter(Boolean).join(", ");
+    const remaining = p.remainingClasses || 0;
+    const expired = isPackExpired(p, todayIso);
+    const estado = expired
+      ? 'VENCIDO'
+      : (!p.isActive || remaining <= 0)
+        ? 'COMPLETADO'
+        : 'ACTIVO';
     return {
       id: p.id,
       nombre: p.plan?.name || "Sin plan",
       totalClases: p.totalClasses || 0,
-      clasesUsadas: Math.max(0, (p.totalClasses || 0) - (p.remainingClasses || 0)),
-      clasesRestantes: p.remainingClasses || 0,
+      clasesUsadas: Math.max(0, (p.totalClasses || 0) - remaining),
+      clasesRestantes: remaining,
       precio: parseFloat(p.plan?.price || "0"),
       alumnoId: p.student?.id || "",
       alumnoNombre: p.student?.name || "Alumno sin asignar",
       profesorNombre: profNames || "Sin asignar",
       instrumento: st?.primaryInstrument?.name || "General",
-      estado: p.isActive ? (p.remainingClasses > 0 ? 'ACTIVO' : 'COMPLETADO') : 'COMPLETADO',
+      estado,
       fechaInicio: p.purchaseDate,
       fechaVencimiento: p.expirationDate
     };
-  }), [packsData, studentById]);
+  }), [packsData, studentById, todayIso]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | 'ALL'>('ALL');
@@ -137,6 +147,7 @@ export default function AdminPacksPage() {
     mutation ManualDeductClass($packId: Int!) {
       manualDeductClass(packId: $packId) {
         success
+        error
         pack {
           id
           remainingClasses
@@ -144,9 +155,14 @@ export default function AdminPacksPage() {
       }
     }
   `, {
-    onCompleted: () => {
-      toast.success("Clase descontada con éxito");
-      refetchPacks();
+    onCompleted: (res: any) => {
+      if (res?.manualDeductClass?.success) {
+        toast.success("Clase descontada con éxito");
+        refetchPacks();
+      } else {
+        toast.error(res?.manualDeductClass?.error || "No se pudo descontar la clase de este pack.");
+        refetchPacks();
+      }
     },
     onError: (err) => toast.error(err.message)
   });

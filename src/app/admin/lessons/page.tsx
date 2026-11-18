@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { cn, normalizePhoneNumber } from "@/lib/utils";
+import { cn, getChileTodayIso, isPackValid, normalizePhoneNumber } from "@/lib/utils";
 import {
   Calendar,
   Search,
@@ -117,12 +117,13 @@ export default function AdminLessonsPage() {
   const currentPacks = studentsData?.allStudentPacks || [];
   const currentRooms = roomsData?.allRooms || [];
 
-  // Helper para calcular clases restantes disponibles considerando clases ya agendadas
+  // Helper para calcular clases restantes disponibles considerando vigencia y clases ya agendadas
   const getStudentAvailableCredits = (studentId: string | number) => {
     const sid = parseInt(studentId as string);
     if (!sid) return 0;
+    const todayIso = getChileTodayIso();
     const remainingPacks = currentPacks
-      .filter((p: any) => p.student?.id == sid && p.isActive)
+      .filter((p: any) => p.student?.id == sid && isPackValid(p, todayIso))
       .reduce((sum: number, p: any) => sum + (p.remainingClasses || 0), 0);
     const pendingLessonsCount = displayLessons
       .filter((l: any) => l.student?.id == sid && (l.status === 'PENDING' || l.status === 'CONFIRMED'))
@@ -1163,7 +1164,8 @@ export default function AdminLessonsPage() {
         const absentCount = studentLessons.filter((l: any) => l.status === 'ABSENT').length;
         const pendingCount = studentLessons.filter((l: any) => l.status === 'PENDING' || l.status === 'CONFIRMED').length;
 
-        const activeStudentPacks = currentPacks.filter((p: any) => String(p.student?.id) === String(reportStudentId) && p.isActive);
+        const todayIso = getChileTodayIso();
+        const activeStudentPacks = currentPacks.filter((p: any) => String(p.student?.id) === String(reportStudentId) && isPackValid(p, todayIso));
         const totalRemaining = activeStudentPacks.reduce((acc: number, p: any) => acc + (p.remainingClasses || 0), 0);
 
         const statusHumanLabel = (st: string) => {

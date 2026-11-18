@@ -18,7 +18,7 @@ import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { CREATE_STUDENT, UPDATE_STUDENT, SEND_WHATSAPP_MUTATION } from "@/graphql/mutations/student-mutations";
 import { GET_CHAT_MESSAGES } from "@/graphql/queries/admin-queries";
-import { normalizePhoneNumber } from "@/lib/utils";
+import { isPackExpired, normalizePhoneNumber } from "@/lib/utils";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -830,22 +830,35 @@ export default function AdminStudentsPage() {
                  {activeTab === 'ACADEMICO' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-2">Packs Contratados</p>
-                       {studentPacks.map((pack: any) => (
-                          <div key={pack.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
-                             <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black font-serif">
-                                  {pack.totalClasses}
-                                </div>
-                                <div>
-                                   <p className="font-bold text-slate-900">{pack.plan?.name || "Pack Clases"}</p>
-                                   <p className="text-[10px] font-bold uppercase text-slate-400 mt-1">{pack.remainingClasses} clases restantes de {pack.totalClasses}</p>
-                                </div>
-                             </div>
-                             <Badge className={`border-0 font-black text-[9px] px-3 py-1 ${pack.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
-                                {pack.isActive ? "ACTIVO" : "INACTIVO"}
-                             </Badge>
-                          </div>
-                       ))}
+                       {studentPacks.map((pack: any) => {
+                          const expired = isPackExpired(pack);
+                          const completed = !expired && (!pack.isActive || (pack.remainingClasses || 0) <= 0);
+                          return (
+                            <div key={pack.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
+                               <div className="flex items-center gap-4">
+                                  <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black font-serif">
+                                    {pack.totalClasses}
+                                  </div>
+                                  <div>
+                                     <p className="font-bold text-slate-900">{pack.plan?.name || "Pack Clases"}</p>
+                                     <p className="text-[10px] font-bold uppercase text-slate-400 mt-1">
+                                       {pack.remainingClasses} clases restantes de {pack.totalClasses}
+                                       {pack.expirationDate ? ` · Vence: ${pack.expirationDate}` : ""}
+                                     </p>
+                                  </div>
+                               </div>
+                               <Badge className={`border-0 font-black text-[9px] px-3 py-1 ${
+                                 expired
+                                   ? "bg-rose-50 text-rose-700"
+                                   : completed
+                                     ? "bg-slate-100 text-slate-500"
+                                     : "bg-emerald-50 text-emerald-700"
+                               }`}>
+                                  {expired ? "VENCIDO" : completed ? "COMPLETADO" : "ACTIVO"}
+                               </Badge>
+                            </div>
+                          );
+                       })}
                        {studentPacks.length === 0 && (
                          <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed text-slate-300">
                            <BookOpen className="h-10 w-10 mx-auto opacity-20 mb-3" />

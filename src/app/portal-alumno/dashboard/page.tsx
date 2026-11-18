@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getChileTodayIso, isPackValid } from "@/lib/utils";
 import { 
   format, 
   startOfWeek, 
@@ -47,21 +48,39 @@ export default function StudentDashboardPage() {
   const packs = packsData?.myPacks || [];
   const lessons = lessonsData?.myLessons || [];
 
-  const activePack = packs.find((p: any) => p.isActive) || packs[0];
+  const todayIso = getChileTodayIso();
+  const validPacks = useMemo(() => {
+    return [...packs]
+      .filter((p: any) => isPackValid(p, todayIso))
+      .sort((a: any, b: any) => {
+        if (!a.expirationDate) return 1;
+        if (!b.expirationDate) return -1;
+        return String(a.expirationDate).localeCompare(String(b.expirationDate));
+      });
+  }, [packs, todayIso]);
+
+  const activePack = validPacks[0] || packs[0];
 
   const student = useMemo(() => {
+    const classesRemaining = validPacks.reduce((acc: number, p: any) => acc + (p.remainingClasses || 0), 0);
+    const totalClasses = validPacks.reduce((acc: number, p: any) => acc + (p.totalClasses || 0), 0);
+    const hasValidPacks = validPacks.length > 0;
+    const planLabel = validPacks.length > 1
+      ? `${validPacks.length} Packs Vigentes`
+      : (activePack?.plan?.name || "Sin Plan Activo");
+
     return {
       name: studentProfile?.name || "Alumno",
       plan: {
-        name: activePack?.plan?.name || "Sin Plan Activo",
-        status: activePack?.isActive ? (activePack.remainingClasses <= 1 ? "EXPIRING" : "ACTIVE") : "EXPIRED",
-        classesRemaining: activePack?.remainingClasses ?? 0,
-        totalClasses: activePack?.totalClasses ?? 0,
+        name: planLabel,
+        status: hasValidPacks ? (classesRemaining <= 1 ? "EXPIRING" : "ACTIVE") : "EXPIRED",
+        classesRemaining,
+        totalClasses,
         expirationDate: activePack?.expirationDate ? format(parseISO(activePack.expirationDate), "d 'de' MMMM, yyyy", { locale: es }) : "Sin expirar",
         paymentLink: "/portal-alumno/shop"
       }
     };
-  }, [studentProfile, activePack]);
+  }, [studentProfile, validPacks, activePack]);
 
   const nextWeek = () => setCurrentWeekStart(prev => addWeeks(prev, 1));
   const prevWeek = () => setCurrentWeekStart(prev => subWeeks(prev, 1));
@@ -355,7 +374,9 @@ export default function StudentDashboardPage() {
                         <Calendar className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha de Vencimiento</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          {validPacks.length > 1 ? "Próximo Vencimiento" : "Fecha de Vencimiento"}
+                        </p>
                         <p className="font-bold text-slate-900 text-sm mt-0.5">{student.plan.expirationDate}</p>
                       </div>
                     </div>
@@ -365,6 +386,25 @@ export default function StudentDashboardPage() {
                       </span>
                     )}
                   </div>
+
+                  {validPacks.length > 1 && (
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Detalle por Pack Vigente</p>
+                      {validPacks.map((p: any) => (
+                        <div key={p.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                          <div>
+                            <p className="font-bold text-slate-800">{p.plan?.name || "Pack"}</p>
+                            <p className="text-[10px] text-slate-400">
+                              {p.expirationDate ? `Vence el ${format(parseISO(p.expirationDate), "d MMM yyyy", { locale: es })}` : "Sin vencimiento"}
+                            </p>
+                          </div>
+                          <Badge className="bg-purple-100 text-[#8E44AD] border-0 font-bold text-[10px]">
+                            {p.remainingClasses}/{p.totalClasses} disp.
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
              </CardContent>
           </Card>
