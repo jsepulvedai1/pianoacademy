@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, ChevronRight, MessageSquare, Mail, Loader2 } from "lucide-react";
+import { getBackendUrl } from "@/lib/utils";
 import Link from "next/link";
 
 function SuccessContent() {
@@ -16,8 +17,7 @@ function SuccessContent() {
 
   useEffect(() => {
     if (!paymentId) return;
-    const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:8000/graphql/";
-    const backendBase = graphqlUrl.replace(/\/graphql\/?$/, "");
+    const backendBase = getBackendUrl();
     fetch(`${backendBase}/api/mercadopago/webhook/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

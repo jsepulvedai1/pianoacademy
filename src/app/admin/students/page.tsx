@@ -83,10 +83,12 @@ export default function AdminStudentsPage() {
   const [updateStudent, { loading: isUpdating }] = useMutation(UPDATE_STUDENT, {
     refetchQueries: [{ query: GET_STUDENTS_LIST }],
     onCompleted: (res: any) => {
-      refetch();
-      if (res.updateStudent?.student) {
-        setSelectedStudent(res.updateStudent.student);
+      if (!res?.updateStudent?.student) {
+        toast.error("No se pudo actualizar la ficha del estudiante.");
+        return;
       }
+      refetch();
+      setSelectedStudent(res.updateStudent.student);
       setIsEditingStudent(false);
       toast.success("Ficha de estudiante actualizada exitosamente ✅");
     },
@@ -95,7 +97,11 @@ export default function AdminStudentsPage() {
   
   const [createStudent, { loading: isCreating }] = useMutation(CREATE_STUDENT, {
     refetchQueries: [{ query: GET_STUDENTS_LIST }],
-    onCompleted: () => {
+    onCompleted: (res: any) => {
+      if (!res?.createStudent?.student) {
+        toast.error("No se pudo registrar el alumno. Revisa los datos ingresados.");
+        return;
+      }
       toast.success("Alumno registrado exitosamente ✅");
       setIsAddingStudent(false);
       setFormData({
@@ -313,25 +319,25 @@ export default function AdminStudentsPage() {
       </header>
 
       {isAddingStudent && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
-           <Card className="w-full max-w-2xl bg-white rounded-[2.5rem] p-10 my-8 shadow-2xl animate-in zoom-in-95 duration-300">
-              <div className="flex justify-between items-center mb-8">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+           <Card className="w-full max-w-2xl bg-white rounded-[2.5rem] my-auto max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border-none">
+              <div className="flex justify-between items-center px-8 pt-7 pb-5 border-b border-slate-100 shrink-0 bg-white">
                 <div>
                   <h3 className="text-2xl font-bold font-serif">Nuevo Alumno</h3>
                   <p className="text-slate-400 text-xs italic">Completa la ficha de ingreso.</p>
                 </div>
-                <button onClick={() => setIsAddingStudent(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <button onClick={() => setIsAddingStudent(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
                   <X className="h-6 w-6 text-slate-400" />
                 </button>
               </div>
               
-              <div className="grid grid-cols-2 gap-6">
-                 <div className="col-span-2 space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-8 overflow-y-auto flex-1">
+                 <div className="sm:col-span-2 space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nombre Completo *</label>
                     <input type="text" placeholder="Ej: Juan Pérez" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
                  </div>
 
-                 <div className="col-span-2 space-y-2">
+                 <div className="sm:col-span-2 space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Correo Electrónico</label>
                     <input type="email" placeholder="estudiante@correo.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
                  </div>
@@ -346,8 +352,8 @@ export default function AdminStudentsPage() {
                    <input type="date" value={formData.birthDate} onChange={(e) => setFormData({...formData, birthDate: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
 
-                <div className="col-span-2 grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                  <div className="col-span-2 flex items-center gap-2 mb-2">
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                  <div className="sm:col-span-2 flex items-center gap-2 mb-2">
                     <Shield className="h-4 w-4 text-primary" />
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Información del Apoderado (Opcional)</p>
                   </div>
@@ -375,7 +381,7 @@ export default function AdminStudentsPage() {
                    </select>
                 </div>
 
-                <div className="col-span-2 space-y-2">
+                <div className="sm:col-span-2 space-y-2">
                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Instrumento Principal</label>
                    <select value={formData.primaryInstrumentId} onChange={(e) => setFormData({...formData, primaryInstrumentId: e.target.value})} className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold outline-none">
                       <option value="">Seleccionar instrumento...</option>
@@ -383,7 +389,7 @@ export default function AdminStudentsPage() {
                    </select>
                 </div>
 
-                <div className="col-span-2 space-y-2">
+                <div className="sm:col-span-2 space-y-2">
                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesores Asignados (Puedes seleccionar varios)</label>
                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[48px] items-center">
                       {teachers.map((t: any) => {
@@ -416,9 +422,9 @@ export default function AdminStudentsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-4 mt-10 pt-6 border-t border-slate-50">
-                 <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsAddingStudent(false)}>Cancelar</Button>
-                 <Button disabled={!formData.name.trim() || isCreating} className="flex-1 h-12 bg-slate-900 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-slate-900/20" onClick={handleCreate}>
+              <div className="flex gap-4 px-8 py-5 border-t border-slate-100 bg-slate-50/80 shrink-0">
+                 <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-pointer" onClick={() => setIsAddingStudent(false)}>Cancelar</Button>
+                 <Button disabled={!formData.name.trim() || isCreating} className="flex-1 h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-slate-900/20 cursor-pointer" onClick={handleCreate}>
                    {isCreating ? 'Registrando...' : 'Confirmar Ingreso'}
                  </Button>
               </div>
@@ -988,6 +994,132 @@ export default function AdminStudentsPage() {
                          </div>
                        )}
                      </div>
+                  )}
+
+                 {activeTab === 'WHATSAPP' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Destinatario:</span>
+                          <button
+                            type="button"
+                            onClick={() => setChatRecipientType('STUDENT')}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                              chatRecipientType === 'STUDENT'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            Alumno ({selectedStudent.phoneNumber || 'Sin teléfono'})
+                          </button>
+                          {selectedStudent.guardianPhone && (
+                            <button
+                              type="button"
+                              onClick={() => setChatRecipientType('GUARDIAN')}
+                              className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                                chatRecipientType === 'GUARDIAN'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
+                            >
+                              Apoderado ({selectedStudent.guardianPhone})
+                            </button>
+                          )}
+                        </div>
+                        {activeChatPhone && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchChatHistory(activeChatPhone)}
+                            className="h-8 rounded-xl text-xs gap-1.5 cursor-pointer"
+                          >
+                            <RefreshCw className={`h-3.5 w-3.5 ${isLoadingChat ? 'animate-spin' : ''}`} />
+                            Actualizar
+                          </Button>
+                        )}
+                      </div>
+
+                      {!activeChatPhone ? (
+                        <div className="text-center py-16 bg-white rounded-[2rem] border border-dashed border-slate-200 text-slate-400">
+                          <Phone className="h-10 w-10 mx-auto opacity-30 mb-3" />
+                          <p className="text-sm font-semibold text-slate-600">Sin número telefónico registrado</p>
+                          <p className="text-xs italic mt-1">Edita la ficha del alumno para agregar su WhatsApp o el de su apoderado.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-white rounded-3xl border border-slate-100 p-5 h-72 overflow-y-auto space-y-3 shadow-xs">
+                            {isLoadingChat && chatMessages.length === 0 ? (
+                              <div className="h-full flex items-center justify-center text-slate-400 text-xs gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" /> Cargando mensajes...
+                              </div>
+                            ) : chatMessages.length === 0 ? (
+                              <div className="h-full flex flex-col items-center justify-center text-slate-300 text-xs italic">
+                                <MessageCircle className="h-8 w-8 mb-2 opacity-40" />
+                                Sin historial reciente de mensajes con +{normalizePhoneNumber(activeChatPhone)}.
+                              </div>
+                            ) : (
+                              chatMessages.map((m: any, idx: number) => {
+                                const isOutbound = m.sender === 'ADMIN' || m.sender === 'SYSTEM' || m.sender === 'BOT';
+                                return (
+                                  <div key={m.id || idx} className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${
+                                      isOutbound ? 'bg-emerald-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'
+                                    }`}>
+                                      <p className="whitespace-pre-wrap">{m.messageText}</p>
+                                      {m.timestamp && (
+                                        <span className={`block text-[9px] mt-1 text-right opacity-70`}>
+                                          {new Date(m.timestamp).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                            <div ref={messagesEndRef} />
+                          </div>
+
+                          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs space-y-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              {(['SALUDO', 'RECORDATORIO', 'PAGO', 'MATERIAL'] as const).map((tpl) => (
+                                <button
+                                  key={tpl}
+                                  type="button"
+                                  onClick={() => applyTemplate(tpl)}
+                                  className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 border border-slate-100 cursor-pointer transition-colors"
+                                >
+                                  {tpl}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Escribe un mensaje de WhatsApp..."
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                  }
+                                }}
+                                className="flex-1 bg-slate-50 border-none rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20"
+                              />
+                              <Button
+                                type="button"
+                                onClick={() => handleSendMessage()}
+                                disabled={!chatInput.trim() || isSendingMessage}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10 px-4 cursor-pointer"
+                              >
+                                {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                   </>
                  )}

@@ -17,8 +17,6 @@ import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_PLANS } from "@/graphql/queries/get-plans";
 import { GET_STUDENTS_LIST } from "@/graphql/queries/get-students";
-import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
-import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { GET_STUDENT_PACKS } from "@/graphql/queries/get-packs";
 import { toast } from "sonner";
 
@@ -50,28 +48,35 @@ function ProgressBar({ used, total }: { used: number; total: number }) {
 export default function AdminPacksPage() {
   const { data: plansData } = useQuery<any>(GET_PLANS);
   const { data: studentsData } = useQuery<any>(GET_STUDENTS_LIST);
-  const { data: teachersData } = useQuery<any>(GET_TEACHERS);
-  const { data: instrumentsData } = useQuery<any>(GET_INSTRUMENTS);
   const { data: packsData, loading: packsLoading, refetch: refetchPacks } = useQuery<any>(GET_STUDENT_PACKS);
 
   const plans = plansData?.allPlans || [];
   const students = studentsData?.allStudents || [];
-  const teachers = teachersData?.allTeachers || [];
-  const instruments = instrumentsData?.allInstruments || [];
-  const packs = useMemo(() => (packsData?.allStudentPacks || []).filter(Boolean).map((p: any) => ({
-    id: p.id,
-    nombre: p.plan?.name || "Sin plan",
-    totalClases: p.totalClasses || 0,
-    clasesUsadas: Math.max(0, (p.totalClasses || 0) - (p.remainingClasses || 0)),
-    clasesRestantes: p.remainingClasses || 0,
-    precio: parseFloat(p.plan?.price || "0"),
-    alumnoId: p.student?.id || "",
-    alumnoNombre: p.student?.name || "Alumno sin asignar",
-    profesorNombre: "Por asignar", // Se podría enriquecer en el modelo
-    instrumento: "General",
-    estado: p.isActive ? (p.remainingClasses > 0 ? 'ACTIVO' : 'COMPLETADO') : 'COMPLETADO',
-    fechaInicio: p.purchaseDate
-  })), [packsData]);
+  const studentById = useMemo(() => {
+    const map = new Map<string, any>();
+    students.forEach((s: any) => map.set(String(s.id), s));
+    return map;
+  }, [students]);
+
+  const packs = useMemo(() => (packsData?.allStudentPacks || []).filter(Boolean).map((p: any) => {
+    const st = studentById.get(String(p.student?.id));
+    const profNames = (st?.assignedTeachers || []).map((t: any) => t.name).filter(Boolean).join(", ");
+    return {
+      id: p.id,
+      nombre: p.plan?.name || "Sin plan",
+      totalClases: p.totalClasses || 0,
+      clasesUsadas: Math.max(0, (p.totalClasses || 0) - (p.remainingClasses || 0)),
+      clasesRestantes: p.remainingClasses || 0,
+      precio: parseFloat(p.plan?.price || "0"),
+      alumnoId: p.student?.id || "",
+      alumnoNombre: p.student?.name || "Alumno sin asignar",
+      profesorNombre: profNames || "Sin asignar",
+      instrumento: st?.primaryInstrument?.name || "General",
+      estado: p.isActive ? (p.remainingClasses > 0 ? 'ACTIVO' : 'COMPLETADO') : 'COMPLETADO',
+      fechaInicio: p.purchaseDate,
+      fechaVencimiento: p.expirationDate
+    };
+  }), [packsData, studentById]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | 'ALL'>('ALL');
@@ -81,10 +86,7 @@ export default function AdminPacksPage() {
 
   const [newPack, setNewPack] = useState({
     alumnoId: '',
-    profesorId: '',
-    instrumento: '', 
     planId: '',
-    fechaInicio: new Date().toISOString().split('T')[0]
   });
 
   const selectedPlan = useMemo(() => 
@@ -101,7 +103,7 @@ export default function AdminPacksPage() {
 
   const stats = useMemo(() => ({
     activos: packs.filter((p: any) => p.estado === 'ACTIVO').length,
-    porVencer: packs.filter((p: any) => p.estado === 'ACTIVO' && (p.clasesRestantes / p.totalClases) <= 0.2).length,
+    porVencer: packs.filter((p: any) => p.estado === 'ACTIVO' && p.totalClases > 0 && (p.clasesRestantes / p.totalClases) <= 0.2).length,
     completados: packs.filter((p: any) => p.estado === 'COMPLETADO').length,
     ingresos: packs.reduce((sum: number, p: any) => sum + p.precio, 0)
   }), [packs]);
@@ -384,25 +386,7 @@ export default function AdminPacksPage() {
                   </select>
                 </div>
                 <div className="col-span-2 space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profesor *</label>
-                  <select 
-                    className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold outline-none" 
-                    value={newPack.profesorId} 
-                    onChange={e => setNewPack({ ...newPack, profesorId: e.target.value })}
-                  >
-                    <option value="">Seleccionar profesor...</option>
-                    {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Instrumento *</label>
-                  <select className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold outline-none" value={newPack.instrumento} onChange={e => setNewPack({ ...newPack, instrumento: e.target.value })}>
-                    <option value="">Seleccionar...</option>
-                    {instruments.map((i: any) => <option key={i.id} value={i.name}>{i.name}</option>)}
-                  </select>
-                </div>
-                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Plan Académico</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Plan Académico *</label>
                   <select 
                     className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold outline-none" 
                     value={newPack.planId} 
@@ -416,10 +400,6 @@ export default function AdminPacksPage() {
                     ))}
                   </select>
                 </div>
-                <div className="col-span-2 space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fecha de Inicio</label>
-                  <input type="date" className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm outline-none focus:ring-2 focus:ring-primary/20" value={newPack.fechaInicio} onChange={e => setNewPack({ ...newPack, fechaInicio: e.target.value })} />
-                </div>
               </div>
 
               {/* Price Preview */}
@@ -431,8 +411,10 @@ export default function AdminPacksPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button variant="outline" className="flex-1 h-12 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsNewOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreatePack} disabled={!newPack.alumnoId || !newPack.profesorId || !newPack.instrumento || !selectedPlan} className="flex-1 h-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 disabled:opacity-40">Crear Pack</Button>
+                <Button variant="outline" className="flex-1 h-12 rounded-2xl border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-widest cursor-pointer" onClick={() => setIsNewOpen(false)}>Cancelar</Button>
+                <Button onClick={handleCreatePack} disabled={!newPack.alumnoId || !selectedPlan || creating} className="flex-1 h-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 disabled:opacity-40 cursor-pointer">
+                  {creating ? "Creando..." : "Crear Pack"}
+                </Button>
               </div>
             </CardContent>
           </Card>

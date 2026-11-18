@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl, uploadTeacherPhoto } from "@/lib/utils";
 import { 
   Users, Search, Plus, Calendar, Clock, User, Music,
   ChevronRight, CheckCircle2, XCircle, GraduationCap,
@@ -71,26 +71,12 @@ export default function AdminTeachersPage() {
 
   const handlePhotoUpload = async (teacherId: string, file: File) => {
     setUploadingPhoto(true);
-    const formData = new FormData();
-    formData.append("teacher_id", teacherId);
-    formData.append("photo", file);
-
     try {
-      const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || "http://localhost:8000";
-      const response = await fetch(`${djangoUrl}/api/teachers/upload-photo/`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (result.status === "SUCCESS") {
-        toast.success("Foto de perfil actualizada ✅");
-        refetchTeachers();
-      } else {
-        toast.error(result.message || "Error al subir la foto");
-      }
+      await uploadTeacherPhoto(teacherId, file);
+      toast.success("Foto de perfil actualizada ✅");
+      refetchTeachers();
     } catch (err: any) {
-      toast.error(err.message || "Error de red al subir la foto");
+      toast.error(err?.message || "Error al subir la foto");
     } finally {
       setUploadingPhoto(false);
     }
@@ -176,6 +162,7 @@ export default function AdminTeachersPage() {
 
   const teachers = teachersData?.allTeachers || [];
   const lessons = lessonsData?.allLessons || [];
+  const allStudents = studentsData?.allStudents || [];
   const studentPacks = studentsData?.allStudentPacks || [];
   const instruments = instrumentsData?.allInstruments || [];
 
@@ -195,9 +182,21 @@ export default function AdminTeachersPage() {
     });
   }, [selectedTeacher, lessons]);
 
-  const teacherPacks = useMemo(() => 
-    selectedTeacher ? studentPacks.filter((p: any) => p.student?.teacher?.id === selectedTeacher.id) : [], 
-  [selectedTeacher, studentPacks]);
+  const teacherStudents = useMemo(() => {
+    if (!selectedTeacher) return [];
+    const assigned = allStudents.filter((s: any) =>
+      (s.assignedTeachers || []).some((t: any) => String(t.id) === String(selectedTeacher.id))
+    );
+    return assigned.map((s: any) => {
+      const pack = studentPacks.find((p: any) => String(p.student?.id) === String(s.id) && p.isActive)
+        || studentPacks.find((p: any) => String(p.student?.id) === String(s.id));
+      return {
+        id: s.id,
+        student: s,
+        plan: pack?.plan || (s.primaryInstrument ? { name: s.primaryInstrument.name } : null),
+      };
+    });
+  }, [selectedTeacher, allStudents, studentPacks]);
 
   const openModal = (teacher: any = null) => {
     if (teacher) {
@@ -486,7 +485,7 @@ export default function AdminTeachersPage() {
                         <div className="h-11 w-11 rounded-2xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300">
                           {teacher.photo ? (
                             <img 
-                              src={teacher.photo.startsWith('http') ? teacher.photo : `${process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000'}${teacher.photo}`} 
+                              src={getImageUrl(teacher.photo)} 
                               alt={teacher.name} 
                               className="w-full h-full object-cover" 
                             />
@@ -552,7 +551,7 @@ export default function AdminTeachersPage() {
                  <div className="h-20 w-20 rounded-[2rem] bg-white/5 overflow-hidden flex items-center justify-center border border-white/10 relative group/avatar">
                      {selectedTeacher.photo ? (
                         <img 
-                           src={selectedTeacher.photo.startsWith('http') ? selectedTeacher.photo : `${process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000'}${selectedTeacher.photo}`} 
+                           src={getImageUrl(selectedTeacher.photo)} 
                            alt={selectedTeacher.name} 
                            className="w-full h-full object-cover" 
                         />
@@ -575,6 +574,7 @@ export default function AdminTeachersPage() {
                            onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) handlePhotoUpload(selectedTeacher.id, file);
+                              e.target.value = "";
                            }} 
                         />
                      </label>
@@ -914,7 +914,7 @@ export default function AdminTeachersPage() {
               )}
               {activeTab === 'ALUMNOS' && (
                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                    {teacherPacks.map((p: any) => (
+                    {teacherStudents.map((p: any) => (
                        <div key={p.id} className="bg-white rounded-3xl p-6 border border-slate-100 flex items-center justify-between shadow-sm hover:border-primary/20 transition-colors">
                           <div className="flex items-center gap-3">
                              <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
@@ -922,10 +922,10 @@ export default function AdminTeachersPage() {
                              </div>
                              <span className="font-bold text-slate-800">{p.student?.name}</span>
                           </div>
-                          <Badge variant="outline" className="text-[9px] border-slate-100 font-bold text-slate-400">{p.plan?.name}</Badge>
+                          <Badge variant="outline" className="text-[9px] border-slate-100 font-bold text-slate-400">{p.plan?.name || "Sin Plan"}</Badge>
                        </div>
                     ))}
-                    {teacherPacks.length === 0 && (
+                    {teacherStudents.length === 0 && (
                       <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed text-slate-300">
                         <Users className="h-10 w-10 mx-auto opacity-20 mb-3" />
                         <p className="text-sm italic">No tiene alumnos asignados actualmente</p>
@@ -943,8 +943,8 @@ export default function AdminTeachersPage() {
                     </div>
                     <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm text-center flex flex-col justify-center">
                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Comunidad</p>
-                       <p className="text-5xl font-black text-slate-900 font-serif">{teacherPacks.length}</p>
-                       <p className="text-xs text-slate-500 mt-2">Alumnos activos</p>
+                       <p className="text-5xl font-black text-slate-900 font-serif">{teacherStudents.length}</p>
+                       <p className="text-xs text-slate-500 mt-2">Alumnos asignados</p>
                     </div>
                  </div>
               )}

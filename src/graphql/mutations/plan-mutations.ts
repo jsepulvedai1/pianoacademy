@@ -21,6 +21,7 @@ export const DELETE_PLAN = gql`
   mutation DeletePlan($id: Int!) {
     deletePlan(id: $id) {
       success
+      error
     }
   }
 `;

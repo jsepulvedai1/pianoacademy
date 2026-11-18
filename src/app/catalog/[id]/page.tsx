@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, DollarSign, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { getClient } from '@/lib/apollo-client';
+import { getImageUrl } from '@/lib/utils';
 import { gql } from '@apollo/client/core/index.js';
 
 export const dynamic = 'force-dynamic';
@@ -82,7 +83,7 @@ export default async function ClassDetailPage({ params }: ClassDetailPageProps) 
   const availableTeachers = (classType.teachers || []).map((t: any) => ({
     id: t.id,
     name: t.name,
-    photo: t.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${t.name}`,
+    photo: t.photo ? getImageUrl(t.photo) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${t.name}`,
     specialtyText: t.specialties?.[0]?.name || 'Profesor'
   }));
 

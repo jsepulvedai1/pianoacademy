@@ -19,7 +19,13 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000';
+    const backendUrl = (
+      process.env.NEXT_PUBLIC_DJANGO_URL ||
+      (process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT
+        ? process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT.replace(/\/graphql\/?$/, '')
+        : '') ||
+      'http://localhost:8000'
+    ).replace(/\/$/, '');
     return [
       {
         source: '/graphql/',
@@ -32,6 +38,26 @@ const nextConfig: NextConfig = {
       {
         source: '/media/:path*',
         destination: `${backendUrl}/media/:path*`,
+      },
+      {
+        source: '/api/media/upload/',
+        destination: `${backendUrl}/api/media/upload/`,
+      },
+      {
+        source: '/api/media/:path*',
+        destination: `${backendUrl}/api/media/:path*`,
+      },
+      {
+        source: '/api/teachers/upload-photo/',
+        destination: `${backendUrl}/api/teachers/upload-photo/`,
+      },
+      {
+        source: '/api/teachers/:path*',
+        destination: `${backendUrl}/api/teachers/:path*`,
+      },
+      {
+        source: '/api/mercadopago/:path*',
+        destination: `${backendUrl}/api/mercadopago/:path*`,
       },
     ];
   },

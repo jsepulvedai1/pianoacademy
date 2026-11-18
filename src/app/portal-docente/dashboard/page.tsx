@@ -52,15 +52,6 @@ export default function TeacherDashboardPage() {
   const teacherProfile = profileData?.myTeacherProfile;
   const lessons = lessonsData?.myLessons || [];
 
-  if (profileLoading || lessonsLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 text-[#70125F] animate-spin" />
-        <p className="text-slate-400 text-xs italic">Cargando tu agenda docente...</p>
-      </div>
-    );
-  }
-
   const stats = useMemo(() => {
     const totalWeeklyMinutes = lessons.reduce((acc: number, l: any) => {
       if (!l.startTime || !l.endTime) return acc;
@@ -133,6 +124,15 @@ export default function TeacherDashboardPage() {
     });
     return result;
   }, [lessons]);
+
+  if (profileLoading || lessonsLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 text-[#70125F] animate-spin" />
+        <p className="text-slate-400 text-xs italic">Cargando tu agenda docente...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">

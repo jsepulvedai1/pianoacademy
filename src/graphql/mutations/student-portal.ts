@@ -3,6 +3,8 @@ import { gql } from "@apollo/client/core/index.js";
 export const CREATE_MATERIAL = gql`
   mutation CreateMaterial($title: String!, $type: String!, $url: String!, $scope: String, $teacherId: Int) {
     createMaterial(title: $title, type: $type, url: $url, scope: $scope, teacherId: $teacherId) {
+      success
+      error
       material {
         id
         title

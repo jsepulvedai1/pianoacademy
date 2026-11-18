@@ -12,6 +12,7 @@ import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
 import { CHANGE_MY_PASSWORD } from "@/graphql/mutations/student-mutations";
 import { UPDATE_MY_TEACHER_PROFILE } from "@/graphql/mutations/create-teacher";
+import { getImageUrl, uploadTeacherPhoto } from "@/lib/utils";
 
 const DAY_MAP_EN_TO_ES: Record<string, string> = {
   MONDAY: "Lunes",
@@ -41,7 +42,7 @@ export default function TeacherProfilePage() {
     description: ""
   });
 
-  const { data: profileData, loading } = useQuery<any>(MY_TEACHER_PROFILE);
+  const { data: profileData, loading, refetch } = useQuery<any>(MY_TEACHER_PROFILE);
   const teacher = profileData?.myTeacherProfile;
 
   const [updateProfile, { loading: isUpdatingProfile }] = useMutation(UPDATE_MY_TEACHER_PROFILE, {
@@ -83,13 +84,21 @@ export default function TeacherProfilePage() {
     });
   };
 
-  const handleSimulateUpload = () => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !teacher?.id) return;
     setIsUploading(true);
-    setTimeout(() => {
-      setPhotoUrl("https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80");
+    try {
+      const uploaded = await uploadTeacherPhoto(teacher.id, file);
+      if (uploaded.url) setPhotoUrl(uploaded.url);
+      await refetch();
+      toast.success("Foto de perfil actualizada ✅");
+    } catch (err: any) {
+      toast.error(err?.message || "Error al subir la foto de perfil.");
+    } finally {
+      e.target.value = "";
       setIsUploading(false);
-      toast.success("Foto de perfil actualizada.");
-    }, 1500);
+    }
   };
 
   if (loading) {
@@ -126,23 +135,21 @@ export default function TeacherProfilePage() {
              <div className="absolute inset-0 bg-gradient-to-br from-[#70125F]/5 to-transparent pointer-events-none" />
              <div className="w-40 h-40 mx-auto rounded-full border-8 border-white shadow-lg overflow-hidden relative bg-slate-100 flex items-center justify-center mb-6">
                 {photoUrl || teacher?.photo ? (
-                   <img src={photoUrl || teacher?.photo} alt="Perfil" className="w-full h-full object-cover" />
+                   <img src={photoUrl || getImageUrl(teacher?.photo)} alt="Perfil" className="w-full h-full object-cover" />
                 ) : (
                    <User className="h-16 w-16 text-slate-300" />
                 )}
-                <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleSimulateUpload}>
-                   <Camera className="h-8 w-8 text-white" />
-                </div>
+                <label className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                   {isUploading ? <Loader2 className="h-8 w-8 text-white animate-spin" /> : <Camera className="h-8 w-8 text-white" />}
+                   <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={handlePhotoUpload} />
+                </label>
              </div>
              <h2 className="text-xl font-bold font-serif text-slate-900">{teacher?.name}</h2>
              <p className="text-xs font-bold uppercase tracking-widest text-[#70125F] mt-1">Docente Détaché</p>
-             <Button 
-                onClick={handleSimulateUpload} 
-                disabled={isUploading}
-                className="w-full mt-6 rounded-2xl h-12 font-bold uppercase text-[10px] tracking-widest bg-slate-900 text-white shadow-lg shadow-slate-900/20 cursor-pointer"
-             >
+             <label className="mt-6 w-full rounded-2xl h-12 font-bold uppercase text-[10px] tracking-widest bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 cursor-pointer flex items-center justify-center">
                 {isUploading ? "Subiendo..." : "Cambiar Foto"}
-             </Button>
+                <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={handlePhotoUpload} />
+             </label>
           </Card>
           <div className="bg-slate-100/80 rounded-3xl p-6 border border-slate-200/80 flex items-start gap-4">
              <Clock className="h-5 w-5 text-[#70125F] shrink-0 mt-0.5" />

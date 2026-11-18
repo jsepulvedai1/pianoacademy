@@ -18,7 +18,7 @@ import { GET_INSTRUMENTS } from "@/graphql/queries/get-instruments";
 import { CREATE_MATERIAL, UPDATE_MATERIAL, DELETE_MATERIAL } from "@/graphql/mutations/material-mutations";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { getMediaUrl } from "@/lib/utils";
+import { getMediaUrl, uploadMediaFile } from "@/lib/utils";
 import { SecureDocumentModal } from "@/components/modals/secure-document-modal";
 
 type ScopeFilter = "DETACHE" | "MY_MATERIALS" | "ALL";
@@ -100,42 +100,19 @@ export default function TeacherMaterialsPage() {
 
     setIsUploadingFile(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("folder", "materials");
-
-      const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || process.env.NEXT_PUBLIC_DJANGO_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "https://api.detache.cl");
-      const endpoint = `${djangoUrl}/api/media/upload/`;
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: uploadData,
-      });
-
-      const data = await res.json();
-      if (data.status === "SUCCESS") {
-        const fileExt = file.name.split('.').pop()?.toLowerCase();
-        let detectedType = "PDF";
-        if (["mp3", "wav", "ogg", "aac", "flac"].includes(fileExt || "")) detectedType = "AUDIO";
-        else if (["mp4", "mov", "avi", "webm", "mkv"].includes(fileExt || "")) detectedType = "VIDEO";
-        else if (["pdf", "doc", "docx", "xls", "xlsx"].includes(fileExt || "")) detectedType = "PDF";
-
-        const resourceUrl = data.url || (data.relativeUrl ? `${djangoUrl}${data.relativeUrl}` : "");
-
-        setFormData(prev => ({
-          ...prev,
-          url: resourceUrl,
-          title: prev.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-          type: detectedType
-        }));
-        setUploadedFileName(file.name);
-        toast.success(`Archivo "${file.name}" subido al servidor ✅`);
-      } else {
-        toast.error(data.message || "Error al subir archivo");
-      }
+      const uploaded = await uploadMediaFile(file, "materials");
+      setFormData(prev => ({
+        ...prev,
+        url: uploaded.url,
+        title: prev.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+        type: uploaded.detectedType
+      }));
+      setUploadedFileName(file.name);
+      toast.success(`Archivo "${file.name}" subido al servidor ✅`);
     } catch (err: any) {
-      toast.error("Error de conexión al subir archivo: " + err.message);
+      toast.error(err?.message || "Error de conexión al subir archivo");
     } finally {
+      e.target.value = "";
       setIsUploadingFile(false);
     }
   };

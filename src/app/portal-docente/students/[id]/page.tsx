@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
-import { cn, getMediaUrl } from "@/lib/utils";
+import { cn, getMediaUrl, uploadMediaFile } from "@/lib/utils";
 import { useQuery, useMutation } from "@apollo/client/react/index.js";
 import { GET_STUDENT_PORTAL_DATA } from "@/graphql/queries/student-portal";
 import { MY_TEACHER_PROFILE } from "@/graphql/queries/portal-queries";
@@ -54,42 +54,19 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
 
     setIsUploadingFile(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("folder", "materials");
-
-      const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || process.env.NEXT_PUBLIC_DJANGO_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "https://api.detache.cl");
-      const endpoint = `${djangoUrl}/api/media/upload/`;
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: uploadData,
-      });
-
-      const data = await res.json();
-      if (data.status === "SUCCESS") {
-        const fileExt = file.name.split('.').pop()?.toLowerCase();
-        let detectedType = "PDF";
-        if (["mp3", "wav", "ogg", "aac", "flac"].includes(fileExt || "")) detectedType = "AUDIO";
-        else if (["mp4", "mov", "avi", "webm", "mkv"].includes(fileExt || "")) detectedType = "VIDEO";
-        else if (["pdf", "doc", "docx", "xls", "xlsx"].includes(fileExt || "")) detectedType = "PDF";
-
-        const resourceUrl = data.url || (data.relativeUrl ? `${djangoUrl}${data.relativeUrl}` : "");
-
-        setNewMaterial(prev => ({
-          ...prev,
-          url: resourceUrl,
-          title: prev.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-          type: detectedType
-        }));
-        setUploadedFileName(file.name);
-        toast.success(`Archivo "${file.name}" subido ✅`);
-      } else {
-        toast.error(data.message || "Error al subir archivo");
-      }
+      const uploaded = await uploadMediaFile(file, "materials");
+      setNewMaterial(prev => ({
+        ...prev,
+        url: uploaded.url,
+        title: prev.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+        type: uploaded.detectedType
+      }));
+      setUploadedFileName(file.name);
+      toast.success(`Archivo "${file.name}" subido ✅`);
     } catch (err: any) {
-      toast.error("Error de conexión al subir archivo: " + err.message);
+      toast.error(err?.message || "Error de conexión al subir archivo");
     } finally {
+      e.target.value = "";
       setIsUploadingFile(false);
     }
   };
@@ -138,6 +115,9 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
             teacherId: teacherId
           }
         });
+        if (!matData?.createMaterial?.success || !matData?.createMaterial?.material?.id) {
+          throw new Error(matData?.createMaterial?.error || "No se pudo crear el material adjunto.");
+        }
         materialId = matData.createMaterial.material.id;
       } else if (pendingAttachment) {
         materialId = pendingAttachment.id;
@@ -205,7 +185,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
              <CardContent className="pt-16 pb-8 px-8 relative z-10">
                 <div className="w-32 h-32 mx-auto rounded-full border-8 border-white shadow-xl bg-indigo-50 mb-6 flex items-center justify-center overflow-hidden">
                    {student.avatar ? (
-                     <img src={student.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                     <img src={getMediaUrl(student.avatar)} alt="Avatar" className="w-full h-full object-cover" />
                    ) : (
                      <User className="h-12 w-12 text-indigo-300" />
                    )}
@@ -220,7 +200,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
                    </div>
                    <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Contacto</p>
-                      <p className="text-sm font-bold text-slate-900 mt-1">{student.phone_number || "--"}</p>
+                      <p className="text-sm font-bold text-slate-900 mt-1">{student.phoneNumber || student.phone_number || "--"}</p>
                    </div>
                 </div>
              </CardContent>

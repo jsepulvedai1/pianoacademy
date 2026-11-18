@@ -58,19 +58,10 @@ export default function StudentDashboardPage() {
         classesRemaining: activePack?.remainingClasses ?? 0,
         totalClasses: activePack?.totalClasses ?? 0,
         expirationDate: activePack?.expirationDate ? format(parseISO(activePack.expirationDate), "d 'de' MMMM, yyyy", { locale: es }) : "Sin expirar",
-        paymentLink: "https://api.detache.cl/payments"
+        paymentLink: "/portal-alumno/shop"
       }
     };
   }, [studentProfile, activePack]);
-
-  if (profileLoading || packsLoading || lessonsLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-        <p className="text-slate-400 text-xs italic">Cargando tu resumen académico...</p>
-      </div>
-    );
-  }
 
   const nextWeek = () => setCurrentWeekStart(prev => addWeeks(prev, 1));
   const prevWeek = () => setCurrentWeekStart(prev => subWeeks(prev, 1));
@@ -124,6 +115,15 @@ export default function StudentDashboardPage() {
     });
     return result;
   }, [lessons]);
+
+  if (profileLoading || packsLoading || lessonsLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-slate-400 text-xs italic">Cargando tu resumen académico...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-8 lg:p-12 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto">
@@ -314,7 +314,7 @@ export default function StudentDashboardPage() {
                               {lesson.startTime.substring(0, 5)}
                             </span>
                             <p className="text-[9px] font-bold leading-tight truncate">
-                              {lesson.teacher.name}
+                              {lesson.teacher?.name || "Por asignar"}
                             </p>
                           </div>
                         );
@@ -344,7 +344,7 @@ export default function StudentDashboardPage() {
                     <div className="w-full h-1.5 bg-slate-200 rounded-full mt-4 overflow-hidden">
                       <div 
                         className={`h-full rounded-full ${isExpiring ? 'bg-amber-500' : 'bg-primary'}`} 
-                        style={{ width: `${(student.plan.classesRemaining / student.plan.totalClasses) * 100}%` }}
+                        style={{ width: `${student.plan.totalClasses > 0 ? Math.min(100, (student.plan.classesRemaining / student.plan.totalClasses) * 100) : 0}%` }}
                       />
                     </div>
                   </div>
@@ -382,11 +382,11 @@ export default function StudentDashboardPage() {
                       <p className="text-xs text-amber-700/80 font-medium mb-4 leading-relaxed">
                         Te quedan pocas clases. Puedes renovar ahora para asegurar tu cupo y horario actual.
                       </p>
-                      <a href={student.plan.paymentLink} target="_blank" rel="noopener noreferrer">
-                        <Button className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase text-[10px] tracking-widest h-10 shadow-lg shadow-amber-600/20">
-                          Pagar Mensualidad <ExternalLink className="h-3 w-3 ml-2" />
+                      <Link href={student.plan.paymentLink}>
+                        <Button className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase text-[10px] tracking-widest h-10 shadow-lg shadow-amber-600/20 cursor-pointer">
+                          Renovar en Tienda <ExternalLink className="h-3 w-3 ml-2" />
                         </Button>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                </CardContent>

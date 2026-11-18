@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, uploadMediaFile } from "@/lib/utils";
 
 const AVAILABLE_ICONS = [
   "Amplificador.svg",
@@ -345,25 +345,15 @@ export default function UnifiedWebEditor() {
 
   // Image Upload handler
   const handleImageUpload = async (file: File, onUploadSuccess: (url: string) => void) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000';
     toast.promise(
-      fetch(`${djangoUrl}/api/media/upload/`, {
-        method: "POST",
-        body: formData,
-      }).then(async (res) => {
-        if (!res.ok) throw new Error("Error en la subida");
-        const data = await res.json();
-        if (data.status === "ERROR") throw new Error(data.message);
+      uploadMediaFile(file, "cms").then((data) => {
         onUploadSuccess(data.url);
         return data;
       }),
       {
         loading: "Subiendo imagen...",
         success: "¡Imagen subida con éxito!",
-        error: "Error al subir la imagen",
+        error: (err: any) => err?.message || "Error al subir la imagen",
       }
     );
   };

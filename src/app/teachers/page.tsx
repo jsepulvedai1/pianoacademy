@@ -9,6 +9,7 @@ import { User, Calendar, Star } from "lucide-react";
 import { getClient } from "@/lib/apollo-client";
 import { GET_TEACHERS } from "@/graphql/queries/get-teachers";
 import { GetTeachersData, Teacher } from "@/types/graphql";
+import { getImageUrl } from "@/lib/utils";
 
 export default async function TeachersPage() {
   let teachers: Teacher[] = [];
@@ -46,7 +47,7 @@ export default async function TeachersPage() {
                 <div className="w-44 h-44 relative rounded-full overflow-hidden border-[6px] border-white shadow-xl ring-1 ring-primary/5 group-hover:ring-primary/20 transition-all duration-500">
                   {teacher.photo ? (
                     <img
-                      src={teacher.photo}
+                      src={getImageUrl(teacher.photo)}
                       alt={teacher.name}
                       className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110"
                     />

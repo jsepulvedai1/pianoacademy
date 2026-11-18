@@ -27,10 +27,15 @@ export default function AdminPlansMasterPage() {
   });
 
   const [deletePlan] = useMutation(DELETE_PLAN, {
-    onCompleted: () => {
-      toast.success("Programa eliminado");
-      refetch();
-    }
+    onCompleted: (res: any) => {
+      if (res?.deletePlan?.success) {
+        toast.success("Programa eliminado");
+        refetch();
+      } else {
+        toast.error(res?.deletePlan?.error || "No se pudo eliminar este programa.");
+      }
+    },
+    onError: (err) => toast.error(err.message || "Error al eliminar el programa.")
   });
 
   const [updatePlan, { loading: isUpdating }] = useMutation(UPDATE_PLAN, {

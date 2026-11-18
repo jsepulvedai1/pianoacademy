@@ -8,6 +8,7 @@ export const GET_STUDENT_PORTAL_DATA = gql`
       age: birthDate
       avatar: photo
       pack: level
+      phoneNumber
       privateNotes {
         id
         text

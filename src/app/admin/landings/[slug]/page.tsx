@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { safeArray } from "@/lib/utils";
+import { safeArray, uploadMediaFile as uploadMediaFileHelper } from "@/lib/utils";
 
 interface GalleryItem {
   url: string;
@@ -191,24 +191,11 @@ export default function EditLandingPage({
   const uploadMediaFile = async (file: File): Promise<string | null> => {
     setIsUploading(true);
     try {
-      const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:8000/graphql/";
-      const backendBase = graphqlUrl.replace(/\/graphql\/?$/, "");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", "instruments");
-      const res = await fetch(`${backendBase}/api/media/upload/`, {
-        method: "POST",
-        body: fd,
-      });
-      const json = await res.json();
-      if (json.status === "SUCCESS" && json.url) {
-        toast.success("Imagen subida correctamente 📸");
-        return json.url;
-      }
-      toast.error("Error al subir imagen");
-      return null;
-    } catch {
-      toast.error("No se pudo subir la imagen");
+      const uploaded = await uploadMediaFileHelper(file, "instruments");
+      toast.success("Imagen subida correctamente 📸");
+      return uploaded.url;
+    } catch (err: any) {
+      toast.error(err?.message || "Error al subir imagen");
       return null;
     } finally {
       setIsUploading(false);

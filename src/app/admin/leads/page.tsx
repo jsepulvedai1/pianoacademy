@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Users,
   Search,
@@ -501,16 +501,24 @@ export default function AdminLeadsPage() {
     };
   }, [leads]);
 
+  const syncedExpiredIdsRef = useRef<Set<string>>(new Set());
+
   // Sincronizar automáticamente en base de datos si alguna pre-reserva expiró
   useEffect(() => {
     if (!leads || leads.length === 0) return;
-    const expiredToSync = leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isExpired);
+    const expiredToSync = leads.filter(
+      (l: any) =>
+        l.estado === 'PRE_RESERVA' &&
+        getLeadExpiration(l).isExpired &&
+        !syncedExpiredIdsRef.current.has(String(l.id))
+    );
     if (expiredToSync.length > 0) {
       expiredToSync.forEach((l: any) => {
+        syncedExpiredIdsRef.current.add(String(l.id));
         updateStatusMutation({ variables: { leadId: l.id, status: 'RESERVA_VENCIDA' } });
       });
     }
-  }, [leads]);
+  }, [leads, updateStatusMutation]);
 
   const handleLiberarTodasVencidas = async () => {
     const vencidas = leads.filter((l: any) => l.estado === 'PRE_RESERVA' && getLeadExpiration(l).isPast20);
@@ -812,7 +820,7 @@ export default function AdminLeadsPage() {
         ].map(stat => (
           <div key={stat.label} className={`${stat.bg} border border-slate-100/80 rounded-3xl p-6 shadow-sm`}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{stat.label}</p>
-            <p className="text-3xl font-bold font-serif ${stat.color}">{stat.value}</p>
+            <p className={`text-3xl font-bold font-serif ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -1008,7 +1016,9 @@ export default function AdminLeadsPage() {
                       <td className="px-8 py-5">
                         <div>
                           <p className="font-bold text-slate-900 text-sm">{lead.nombre}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">+{lead.telefono.slice(0, 2)} {lead.telefono.slice(2)}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            {lead.telefono ? `+${lead.telefono.slice(0, 2)} ${lead.telefono.slice(2)}` : 'Sin teléfono'}
+                          </p>
                         </div>
                       </td>
                       <td className="px-8 py-5">
@@ -1669,9 +1679,12 @@ export default function AdminLeadsPage() {
                       className="w-full h-12 bg-slate-50 border-none rounded-2xl px-4 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                     >
                       <option value="">Seleccionar profesor...</option>
-                      {teachers.map((t: any) => (
-                        <option key={t.id} value={t.id}>{t.name} ({t.instrument || "Docente"})</option>
-                      ))}
+                      {teachers.map((t: any) => {
+                        const specs = (t.specialties || []).map((s: any) => s.name).filter(Boolean).join(", ");
+                        return (
+                          <option key={t.id} value={t.id}>{t.name} ({specs || "Docente"})</option>
+                        );
+                      })}
                     </select>
                   </div>
 
