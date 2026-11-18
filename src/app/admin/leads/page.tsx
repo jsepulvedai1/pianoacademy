@@ -1243,8 +1243,8 @@ export default function AdminLeadsPage() {
                                     {selectedLead.estado === 'RESERVA_VENCIDA'
                                       ? "Reserva Vencida"
                                       : cp.isPreReservation
-                                        ? (isPast20 ? "Pre-Reserva (Vencida 20:00)" : "Pre-Reserva (Pendiente Pago)")
-                                        : "CP Confirmada"}
+                                        ? (isPast20 ? "Pendiente (Vencida 20:00)" : "Pendiente Validación (Transferencia)")
+                                        : "CP Pagada / Confirmada"}
                                   </Badge>
                                 </div>
                                 {cp.isPreReservation && selectedLead.estado !== 'RESERVA_VENCIDA' && (

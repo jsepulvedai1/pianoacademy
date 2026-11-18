@@ -593,12 +593,14 @@ export default function AdminLessonsPage() {
           selectedLesson.lessonType === 'GRUPAL' 
             ? 'Clase Grupal / Ensamble' 
             : selectedLesson.isPreReservation 
-            ? 'Clase de Prueba (Evaluación)' 
+            ? 'Clase de Prueba (Pendiente Validación)' 
+            : selectedLesson.lead
+            ? 'Clase de Prueba (Pagada / Confirmada)'
             : 'Clase Individual (1 a 1)';
 
         const studentSubtitle = selectedLesson.student 
           ? (selectedLesson.student.level ? `Nivel ${selectedLesson.student.level}` : 'Alumno Regular')
-          : (selectedLesson.lead ? 'Prospecto en Pre-Reserva' : 'Sin matrícula');
+          : (selectedLesson.lead ? (selectedLesson.isPreReservation ? 'Pendiente Validación (Transferencia)' : 'Clase de Prueba Pagada') : 'Sin matrícula');
 
         const teacherSubtitle = selectedLesson.teacher?.specialties?.map((s: any) => s.name).join(', ') || 'Docente Titular';
 

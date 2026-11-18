@@ -468,7 +468,7 @@ function BookPageContent() {
           });
         } else {
           setStep(6);
-          toast.warning("Pre-reserva registrada como PENDIENTE DE PAGO. Realiza el pago para confirmar tu cupo.");
+          toast.warning("Reserva registrada como PENDIENTE DE VALIDACIÓN. Realiza la transferencia y envía tu comprobante para que el staff confirme tu cupo.");
         }
       } else {
         toast.error("Hubo un problema al registrar la solicitud. Intenta nuevamente.");
@@ -1356,7 +1356,7 @@ function BookPageContent() {
                           <Badge className="bg-emerald-600 text-white text-[9px] uppercase">Confirmación Inmediata</Badge>
                         </div>
                         <p className="text-xs text-slate-600">
-                          Paga con tarjeta de débito o crédito (${Number(activePayAmount).toLocaleString("es-CL")} CLP) y asegura tu reserva de inmediato.
+                          Paga con tarjeta de débito o crédito (${Number(activePayAmount).toLocaleString("es-CL")} CLP) vía Mercado Pago. Tu clase de prueba queda pagada y confirmada de inmediato.
                         </p>
                       </button>
 
@@ -1375,11 +1375,11 @@ function BookPageContent() {
                             Transferencia Bancaria
                           </div>
                           <Badge variant="outline" className="border-amber-400 text-amber-800 bg-amber-50 text-[9px] uppercase">
-                            Plazo hasta las 20:00 hrs
+                            Pendiente de Validación
                           </Badge>
                         </div>
                         <p className="text-xs text-slate-600">
-                          Realiza la transferencia por ${Number(activePayAmount).toLocaleString("es-CL")} CLP y envía el comprobante por WhatsApp antes de las 20:00 hrs para activar tu reserva.
+                          Realiza la transferencia por ${Number(activePayAmount).toLocaleString("es-CL")} CLP y envía el comprobante por WhatsApp. Tu reserva quedará pendiente hasta que el staff la valide.
                         </p>
                       </button>
                     </div>
@@ -1476,7 +1476,7 @@ function BookPageContent() {
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      <Landmark className="h-4 w-4" /> Registrar Pre-Reserva (${Number(activePayAmount).toLocaleString("es-CL")}) y Ver Instrucciones
+                      <Landmark className="h-4 w-4" /> Registrar Reserva Pendiente (${Number(activePayAmount).toLocaleString("es-CL")}) y Ver Instrucciones
                     </span>
                   )}
                 </Button>
@@ -1485,7 +1485,7 @@ function BookPageContent() {
           </div>
         )}
 
-        {/* PASO 6: ESTADO DE PRE-RESERVA PENDIENTE DE PAGO */}
+        {/* PASO 6: ESTADO DE RESERVA PENDIENTE DE VALIDACIÓN (TRANSFERENCIA) */}
         {step === 6 && (
           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 max-w-2xl mx-auto py-8">
             <Card className="rounded-[2.5rem] border-2 border-amber-300 shadow-2xl bg-white overflow-hidden text-center p-8 sm:p-12 space-y-6 relative">
@@ -1495,10 +1495,10 @@ function BookPageContent() {
 
               <div className="space-y-2">
                 <Badge className="bg-amber-100 text-amber-900 border border-amber-300 font-mono text-xs px-3 py-1 font-bold">
-                  SOLICITUD PRE-RESERVA: {bookingFolio} • PENDIENTE DE PAGO
+                  SOLICITUD DE RESERVA: {bookingFolio} • PENDIENTE DE VALIDACIÓN
                 </Badge>
                 <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900">
-                  ⚠️ Falta tu Pago para Confirmar la Clase
+                  ⏳ Reserva Pendiente de Validación por Staff
                 </h2>
                 <p className="text-amber-900 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs sm:text-sm font-semibold leading-relaxed">
                   {trialBookingNotice}
@@ -1569,12 +1569,12 @@ function BookPageContent() {
                   disabled={isCreatingPayment}
                   className="w-full bg-[#70125F] hover:bg-[#590e4b] text-white rounded-2xl h-12 font-bold text-xs uppercase tracking-wider gap-2 shadow-lg cursor-pointer"
                 >
-                  <CreditCard className="h-4 w-4" /> Pagar Ahora con Link de Pago Online (${Number(activePayAmount).toLocaleString("es-CL")})
+                  <CreditCard className="h-4 w-4" /> Pagar Ahora con Mercado Pago (${Number(activePayAmount).toLocaleString("es-CL")}) — Confirmación Inmediata
                 </Button>
 
                 <a
                   href={`https://wa.me/${(globalSettings?.whatsappNumber || "+56964279239").replace(/\D/g, "")}?text=${encodeURIComponent(
-                    `Hola Academia Détaché 🎻, acabo de solicitar una Pre-Reserva de Clase de Prueba de ${currentInstrument.name} (30 min) con ${effectiveAssignedTeacherName} para el ${selectedDateStr} a las ${selectedSlot?.start} hrs (Folio: ${bookingFolio}). Alumno: ${formData.nombre} ${formData.apellido} (${formData.edad} años). Adjunto mi comprobante de pago para confirmar mi cupo.`
+                    `Hola Academia Détaché 🎻, acabo de solicitar una Clase de Prueba de ${currentInstrument.name} (30 min) con ${effectiveAssignedTeacherName} para el ${selectedDateStr} a las ${selectedSlot?.start} hrs (Folio: ${bookingFolio}). Alumno: ${formData.nombre} ${formData.apellido} (${formData.edad} años). Adjunto mi comprobante de transferencia para su validación por el staff.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

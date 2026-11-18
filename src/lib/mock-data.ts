@@ -387,7 +387,7 @@ export const WA_TEMPLATES = {
   INFO_PACKS: (nombre: string) =>
     `Hola ${nombre}! 🎵 Nuestros packs:\n\n🎵 *Pack 4 clases* — $60.000\n🎵 *Pack 12 clases* — $160.000\n🎵 *Pack 24 clases* — $290.000\n🎵 *Pack 40 clases* — $450.000\n\n¿Cuál te interesa? 😊`,
   PRE_RESERVA: (nombre: string, fecha: string, hora: string, profesor: string) =>
-    `¡Hola ${nombre}! 🎉 Tu clase de prueba ha sido *pre-reservada*:\n\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${hora}\n👩‍🏫 *Profesor/a:* ${profesor}\n\n*Tienes hasta las 20:00 de hoy para confirmar con el pago.* Después de eso, el cupo se libera automáticamente.\n\n¿Cómo prefieres pagar? 💳`,
+    `¡Hola ${nombre}! 🎉 Tu solicitud de clase de prueba ha sido *registrada*:\n\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${hora}\n👩‍🏫 *Profesor/a:* ${profesor}\n\n*Tienes hasta las 20:00 de hoy para completar el pago.* Si pagas por Mercado Pago queda confirmada de inmediato; si es por transferencia queda pendiente hasta que el staff la valide. 💳`,
   RECORDATORIO_PAGO: (nombre: string, monto: string) =>
     `Hola ${nombre} 👋 Tienes un pago pendiente de *${monto}* en Détaché. ¿Lo coordinamos? 😊`,
   CONFIRMACION: (nombre: string, fecha: string, hora: string) =>
@@ -422,8 +422,8 @@ export const sourceLabel: Record<LeadSource, string> = {
 
 export const statusLabel: Record<LeadStatus, string> = {
   SOLICITUD: 'Solicitud Recibida',
-  PRE_RESERVA: 'Pre-Reserva (Con Adelanto)',
-  RESERVA_CONFIRMADA: 'Reserva Confirmada (Total)',
+  PRE_RESERVA: 'Pendiente Validación (Transferencia)',
+  RESERVA_CONFIRMADA: 'Clase Pagada / Confirmada',
   RESERVA_VENCIDA: 'Reserva Vencida',
   CONTACTADO: 'Contactado / En Seguimiento',
   CONCRETADO: 'Venta Concretada / Alumno',

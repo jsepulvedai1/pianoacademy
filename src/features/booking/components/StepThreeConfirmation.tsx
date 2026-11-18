@@ -186,7 +186,7 @@ export function StepThreeConfirmation() {
               <label htmlFor="terms" className="text-sm font-medium leading-normal cursor-pointer">
                 Acepto el <Link href="/terms" target="_blank" className="text-primary underline underline-offset-4 hover:text-primary/80">Reglamento Interno</Link> de la academia y las políticas de cancelación.
               </label>
-              <p className="text-xs text-muted-foreground">Requerido para confirmar tu pre-reserva.</p>
+              <p className="text-xs text-muted-foreground">Requerido para registrar tu reserva.</p>
             </div>
           </div>
 
